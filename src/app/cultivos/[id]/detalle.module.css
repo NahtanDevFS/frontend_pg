@@ -1,0 +1,113 @@
+.container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: sans-serif;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #eaeaea;
+  padding-bottom: 1rem;
+}
+.title {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+.btnBack {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  padding: 0;
+}
+.btnPrimary {
+  background-color: #0070f3;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.table th,
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eaeaea;
+}
+.table th {
+  background-color: #f8f9fa;
+  color: #555;
+}
+.table tr:hover {
+  background-color: #fcfcfc;
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+.completado {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+.procesando {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+.pendiente {
+  background-color: #fef7e0;
+  color: #f29900;
+}
+.error {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.textSuccess {
+  color: #2e7d32;
+}
+.textWarning {
+  color: #ed6c02;
+}
+
+.btnAction {
+  background-color: #eaeaea;
+  border: 1px solid #ccc;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.btnAction:hover {
+  background-color: #d4d4d4;
+}
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #0070f3;
+}

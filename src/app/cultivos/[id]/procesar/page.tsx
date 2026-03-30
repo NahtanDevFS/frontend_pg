@@ -190,7 +190,11 @@ export default function ProcesarVideoPage() {
 
           <h3>Video Anotado por IA</h3>
           {procesamiento.video_anotado_url ? (
-            <video controls className={styles.videoPlayer}>
+            <video
+              key={procesamiento.video_anotado_url}
+              controls
+              className={styles.videoPlayer}
+            >
               <source
                 src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
                 type="video/mp4"

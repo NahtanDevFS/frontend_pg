@@ -7,7 +7,7 @@ import styles from "./login.module.css";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -17,22 +17,18 @@ export default function LoginPage() {
 
     try {
       const params = new URLSearchParams();
-      params.append("username", email);
+      params.append("username", username);
       params.append("password", password);
 
       const response = await api.post("/login", params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      const token = response.data.access_token;
-      localStorage.setItem("token", token);
-
+      localStorage.setItem("token", response.data.access_token);
       router.push("/dashboard");
     } catch (err: any) {
       if (err.response?.status === 401) {
-        setError("Email o contraseña incorrectos.");
+        setError("Usuario o contraseña incorrectos.");
       } else {
         setError("Ocurrió un error al intentar iniciar sesión.");
       }
@@ -43,16 +39,15 @@ export default function LoginPage() {
     <div className={styles.container}>
       <form className={styles.formCard} onSubmit={handleLogin}>
         <h2 className={styles.title}>Sistema de Conteo</h2>
-
         {error && <div className={styles.errorMsg}>{error}</div>}
 
         <div className={styles.inputGroup}>
-          <label htmlFor="email">Correo Electrónico</label>
+          <label htmlFor="username">Nombre de Usuario</label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
         </div>

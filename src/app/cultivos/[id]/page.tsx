@@ -66,8 +66,8 @@ export default function DetalleCultivoPage() {
                 <th>ID</th>
                 <th>Fecha de Grabación</th>
                 <th>Estado</th>
-                <th>Maduros</th>
-                <th>Inmaduros</th>
+                <th>Conteo IA</th>
+                <th>Conteo Ajustado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -83,16 +83,15 @@ export default function DetalleCultivoPage() {
                   </td>
                   <td className={styles.textSuccess}>
                     <strong>
-                      {proc.resultado_ia
-                        ? proc.resultado_ia.conteo_maduros
-                        : "-"}
+                      {proc.resultado ? proc.resultado.conteo_ia : "-"}
                     </strong>
                   </td>
                   <td className={styles.textWarning}>
                     <strong>
-                      {proc.resultado_ia
-                        ? proc.resultado_ia.conteo_inmaduros
-                        : "-"}
+                      {proc.resultado &&
+                      proc.resultado.conteo_final_ajustado !== null
+                        ? proc.resultado.conteo_final_ajustado
+                        : "Sin ajustar"}
                     </strong>
                   </td>
                   <td>
@@ -100,7 +99,9 @@ export default function DetalleCultivoPage() {
                       <button
                         className={styles.btnAction}
                         onClick={() =>
-                          alert(`Visualizando resultados del video #${proc.id}`)
+                          router.push(
+                            `/cultivos/${cultivoId}/procesamientos/${proc.id}`,
+                          )
                         }
                       >
                         Ver Detalles

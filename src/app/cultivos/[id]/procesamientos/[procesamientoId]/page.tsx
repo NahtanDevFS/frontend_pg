@@ -255,7 +255,7 @@ export default function DetalleProcesamientoPage() {
               total asignado: {totalPorcentaje}%
             </strong>
             <span className={styles.validationMsg}>
-              {totalPorcentaje > 100 && "⚠️ excede el 100%"}
+              {totalPorcentaje > 100 && "excede el 100%"}
               {totalPorcentaje < 100 &&
                 totalPorcentaje > 0 &&
                 `faltan ${(100 - totalPorcentaje).toFixed(0)}%`}

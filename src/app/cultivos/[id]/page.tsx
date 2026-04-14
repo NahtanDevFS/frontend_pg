@@ -20,7 +20,7 @@ export default function DetalleCultivoPage() {
         const response = await api.get(`/procesamientos/cultivo/${cultivoId}`);
         setHistorial(response.data);
       } catch (err: any) {
-        setError("Error al cargar el historial de este cultivo.");
+        setError("error al cargar el historial de este cultivo.");
       } finally {
         setLoading(false);
       }
@@ -30,25 +30,25 @@ export default function DetalleCultivoPage() {
   }, [cultivoId]);
 
   if (loading)
-    return <div className={styles.loading}>Cargando historial...</div>;
+    return <div className={styles.loading}>cargando historial...</div>;
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Historial del Cultivo</h1>
+          <h1 className={styles.title}>historial del cultivo</h1>
           <button
             className={styles.btnBack}
             onClick={() => router.push("/dashboard")}
           >
-            &larr; Volver a Cultivos
+            &larr; volver a cultivos
           </button>
         </div>
         <button
           className={styles.btnPrimary}
           onClick={() => router.push(`/cultivos/${cultivoId}/procesar`)}
         >
-          + Analizar Nuevo Video
+          + analizar nuevo video
         </button>
       </header>
 
@@ -57,18 +57,18 @@ export default function DetalleCultivoPage() {
       <div className={styles.tableContainer}>
         {historial.length === 0 ? (
           <div className={styles.emptyState}>
-            Aún no has procesado ningún video para este cultivo.
+            aún no has procesado ningún video para este cultivo.
           </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Fecha de Grabación</th>
-                <th>Estado</th>
-                <th>Conteo IA</th>
-                <th>Conteo Ajustado</th>
-                <th>Acciones</th>
+                <th>id</th>
+                <th>fecha de grabación</th>
+                <th>estado</th>
+                <th>conteo ia</th>
+                <th>conteo ajustado</th>
+                <th>acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -78,7 +78,7 @@ export default function DetalleCultivoPage() {
                   <td>{new Date(proc.fecha_grabacion).toLocaleDateString()}</td>
                   <td>
                     <span className={`${styles.badge} ${styles[proc.estado]}`}>
-                      {proc.estado.toUpperCase()}
+                      {proc.estado}
                     </span>
                   </td>
                   <td className={styles.textSuccess}>
@@ -91,7 +91,7 @@ export default function DetalleCultivoPage() {
                       {proc.resultado &&
                       proc.resultado.conteo_final_ajustado !== null
                         ? proc.resultado.conteo_final_ajustado
-                        : "Sin ajustar"}
+                        : "sin ajustar"}
                     </strong>
                   </td>
                   <td>
@@ -104,7 +104,7 @@ export default function DetalleCultivoPage() {
                           )
                         }
                       >
-                        Ver Detalles
+                        ver detalles
                       </button>
                     )}
                   </td>

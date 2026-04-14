@@ -30,17 +30,17 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleDesactivar = async (id: number) => {
-    if (!confirm("¿Seguro que deseas desactivar este cultivo?")) return;
+    if (!confirm("¿seguro que deseas desactivar este cultivo?")) return;
     try {
       await api.patch(`/cultivos/${id}/desactivar`);
       setCultivos(cultivos.filter((c) => c.id !== id));
     } catch (error) {
-      alert("Error al desactivar el cultivo");
+      alert("error al desactivar el cultivo");
     }
   };
 
   const handleEditar = async (cultivo: Cultivo) => {
-    const nuevoNombre = prompt("Nuevo nombre del cultivo:", cultivo.nombre);
+    const nuevoNombre = prompt("nuevo nombre del cultivo:", cultivo.nombre);
     if (!nuevoNombre || nuevoNombre === cultivo.nombre) return;
 
     try {
@@ -50,34 +50,34 @@ export default function DashboardPage() {
       });
       fetchCultivos();
     } catch (error) {
-      alert("Error al actualizar");
+      alert("error al actualizar");
     }
   };
 
-  if (loading) return <div className={styles.loading}>Cargando...</div>;
+  if (loading) return <div className={styles.loading}>cargando...</div>;
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Mis Cultivos</h1>
+        <h1 className={styles.title}>Áreas de cultivos</h1>
         <button
           className={styles.btnPrimary}
           onClick={() => router.push("/cultivos/nuevo")}
         >
-          + Nuevo Cultivo
+          + nuevo cultivo
         </button>
       </header>
 
       <div className={styles.tableContainer}>
         {cultivos.length === 0 ? (
-          <div className={styles.emptyState}>No tienes cultivos activos.</div>
+          <div className={styles.emptyState}>no tienes cultivos activos.</div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Ubicación</th>
-                <th>Acciones</th>
+                <th>nombre</th>
+                <th>ubicación</th>
+                <th>acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -86,21 +86,25 @@ export default function DashboardPage() {
                   <td>
                     <strong>{cultivo.nombre}</strong>
                   </td>
-                  <td>{cultivo.ubicacion || "N/A"}</td>
-                  <td style={{ display: "flex", gap: "10px" }}>
+                  <td>{cultivo.ubicacion || "n/a"}</td>
+                  <td className={styles.actionsGroup}>
                     <button
+                      className={styles.btnAction}
                       onClick={() => router.push(`/cultivos/${cultivo.id}`)}
                     >
-                      Ver videos
-                    </button>
-                    <button onClick={() => handleEditar(cultivo)}>
-                      Editar
+                      ver videos
                     </button>
                     <button
-                      onClick={() => handleDesactivar(cultivo.id)}
-                      style={{ color: "red" }}
+                      className={styles.btnAction}
+                      onClick={() => handleEditar(cultivo)}
                     >
-                      Desactivar
+                      editar
+                    </button>
+                    <button
+                      className={styles.btnDanger}
+                      onClick={() => handleDesactivar(cultivo.id)}
+                    >
+                      desactivar
                     </button>
                   </td>
                 </tr>

@@ -85,6 +85,12 @@
   background-color: #fcfdfd;
 }
 
+.actionsGroup {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .btnAction {
   background: none;
   border: none;

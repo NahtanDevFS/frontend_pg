@@ -91,7 +91,7 @@ export default function ClientLayout({
             }}
             onClick={() => router.push("/dashboard")}
           >
-            <span>🍉</span> sistema de melones
+            Contador de melones
           </div>
           <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
             <span

@@ -2,7 +2,6 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: sans-serif;
 }
 
 .header {
@@ -15,21 +14,31 @@
 .btnBack {
   background: none;
   border: none;
-  color: #0070f3;
+  color: var(--color-text-muted);
   cursor: pointer;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.btnBack:hover {
+  color: var(--color-text);
   text-decoration: underline;
-  font-size: 1rem;
 }
 
 .loading {
   text-align: center;
   margin-top: 5rem;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .errorText {
-  color: #d32f2f;
+  color: var(--color-danger);
+  background-color: #fff5f5;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid #fed7d7;
   text-align: center;
   margin-top: 2rem;
 }
@@ -39,14 +48,15 @@
 }
 
 .highlightGreen {
-  color: #28a745;
+  color: var(--color-primary);
 }
 
 .btnToggleVideo {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
   margin-top: 1rem;
   font-size: 0.9rem;
@@ -54,17 +64,19 @@
 }
 
 .btnToggleVideo:hover {
-  background-color: #e0e0e0;
+  background-color: var(--color-bg);
 }
 
 .videoPlayer {
   width: 100%;
   margin-top: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  background-color: #000;
 }
 
 .italicMuted {
-  color: #666;
+  color: var(--color-text-muted);
   font-style: italic;
   margin-top: 1rem;
 }
@@ -72,20 +84,20 @@
 .divider {
   margin: 2rem 0;
   border: 0;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
 }
 
 .uploadCard {
-  background: white;
+  background: var(--color-surface);
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eaeaea;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 .sectionTitle {
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--color-text);
 }
 
 .formGroup {
@@ -95,30 +107,46 @@
 }
 
 .boldLabel {
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 8px;
-  color: #444;
+  color: var(--color-text);
 }
 
 .largeInput {
   font-size: 1.2rem;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.largeInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 133, 90, 0.15);
 }
 
 .textArea {
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   font-family: inherit;
   resize: vertical;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 133, 90, 0.15);
 }
 
 .subSectionTitle {
   margin-top: 1.5rem;
   margin-bottom: 1rem;
-  color: #333;
+  color: var(--color-text);
 }
 
 .calibreGrid {
@@ -128,22 +156,22 @@
 }
 
 .calibreCard {
-  background: #f8f9fa;
+  background: var(--color-bg);
   padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
 }
 
 .calibreCardHeader {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .calibreUnits {
-  color: #0070f3;
+  color: var(--color-primary);
 }
 
 .calibreInputWrapper {
@@ -156,45 +184,53 @@
   width: 100%;
   margin: 0;
   padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.calibreInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 133, 90, 0.15);
 }
 
 .percentSymbol {
-  font-weight: bold;
-  color: #666;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .validationPanel {
   margin-top: 1.5rem;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .validationSuccess {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
 }
 
 .validationWarning {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeeba;
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 
 .validationError {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
 }
 
 .validationTotal {
   font-size: 1.1rem;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .validationMsg {
@@ -205,19 +241,25 @@
   margin-top: 1.5rem;
   padding: 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   width: 100%;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
   color: white;
   transition: background-color 0.3s;
 }
 
 .btnSubmitActive {
-  background-color: #28a745;
+  background-color: var(--color-primary);
   cursor: pointer;
 }
 
+.btnSubmitActive:hover {
+  background-color: var(--color-primary-hover);
+}
+
 .btnSubmitDisabled {
-  background-color: #cccccc;
+  background-color: #cbd5e0;
+  color: var(--color-text-muted);
   cursor: not-allowed;
 }

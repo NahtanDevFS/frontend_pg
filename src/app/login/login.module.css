@@ -1,74 +1,65 @@
 .container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  alignitems: center;
   min-height: 100vh;
-  background-color: #f4f7f6;
+  padding: 1rem;
 }
 
 .formCard {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 400px;
+  border: 1px solid var(--color-border);
 }
 
 .title {
   text-align: center;
-  color: #333;
+  color: var(--color-primary);
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.errorMsg {
+  background-color: #fff5f5;
+  color: var(--color-danger);
+  padding: 0.75rem;
+  border-radius: var(--radius);
   margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #fed7d7;
+  text-align: center;
 }
 
 .inputGroup {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 1.5rem;
 }
 
 .inputGroup label {
+  display: block;
   margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-.inputGroup input {
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.inputGroup input:focus {
-  outline: none;
-  border-color: #0070f3;
+  color: var(--color-text);
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
 .submitBtn {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #0070f3;
+  padding: 12px;
+  background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.2s;
   margin-top: 1rem;
 }
 
 .submitBtn:hover {
-  background-color: #005bb5;
-}
-
-.errorMsg {
-  color: #d32f2f;
-  background-color: #fde0e0;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  text-align: center;
+  background-color: var(--color-primary-hover);
 }

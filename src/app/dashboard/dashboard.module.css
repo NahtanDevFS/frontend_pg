@@ -2,7 +2,12 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: sans-serif;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 5rem;
+  color: var(--color-text-muted);
 }
 
 .header {
@@ -10,53 +15,66 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #eaeaea;
-  padding-bottom: 1rem;
 }
 
 .title {
-  color: #333;
-  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .btnPrimary {
-  background-color: #0070f3;
+  background-color: var(--color-primary);
   color: white;
-  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 6px;
-  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: var(--radius);
   cursor: pointer;
+  font-weight: 500;
   transition: background-color 0.2s;
 }
 
 .btnPrimary:hover {
-  background-color: #005bb5;
+  background-color: var(--color-primary-hover);
+}
+
+.emptyState {
+  background: var(--color-surface);
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
 }
 
 .tableContainer {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  border-bottom: 1px solid #eaeaea;
 }
 
 .table th {
-  background-color: #f8f9fa;
-  color: #555;
+  background-color: #f8fafc;
+  color: var(--color-text-muted);
   font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .table tr:last-child td {
@@ -64,18 +82,35 @@
 }
 
 .table tr:hover {
-  background-color: #fcfcfc;
+  background-color: #fcfdfd;
 }
 
-.emptyState {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
+.btnAction {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
-  color: #0070f3;
+.btnAction:hover {
+  background-color: #f0fdf4;
+}
+
+.btnDanger {
+  background: none;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btnDanger:hover {
+  background-color: #fff5f5;
 }

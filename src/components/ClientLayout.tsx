@@ -74,44 +74,54 @@ export default function ClientLayout({
             justifyContent: "space-between",
             alignItems: "center",
             padding: "1rem 2rem",
-            backgroundColor: "#ffffff",
-            borderBottom: "1px solid #eaeaea",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            backgroundColor: "var(--color-surface)",
+            borderBottom: "1px solid var(--color-border)",
+            boxShadow: "var(--shadow-sm)",
           }}
         >
           <div
             style={{
-              fontWeight: "bold",
+              fontWeight: "700",
               fontSize: "1.2rem",
-              color: "#333",
+              color: "var(--color-primary)",
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
             onClick={() => router.push("/dashboard")}
           >
-            Contador de melones
+            <span>🍉</span> sistema de melones
           </div>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <span style={{ color: "#666" }}>
-              hola, <strong>{user.nombre.toLowerCase()}</strong>
+          <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+            <span
+              style={{ color: "var(--color-text-muted)", fontSize: "0.95rem" }}
+            >
+              hola,{" "}
+              <strong style={{ color: "var(--color-text)" }}>
+                {user.nombre.toLowerCase()}
+              </strong>
             </span>
             <button
               onClick={handleLogout}
               style={{
-                padding: "8px 16px",
+                padding: "6px 12px",
                 cursor: "pointer",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
+                backgroundColor: "transparent",
+                color: "var(--color-text-muted)",
+                border: "1px solid var(--color-border)",
                 borderRadius: "6px",
-                fontWeight: "bold",
-                transition: "background-color 0.2s",
+                fontSize: "0.9rem",
+                transition: "all 0.2s",
               }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.backgroundColor = "#c82333")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.backgroundColor = "#dc3545")
-              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.color = "var(--color-danger)";
+                e.currentTarget.style.borderColor = "var(--color-danger)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.color = "var(--color-text-muted)";
+                e.currentTarget.style.borderColor = "var(--color-border)";
+              }}
             >
               cerrar sesión
             </button>

@@ -92,7 +92,7 @@ export default function DashboardPage() {
                       className={styles.btnAction}
                       onClick={() => router.push(`/cultivos/${cultivo.id}`)}
                     >
-                      ver videos
+                      ver detalles
                     </button>
                     <button
                       className={styles.btnAction}

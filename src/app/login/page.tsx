@@ -38,7 +38,7 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <form className={styles.formCard} onSubmit={handleLogin}>
-        <h2 className={styles.title}>Sistema de Conteo</h2>
+        <h2 className={styles.title}>Sistema de conteo de melones</h2>
         {error && <div className={styles.errorMsg}>{error}</div>}
 
         <div className={styles.inputGroup}>

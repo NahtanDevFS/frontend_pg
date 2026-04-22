@@ -10,8 +10,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const CALIBRES = [
   { id: 1, nombre: "6" },
-  { id: 2, nombre: "9j" },
-  { id: 3, nombre: "9s" },
+  { id: 2, nombre: "9J" },
+  { id: 3, nombre: "9S" },
   { id: 4, nombre: "12" },
   { id: 5, nombre: "15" },
 ];
@@ -26,8 +26,6 @@ export default function DetalleProcesamientoPage() {
     null,
   );
   const [loading, setLoading] = useState(true);
-
-  // estados de ajuste
   const [conteoAjustado, setConteoAjustado] = useState(0);
   const [observaciones, setObservaciones] = useState("");
   const [distribucion, setDistribucion] = useState<{ [key: number]: number }>(
@@ -37,23 +35,18 @@ export default function DetalleProcesamientoPage() {
   const [mostrarVideo, setMostrarVideo] = useState(false);
 
   useEffect(() => {
-    const fetchDetalle = async () => {
+    const fetch = async () => {
       try {
-        const response = await api.get<Procesamiento>(
+        const { data } = await api.get<Procesamiento>(
           `/procesamientos/${procesamientoId}`,
         );
-        const data = response.data;
         setProcesamiento(data);
-
         if (data.resultado) {
           setConteoAjustado(
-            data.resultado.conteo_final_ajustado !== null
-              ? data.resultado.conteo_final_ajustado
-              : data.resultado.conteo_ia,
+            data.resultado.conteo_final_ajustado ?? data.resultado.conteo_ia,
           );
           setObservaciones(data.resultado.observaciones_ajuste || "");
-
-          if (data.resultado.calibres && data.resultado.calibres.length > 0) {
+          if (data.resultado.calibres?.length) {
             const dist: { [key: number]: number } = {};
             data.resultado.calibres.forEach((c) => {
               dist[c.calibre_id] = c.porcentaje_muestreo * 100;
@@ -61,169 +54,230 @@ export default function DetalleProcesamientoPage() {
             setDistribucion(dist);
           }
         }
-      } catch (err) {
-        alert("error al cargar los detalles del procesamiento.");
+      } catch {
+        alert("Error al cargar los detalles.");
       } finally {
         setLoading(false);
       }
     };
-
-    if (procesamientoId) fetchDetalle();
+    if (procesamientoId) fetch();
   }, [procesamientoId]);
 
-  const totalPorcentaje = Object.values(distribucion).reduce(
-    (a, b) => a + b,
-    0,
-  );
-  const hayDistribucion = totalPorcentaje > 0;
-
-  const isSubmitDisabled =
-    ajustando || (hayDistribucion && totalPorcentaje !== 100);
+  const totalPct = Object.values(distribucion).reduce((a, b) => a + b, 0);
+  const hayDist = totalPct > 0;
 
   const handleAjusteManual = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!procesamiento) return;
-
-    if (hayDistribucion && totalPorcentaje !== 100) {
-      alert("la suma de los porcentajes debe ser exactamente 100%.");
+    if (hayDist && totalPct !== 100) {
+      alert("La suma de los porcentajes debe ser 100%.");
       return;
     }
-
     const calibresArray = Object.entries(distribucion)
-      .map(([id, valor]) => ({
-        calibre_id: parseInt(id),
-        porcentaje: valor / 100,
-      }))
+      .map(([id, v]) => ({ calibre_id: parseInt(id), porcentaje: v / 100 }))
       .filter((c) => c.porcentaje > 0);
-
     setAjustando(true);
     try {
       await api.post(`/procesamientos/${procesamiento.id}/ajustar-resultado`, {
         conteo_ajustado: conteoAjustado,
-        observaciones: observaciones,
+        observaciones,
         calibres: calibresArray,
       });
-      alert("¡ajuste guardado correctamente!");
+      alert("¡Ajuste guardado correctamente!");
       router.push(`/cultivos/${cultivoId}`);
-    } catch (error) {
-      alert("error al guardar el ajuste.");
+    } catch {
+      alert("Error al guardar el ajuste.");
     } finally {
       setAjustando(false);
     }
   };
 
-  const handleDistribucionChange = (id: number, value: string) => {
-    const numValue = Number(value);
-    if (numValue < 0) return;
-    setDistribucion((prev) => ({ ...prev, [id]: numValue }));
-  };
-
   if (loading)
-    return <div className={styles.loading}>cargando detalles...</div>;
+    return (
+      <div className={styles.loadingWrap}>
+        <div className={styles.spinner} />
+        <span>Cargando análisis...</span>
+      </div>
+    );
   if (!procesamiento)
     return (
-      <div className={styles.errorText}>no se encontró el procesamiento.</div>
+      <div className={styles.errorAlert}>No se encontró el procesamiento.</div>
     );
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1>detalles del análisis #{procesamiento.id}</h1>
-        <button
-          className={styles.btnBack}
-          onClick={() => router.push(`/cultivos/${cultivoId}`)}
-        >
-          &larr; volver al historial
-        </button>
-      </header>
-
-      <div className={styles.resultsContainer}>
-        <h2>
-          resultado original de ia:{" "}
-          <span className={styles.highlightGreen}>
-            {procesamiento.resultado?.conteo_ia}
-          </span>{" "}
-          melones detectados
-        </h2>
-
-        {procesamiento.video_anotado_url ? (
-          <>
-            <button
-              className={styles.btnToggleVideo}
-              onClick={() => setMostrarVideo(!mostrarVideo)}
+      <div className={styles.pageHeader}>
+        <div>
+          <button
+            className={styles.btnBack}
+            onClick={() => router.push(`/cultivos/${cultivoId}`)}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {mostrarVideo ? "ocultar video anotado" : "mostrar video anotado"}
-            </button>
-
-            {mostrarVideo && (
-              <video controls className={styles.videoPlayer}>
-                <source
-                  src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
-                  type="video/mp4"
-                />
-                tu navegador no soporta video.
-              </video>
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Volver al historial
+          </button>
+          <h1 className={styles.pageTitle}>Análisis #{procesamiento.id}</h1>
+          <p className={styles.pageSubtitle}>
+            {new Date(procesamiento.fecha_grabacion).toLocaleDateString(
+              "es-GT",
+              {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              },
             )}
-          </>
-        ) : (
-          <p className={styles.italicMuted}>
-            el video anotado no está disponible aún.
           </p>
-        )}
+        </div>
+      </div>
 
-        <hr className={styles.divider} />
+      {/* Result hero */}
+      <div className={styles.resultHero}>
+        <div className={styles.resultHeroLeft}>
+          <span className={styles.resultLabel}>Melones detectados por IA</span>
+          <div className={styles.resultCount}>
+            <span className={styles.resultNum}>
+              {procesamiento.resultado?.conteo_ia ?? "—"}
+            </span>
+            <span className={styles.resultUnit}>melones</span>
+          </div>
+        </div>
+        {procesamiento.resultado?.conteo_final_ajustado !== null &&
+          procesamiento.resultado?.conteo_final_ajustado !== undefined && (
+            <div className={styles.resultAdjusted}>
+              <span className={styles.resultAdjLabel}>Ajustado a</span>
+              <span className={styles.resultAdjNum}>
+                {procesamiento.resultado.conteo_final_ajustado}
+              </span>
+            </div>
+          )}
+      </div>
 
-        <form onSubmit={handleAjusteManual} className={styles.uploadCard}>
-          <h3 className={styles.sectionTitle}>
-            ajuste manual y segmentación por calibres
+      {/* Video */}
+      {procesamiento.video_anotado_url ? (
+        <div className={styles.videoSection}>
+          <button
+            className={styles.videoToggle}
+            onClick={() => setMostrarVideo(!mostrarVideo)}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            {mostrarVideo ? "Ocultar video anotado" : "Ver video anotado"}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                marginLeft: "auto",
+                transform: mostrarVideo ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s",
+              }}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          {mostrarVideo && (
+            <video controls className={styles.videoPlayer}>
+              <source
+                src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
+                type="video/mp4"
+              />
+            </video>
+          )}
+        </div>
+      ) : (
+        <div className={styles.noVideo}>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          Video anotado no disponible aún.
+        </div>
+      )}
+
+      {/* Adjust form */}
+      <form onSubmit={handleAjusteManual} className={styles.adjustForm}>
+        <div className={styles.adjustHeader}>
+          <h3 className={styles.adjustTitle}>
+            Ajuste manual y segmentación por calibres
           </h3>
+          <p className={styles.adjustSubtitle}>
+            Rectifica el conteo si fue necesario y distribuye por calibre
+          </p>
+        </div>
 
+        <div className={styles.formGrid}>
           <div className={styles.formGroup}>
-            <label className={styles.boldLabel}>conteo final rectificado</label>
+            <label>Conteo final rectificado</label>
             <input
               type="number"
               min="0"
               required
               value={conteoAjustado}
               onChange={(e) => setConteoAjustado(Number(e.target.value))}
-              className={styles.largeInput}
+              className={styles.bigInput}
             />
           </div>
-
           <div className={styles.formGroup}>
-            <label className={styles.boldLabel}>
-              observaciones (motivo de rectificación, si aplica)
-            </label>
+            <label>Observaciones (opcional)</label>
             <textarea
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
-              rows={2}
-              className={styles.textArea}
-              placeholder="ej: la cámara no captó la hilera izquierda al inicio..."
+              rows={3}
+              placeholder="Ej: La cámara no captó la hilera izquierda al inicio..."
             />
           </div>
+        </div>
 
-          <h4 className={styles.subSectionTitle}>
-            distribución de calibres (%)
-          </h4>
-
+        <div className={styles.calibresSection}>
+          <h4 className={styles.calibresTitle}>Distribución por calibre (%)</h4>
           <div className={styles.calibreGrid}>
             {CALIBRES.map((calibre) => {
-              const porcentajeActual = distribucion[calibre.id] || 0;
-              const cantidadMelones = Math.round(
-                (porcentajeActual / 100) * conteoAjustado,
-              );
-
+              const pct = distribucion[calibre.id] || 0;
+              const cant = Math.round((pct / 100) * conteoAjustado);
               return (
                 <div key={calibre.id} className={styles.calibreCard}>
-                  <label className={styles.calibreCardHeader}>
-                    <span>c {calibre.nombre.toLowerCase()}</span>
-                    <span className={styles.calibreUnits}>
-                      {cantidadMelones} un.
+                  <div className={styles.calibreHeader}>
+                    <span className={styles.calibreName}>
+                      C-{calibre.nombre}
                     </span>
-                  </label>
-
-                  <div className={styles.calibreInputWrapper}>
+                    <span className={styles.calibreCount}>{cant} un.</span>
+                  </div>
+                  <div className={styles.calibreInputRow}>
                     <input
                       type="number"
                       min="0"
@@ -231,51 +285,72 @@ export default function DetalleProcesamientoPage() {
                       placeholder="0"
                       value={distribucion[calibre.id] || ""}
                       onChange={(e) =>
-                        handleDistribucionChange(calibre.id, e.target.value)
+                        setDistribucion((prev) => ({
+                          ...prev,
+                          [calibre.id]: Number(e.target.value),
+                        }))
                       }
                       className={styles.calibreInput}
                     />
-                    <span className={styles.percentSymbol}>%</span>
+                    <span className={styles.pctSymbol}>%</span>
                   </div>
+                  {pct > 0 && (
+                    <div className={styles.calibreBar}>
+                      <div
+                        className={styles.calibreBarFill}
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <div
-            className={`${styles.validationPanel} ${
-              totalPorcentaje === 100
-                ? styles.validationSuccess
-                : totalPorcentaje > 100
-                  ? styles.validationError
-                  : styles.validationWarning
-            }`}
-          >
-            <strong className={styles.validationTotal}>
-              total asignado: {totalPorcentaje}%
-            </strong>
-            <span className={styles.validationMsg}>
-              {totalPorcentaje > 100 && "excede el 100%"}
-              {totalPorcentaje < 100 &&
-                totalPorcentaje > 0 &&
-                `faltan ${(100 - totalPorcentaje).toFixed(0)}%`}
-              {totalPorcentaje === 100 && "distribución correcta"}
-            </span>
-          </div>
+          {hayDist && (
+            <div
+              className={`${styles.pctStatus} ${totalPct === 100 ? styles.pctOk : totalPct > 100 ? styles.pctError : styles.pctWarn}`}
+            >
+              <strong>{totalPct}%</strong>
+              <span>
+                {totalPct === 100 && "✓ Distribución completa"}
+                {totalPct < 100 && totalPct > 0 && `Faltan ${100 - totalPct}%`}
+                {totalPct > 100 && `Excede en ${totalPct - 100}%`}
+              </span>
+            </div>
+          )}
+        </div>
 
-          <button
-            type="submit"
-            className={`${styles.btnSubmit} ${
-              isSubmitDisabled
-                ? styles.btnSubmitDisabled
-                : styles.btnSubmitActive
-            }`}
-            disabled={isSubmitDisabled}
-          >
-            {ajustando ? "guardando..." : "guardar ajuste final"}
-          </button>
-        </form>
-      </div>
+        <button
+          type="submit"
+          className={styles.btnSubmit}
+          disabled={ajustando || (hayDist && totalPct !== 100)}
+        >
+          {ajustando ? (
+            <>
+              <span className={styles.btnSpinner} /> Guardando...
+            </>
+          ) : (
+            <>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Guardar ajuste final
+            </>
+          )}
+        </button>
+      </form>
     </div>
   );
 }

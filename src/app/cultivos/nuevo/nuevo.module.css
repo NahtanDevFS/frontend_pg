@@ -1,67 +1,198 @@
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
+  animation: fadeIn 0.3s ease;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pageHeader {
   margin-bottom: 2rem;
 }
 
 .btnBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: none;
   border: none;
   color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-family: inherit;
   cursor: pointer;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: color 0.2s;
+  padding: 0;
+  margin-bottom: 8px;
+  transition: color 0.15s;
 }
 
 .btnBack:hover {
+  color: var(--color-primary);
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--color-text);
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.pageSubtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 .formCard {
   background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
   padding: 2rem;
-  border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+}
+
+.errorMsg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .formGroup {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .formGroup label {
-  display: block;
-  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--color-text);
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.required {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+.optional {
+  color: var(--color-text-light);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.btnCancel {
+  flex: 1;
+  padding: 11px;
+  background: none;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnCancel:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 .btnSubmit {
-  background-color: var(--color-primary);
+  flex: 2;
+  padding: 11px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-hover)
+  );
   color: white;
   border: none;
-  padding: 12px;
   border-radius: var(--radius);
-  cursor: pointer;
+  font-size: 0.95rem;
   font-weight: 600;
-  width: 100%;
-  transition: background-color 0.2s;
-  margin-top: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.2);
 }
 
-.btnSubmit:hover {
-  background-color: var(--color-primary-hover);
+.btnSubmit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
 }
 
 .btnSubmit:disabled {
-  background-color: var(--color-border);
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+}
+
+.btnSpinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 500px) {
+  .container {
+    padding: 1.25rem 1rem;
+  }
+  .formCard {
+    padding: 1.25rem;
+  }
+  .formRow {
+    grid-template-columns: 1fr;
+  }
 }

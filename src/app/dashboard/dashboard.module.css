@@ -1,122 +1,331 @@
 .container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
+  animation: fadeIn 0.3s ease;
 }
 
-.loading {
-  text-align: center;
-  margin-top: 5rem;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 14px;
   color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
-.header {
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Header ─── */
+.pageHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  gap: 1rem;
 }
 
-.title {
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--color-text);
-  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 2px;
+}
+
+.pageSubtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 .btnPrimary {
-  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%
+  );
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.25);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(45, 106, 79, 0.35);
+}
+
+/* ─── Stats ─── */
+.statsBar {
+  margin-bottom: 1.25rem;
+}
+
+.statChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-accent-soft);
+  padding: 5px 14px;
+  border-radius: 99px;
+}
+
+.statNum {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ─── Cards grid ─── */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.cultivoCard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.2s;
+  animation: fadeUp 0.4s ease both;
+  box-shadow: var(--shadow-xs);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cultivoCard:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-accent-soft);
+  transform: translateY(-2px);
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cultivoBadge {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-accent-soft)
+  );
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--color-accent-soft);
+}
+
+.cultivoInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cultivoName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cultivoMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* ─── Card actions ─── */
+.cardActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.btnCardPrimary {
+  flex: 1;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnCardPrimary:hover {
+  background: var(--color-primary-hover);
+}
+
+.btnCardSecondary {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnCardSecondary:hover {
+  border-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.btnCardDanger {
+  background: none;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-light);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btnCardDanger:hover {
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-text-muted);
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  background: var(--color-primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+
+.btnPrimarySmall {
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: var(--radius);
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.btnPrimary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.emptyState {
-  background: var(--color-surface);
-  padding: 3rem;
-  text-align: center;
-  color: var(--color-text-muted);
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-}
-
-.tableContainer {
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  background-color: #f8fafc;
-  color: var(--color-text-muted);
-  font-weight: 600;
-  text-align: left;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
   font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text);
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.table tr:hover {
-  background-color: #fcfdfd;
-}
-
-.actionsGroup {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.btnAction {
-  background: none;
-  border: none;
-  color: var(--color-primary);
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  margin-top: 4px;
+  transition: background 0.2s;
 }
 
-.btnAction:hover {
-  background-color: #f0fdf4;
+.btnPrimarySmall:hover {
+  background: var(--color-primary-hover);
 }
 
-.btnDanger {
-  background: none;
-  border: none;
-  color: var(--color-danger);
-  cursor: pointer;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.btnDanger:hover {
-  background-color: #fff5f5;
+@media (max-width: 600px) {
+  .container {
+    padding: 1.25rem 1rem;
+  }
+  .pageTitle {
+    font-size: 1.3rem;
+  }
+  .pageHeader {
+    flex-wrap: wrap;
+  }
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -191,7 +191,7 @@ export default function DashboardPage() {
                     className={styles.btnCardPrimary}
                     onClick={() => router.push(`/cultivos/${cultivo.id}`)}
                   >
-                    Ver historial
+                    Ver detalles
                   </button>
                   <button
                     className={styles.btnCardSecondary}

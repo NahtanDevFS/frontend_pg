@@ -13,6 +13,7 @@ export interface Calibre {
   id: number;
   nombre: string;
   descripcion: string | null;
+  orden: number;
 }
 
 export interface Usuario {
@@ -34,11 +35,16 @@ export interface Cultivo {
   created_at: string;
 }
 
-export interface ClasificacionCalibre {
+export interface Conteo {
   id: number;
-  calibre_id: number;
-  porcentaje: number;
-  cantidad_melones: number;
+  cultivo_id: number;
+  variedad_id: number;
+  estado_id: number;
+  fecha_conteo: string;
+  conteo_total_acumulado: number;
+  observaciones: string | null;
+  activo: boolean;
+  created_at: string;
 }
 
 export interface ResultadoIa {
@@ -47,12 +53,11 @@ export interface ResultadoIa {
   conteo_ajustado: number | null;
   observaciones_ajuste: string | null;
   tiempo_procesamiento_seg: number | null;
-  clasificaciones: ClasificacionCalibre[];
 }
 
 export interface ProcesamientoVideo {
   id: number;
-  sesion_id: number;
+  conteo_id: number;
   usuario_id: number;
   estado_id: number;
   surco_inicio: number;
@@ -64,14 +69,19 @@ export interface ProcesamientoVideo {
   resultado: ResultadoIa | null;
 }
 
-export interface SesionConteo {
+export interface ClasificacionCalibre {
   id: number;
-  cultivo_id: number;
-  variedad_id: number;
-  estado_id: number;
-  fecha_sesion: string;
+  calibre_id: number;
+  nombre_calibre: string;
+  orden_calibre: number;
+  cantidad_muestreo: number;
+  total_muestreo: number;
+  porcentaje: number;
+  cantidad_extrapolada: number;
+}
+
+export interface MuestreoResponse {
+  total_muestreo: number;
   conteo_total_acumulado: number;
-  observaciones: string | null;
-  activo: boolean;
-  created_at: string;
+  clasificaciones: ClasificacionCalibre[];
 }

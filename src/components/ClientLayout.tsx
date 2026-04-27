@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 
+interface UsuarioMe {
+  nombre: string;
+  rol_id: number;
+  activo: boolean;
+}
+
 export default function ClientLayout({
   children,
 }: {
@@ -11,7 +17,8 @@ export default function ClientLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<{ nombre: string } | null>(null);
+  const [user, setUser] = useState<UsuarioMe | null>(null);
+  const [roles, setRoles] = useState<{ id: number; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,8 +30,12 @@ export default function ClientLayout({
       }
       if (token) {
         try {
-          const res = await api.get("/usuarios/me");
-          setUser(res.data);
+          const [resMe, resRoles] = await Promise.all([
+            api.get("/usuarios/me"),
+            api.get("/catalogos/roles").catch(() => ({ data: [] })),
+          ]);
+          setUser(resMe.data);
+          setRoles(resRoles.data);
           if (pathname === "/login") router.push("/dashboard");
         } catch {
           localStorage.removeItem("token");
@@ -42,7 +53,12 @@ export default function ClientLayout({
     router.push("/login");
   };
 
-  if (loading) {
+  const nombreRol = user
+    ? (roles.find((r) => r.id === user.rol_id)?.nombre ?? "")
+    : "";
+  const esAdmin = nombreRol === "Administrador";
+
+  if (loading)
     return (
       <div
         style={{
@@ -65,18 +81,11 @@ export default function ClientLayout({
           }}
         />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <span
-          style={{
-            color: "#5a7a6a",
-            fontSize: "0.9rem",
-            letterSpacing: "0.05em",
-          }}
-        >
+        <span style={{ color: "#5a7a6a", fontSize: "0.9rem" }}>
           cargando...
         </span>
       </div>
     );
-  }
 
   return (
     <>
@@ -96,7 +105,7 @@ export default function ClientLayout({
             boxShadow: "0 2px 8px rgba(30,60,40,0.06)",
           }}
         >
-          {/* Logo / Brand */}
+          {/* Logo */}
           <div
             onClick={() => router.push("/dashboard")}
             style={{
@@ -119,7 +128,6 @@ export default function ClientLayout({
                 flexShrink: 0,
               }}
             >
-              {/* Melon icon */}
               <svg
                 width="18"
                 height="18"
@@ -146,6 +154,38 @@ export default function ClientLayout({
               MelonCount
             </span>
           </div>
+
+          {/* Nav links */}
+          <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {esAdmin && (
+              <button
+                onClick={() => router.push("/usuarios")}
+                style={{
+                  padding: "7px 14px",
+                  cursor: "pointer",
+                  background:
+                    pathname === "/usuarios"
+                      ? "var(--color-primary-light)"
+                      : "transparent",
+                  color:
+                    pathname === "/usuarios"
+                      ? "var(--color-primary)"
+                      : "#5a7a6a",
+                  border: "1.5px solid",
+                  borderColor:
+                    pathname === "/usuarios"
+                      ? "var(--color-accent-soft)"
+                      : "#dde8e2",
+                  borderRadius: "8px",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  fontFamily: "inherit",
+                }}
+              >
+                Usuarios
+              </button>
+            )}
+          </nav>
 
           {/* Right side */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -182,15 +222,29 @@ export default function ClientLayout({
                   {user.nombre[0].toUpperCase()}
                 </span>
               </div>
-              <span
-                style={{
-                  color: "#1a2e25",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                }}
-              >
-                {user.nombre.toLowerCase()}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span
+                  style={{
+                    color: "#1a2e25",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {user.nombre.toLowerCase()}
+                </span>
+                {nombreRol && (
+                  <span
+                    style={{
+                      color: "#8fa898",
+                      fontSize: "0.7rem",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {nombreRol}
+                  </span>
+                )}
+              </div>
             </div>
 
             <button
@@ -235,9 +289,7 @@ export default function ClientLayout({
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              <span style={{ display: "var(--hide-on-mobile, inline)" }}>
-                salir
-              </span>
+              salir
             </button>
           </div>
         </header>
@@ -245,12 +297,6 @@ export default function ClientLayout({
       <main style={{ minHeight: "calc(100vh - 60px)", paddingBottom: "3rem" }}>
         {children}
       </main>
-
-      <style>{`
-        @media (max-width: 480px) {
-          :root { --hide-on-mobile: none; }
-        }
-      `}</style>
     </>
   );
 }

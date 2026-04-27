@@ -1,37 +1,77 @@
+export interface Rol {
+  id: number;
+  nombre: string;
+}
+
+export interface Variedad {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface Calibre {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface Usuario {
+  id: number;
+  nombre: string;
+  rol_id: number;
+  activo: boolean;
+  created_at: string;
+}
+
 export interface Cultivo {
   id: number;
   usuario_id: number;
   nombre: string;
   ubicacion: string | null;
   hectareas: number | null;
+  total_surcos: number;
   activo: boolean;
-  creado_en: string;
+  created_at: string;
 }
 
-export interface ResultadoCalibre {
+export interface ClasificacionCalibre {
   id: number;
   calibre_id: number;
-  porcentaje_muestreo: number;
-  cantidad_calculada: number;
+  porcentaje: number;
+  cantidad_melones: number;
 }
 
-export interface Resultado {
+export interface ResultadoIa {
   id: number;
   conteo_ia: number;
-  conteo_final_ajustado: number | null;
+  conteo_ajustado: number | null;
   observaciones_ajuste: string | null;
   tiempo_procesamiento_seg: number | null;
-  calibres?: ResultadoCalibre[];
+  clasificaciones: ClasificacionCalibre[];
 }
 
-export interface Procesamiento {
+export interface ProcesamientoVideo {
   id: number;
-  cultivo_id: number;
-  variedad_id: number;
-  estado: "pendiente" | "procesando" | "completado" | "error";
+  sesion_id: number;
+  usuario_id: number;
+  estado_id: number;
+  surco_inicio: number;
+  surco_fin: number;
   video_original_url: string;
   video_anotado_url: string | null;
   fecha_grabacion: string;
-  creado_en: string;
-  resultado: Resultado | null;
+  created_at: string;
+  resultado: ResultadoIa | null;
+}
+
+export interface SesionConteo {
+  id: number;
+  cultivo_id: number;
+  variedad_id: number;
+  estado_id: number;
+  fecha_sesion: string;
+  conteo_total_acumulado: number;
+  observaciones: string | null;
+  activo: boolean;
+  created_at: string;
 }

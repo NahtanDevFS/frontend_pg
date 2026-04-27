@@ -3,28 +3,28 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { Procesamiento } from "@/types";
+import { SesionConteo } from "@/types";
 import styles from "./detalle.module.css";
 
 export default function DetalleCultivoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
-  const [historial, setHistorial] = useState<Procesamiento[]>([]);
+  const [sesiones, setSesiones] = useState<SesionConteo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchHistorial = async () => {
+    const fetchSesiones = async () => {
       try {
-        const response = await api.get(`/procesamientos/cultivo/${cultivoId}`);
-        setHistorial(response.data);
+        const response = await api.get(`/sesiones/cultivo/${cultivoId}`);
+        setSesiones(response.data);
       } catch {
         setError("Error al cargar el historial de este cultivo.");
       } finally {
         setLoading(false);
       }
     };
-    fetchHistorial();
+    fetchSesiones();
   }, [cultivoId]);
 
   if (loading)
@@ -35,7 +35,12 @@ export default function DetalleCultivoPage() {
       </div>
     );
 
-  const completados = historial.filter((p) => p.estado === "completado").length;
+  const completadas = sesiones.filter((s) => s.estado_id === 2).length;
+
+  const estadoBadge = (estado_id: number) => {
+    if (estado_id === 2) return { label: "completada", cls: styles.completado };
+    return { label: "en progreso", cls: styles.procesando };
+  };
 
   return (
     <div className={styles.container}>
@@ -59,14 +64,15 @@ export default function DetalleCultivoPage() {
             </svg>
             Volver a cultivos
           </button>
-          <h1 className={styles.pageTitle}>Historial de análisis</h1>
+          <h1 className={styles.pageTitle}>Sesiones de conteo</h1>
           <p className={styles.pageSubtitle}>
-            {completados} análisis completados
+            {completadas} sesión{completadas !== 1 ? "es" : ""} completada
+            {completadas !== 1 ? "s" : ""}
           </p>
         </div>
         <button
           className={styles.btnPrimary}
-          onClick={() => router.push(`/cultivos/${cultivoId}/procesar`)}
+          onClick={() => router.push(`/cultivos/${cultivoId}/sesiones/nueva`)}
         >
           <svg
             width="15"
@@ -78,15 +84,16 @@ export default function DetalleCultivoPage() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <polygon points="5 3 19 12 5 21 5 3" />
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Nuevo conteo
+          Nueva sesión
         </button>
       </div>
 
       {error && <div className={styles.errorAlert}>{error}</div>}
 
-      {historial.length === 0 ? (
+      {sesiones.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>
             <svg
@@ -102,96 +109,82 @@ export default function DetalleCultivoPage() {
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
           </div>
-          <p>Aún no has analizado ningún video para este cultivo.</p>
+          <p>Aún no has iniciado ninguna sesión de conteo para este cultivo.</p>
           <button
             className={styles.btnPrimarySmall}
-            onClick={() => router.push(`/cultivos/${cultivoId}/procesar`)}
+            onClick={() => router.push(`/cultivos/${cultivoId}/sesiones/nueva`)}
           >
-            Subir primer video
+            Iniciar primera sesión
           </button>
         </div>
       ) : (
         <div className={styles.analysisList}>
-          {historial.map((proc, i) => (
-            <div
-              key={proc.id}
-              className={styles.analysisCard}
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <div className={styles.analysisLeft}>
-                <div className={styles.analysisId}>#{proc.id}</div>
-                <div className={styles.analysisInfo}>
-                  <span className={styles.analysisDate}>
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+          {sesiones.map((sesion, i) => {
+            const badge = estadoBadge(sesion.estado_id);
+            return (
+              <div
+                key={sesion.id}
+                className={styles.analysisCard}
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <div className={styles.analysisLeft}>
+                  <div className={styles.analysisId}>#{sesion.id}</div>
+                  <div className={styles.analysisInfo}>
+                    <span className={styles.analysisDate}>
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="3"
+                          y="4"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      {new Date(sesion.fecha_sesion).toLocaleDateString(
+                        "es-GT",
+                        { day: "2-digit", month: "short", year: "numeric" },
+                      )}
+                    </span>
+                    <span className={`${styles.badge} ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.analysisCounts}>
+                  <div className={styles.countBlock}>
+                    <span className={styles.countLabel}>Total</span>
+                    <span
+                      className={`${styles.countNum} ${styles.countAdjusted}`}
                     >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    {new Date(proc.fecha_grabacion).toLocaleDateString(
-                      "es-GT",
-                      { day: "2-digit", month: "short", year: "numeric" },
-                    )}
-                  </span>
-                  <span className={`${styles.badge} ${styles[proc.estado]}`}>
-                    {proc.estado}
-                  </span>
+                      {sesion.conteo_total_acumulado}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.analysisCounts}>
-                <div className={styles.countBlock}>
-                  <span className={styles.countLabel}>IA</span>
-                  <span className={styles.countNum}>
-                    {proc.resultado?.conteo_ia ?? "—"}
-                  </span>
-                </div>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#b7ccc2"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-                <div className={styles.countBlock}>
-                  <span className={styles.countLabel}>Ajustado</span>
-                  <span
-                    className={`${styles.countNum} ${styles.countAdjusted}`}
-                  >
-                    {proc.resultado?.conteo_final_ajustado !== null &&
-                    proc.resultado?.conteo_final_ajustado !== undefined
-                      ? proc.resultado.conteo_final_ajustado
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.analysisActions}>
-                {proc.estado === "completado" && (
+                <div className={styles.analysisActions}>
                   <button
                     className={styles.btnDetails}
                     onClick={() =>
                       router.push(
-                        `/cultivos/${cultivoId}/procesamientos/${proc.id}`,
+                        `/cultivos/${cultivoId}/sesiones/${sesion.id}`,
                       )
                     }
                   >
-                    Ver detalles
+                    Ver sesión
                     <svg
                       width="13"
                       height="13"
@@ -205,10 +198,10 @@ export default function DetalleCultivoPage() {
                       <path d="m9 18 6-6-6-6" />
                     </svg>
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

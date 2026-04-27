@@ -10,6 +10,7 @@ export default function NuevoCultivoPage() {
   const [nombre, setNombre] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [hectareas, setHectareas] = useState("");
+  const [totalSurcos, setTotalSurcos] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,13 +19,15 @@ export default function NuevoCultivoPage() {
     setError("");
     setLoading(true);
     try {
+      if (!totalSurcos || parseInt(totalSurcos) <= 0)
+        throw new Error("El número de surcos debe ser mayor a 0.");
+
       const payload = {
         nombre: nombre.trim(),
         ubicacion: ubicacion.trim() || null,
         hectareas: hectareas ? parseFloat(hectareas) : null,
+        total_surcos: parseInt(totalSurcos),
       };
-      if (payload.hectareas !== null && payload.hectareas <= 0)
-        throw new Error("Las hectáreas deben ser mayores a 0.");
       await api.post("/cultivos/", payload);
       router.push("/dashboard");
     } catch (err: any) {
@@ -128,9 +131,25 @@ export default function NuevoCultivoPage() {
                 min="0.1"
                 value={hectareas}
                 onChange={(e) => setHectareas(e.target.value)}
-                placeholder="Ej. 15.5"
+                placeholder="Ej. 1.5"
               />
             </div>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="totalSurcos">
+              Total de surcos <span className={styles.required}>*</span>
+            </label>
+            <input
+              id="totalSurcos"
+              type="number"
+              min="1"
+              step="1"
+              value={totalSurcos}
+              onChange={(e) => setTotalSurcos(e.target.value)}
+              placeholder="Ej. 55  (una hectárea tiene entre 50 y 55 surcos)"
+              required
+            />
           </div>
 
           <div className={styles.formActions}>
@@ -144,7 +163,7 @@ export default function NuevoCultivoPage() {
             <button
               type="submit"
               className={styles.btnSubmit}
-              disabled={loading || !nombre.trim()}
+              disabled={loading || !nombre.trim() || !totalSurcos}
             >
               {loading ? (
                 <>

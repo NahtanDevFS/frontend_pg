@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ProcesamientoVideo, Calibre } from "@/types";
-import styles from "../../../procesar/procesar.module.css";
+import styles from "../../[sesionId]/procesar/procesar.module.css";
 
 export default function ProcesarVideoPage() {
   const router = useRouter();

@@ -41,6 +41,7 @@ export interface Conteo {
   variedad_id: number;
   estado_id: number;
   fecha_conteo: string;
+  total_surcos: number;
   conteo_total_acumulado: number;
   observaciones: string | null;
   activo: boolean;

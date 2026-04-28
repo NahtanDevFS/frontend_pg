@@ -8,6 +8,187 @@ import styles from "./procesar.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// ─────────────────────────────────────────────────────────────
+// Utilidades de rangos bloqueados
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Dado los procesamientos activos de un conteo, devuelve el conjunto
+ * de surcos ya cubiertos (números individuales).
+ */
+function calcularSurcosBloqueados(
+  procesamientos: ProcesamientoVideo[],
+): Set<number> {
+  const bloqueados = new Set<number>();
+  for (const p of procesamientos) {
+    for (let s = p.surco_inicio; s <= p.surco_fin; s++) {
+      bloqueados.add(s);
+    }
+  }
+  return bloqueados;
+}
+
+/**
+ * Valida que el rango [inicio, fin] no solape con ningún surco bloqueado.
+ * Devuelve null si es válido, o un mensaje de error si no lo es.
+ */
+function validarRango(
+  inicio: number,
+  fin: number,
+  bloqueados: Set<number>,
+  totalSurcos: number,
+): string | null {
+  if (isNaN(inicio) || isNaN(fin)) return null; // aún sin datos, no validar
+  if (fin > totalSurcos)
+    return `El surco final (${fin}) supera el total de surcos del conteo (${totalSurcos}).`;
+  for (let s = inicio; s <= fin; s++) {
+    if (bloqueados.has(s))
+      return `El surco ${s} ya está cubierto por otro video en este conteo.`;
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Componente visual: mapa de surcos
+// ─────────────────────────────────────────────────────────────
+
+function MapaSurcos({
+  totalSurcos,
+  bloqueados,
+  rangoActual,
+}: {
+  totalSurcos: number;
+  bloqueados: Set<number>;
+  rangoActual: { inicio: number; fin: number } | null;
+}) {
+  return (
+    <div style={{ marginBottom: "1.25rem" }}>
+      <p
+        style={{
+          fontSize: "0.8rem",
+          fontWeight: 600,
+          color: "var(--color-text-muted)",
+          marginBottom: "0.5rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}
+      >
+        Cobertura del conteo ({bloqueados.size}/{totalSurcos} surcos)
+      </p>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 4,
+        }}
+      >
+        {Array.from({ length: totalSurcos }, (_, i) => {
+          const surco = i + 1;
+          const bloqueado = bloqueados.has(surco);
+          const enRango =
+            rangoActual &&
+            surco >= rangoActual.inicio &&
+            surco <= rangoActual.fin;
+          const conflicto = bloqueado && enRango;
+
+          let bg = "var(--color-surface-alt)";
+          let border = "1px solid var(--color-border)";
+          let color = "var(--color-text-muted)";
+          let title = `Surco ${surco}: disponible`;
+
+          if (bloqueado) {
+            bg = "var(--color-primary-light)";
+            border = "1px solid var(--color-accent-soft)";
+            color = "var(--color-primary)";
+            title = `Surco ${surco}: ya cubierto`;
+          }
+          if (enRango && !conflicto) {
+            bg = "#dcfce7";
+            border = "1px solid #86efac";
+            color = "#15803d";
+            title = `Surco ${surco}: en el rango actual`;
+          }
+          if (conflicto) {
+            bg = "#fee2e2";
+            border = "1px solid #fca5a5";
+            color = "#dc2626";
+            title = `Surco ${surco}: CONFLICTO`;
+          }
+
+          return (
+            <div
+              key={surco}
+              title={title}
+              style={{
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 6,
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "DM Mono, monospace",
+                background: bg,
+                border,
+                color,
+                transition: "all 0.15s",
+                cursor: "default",
+              }}
+            >
+              {surco}
+            </div>
+          );
+        })}
+      </div>
+      {/* Leyenda */}
+      <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+        {[
+          {
+            bg: "var(--color-surface-alt)",
+            border: "var(--color-border)",
+            label: "Libre",
+          },
+          {
+            bg: "var(--color-primary-light)",
+            border: "var(--color-accent-soft)",
+            label: "Ya cubierto",
+          },
+          { bg: "#dcfce7", border: "#86efac", label: "Rango actual" },
+          { bg: "#fee2e2", border: "#fca5a5", label: "Conflicto" },
+        ].map(({ bg, border, label }) => (
+          <div
+            key={label}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: "0.75rem",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 3,
+                background: bg,
+                border: `1px solid ${border}`,
+                flexShrink: 0,
+              }}
+            />
+            {label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Página principal
+// ─────────────────────────────────────────────────────────────
+
 export default function ProcesarVideoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
@@ -22,6 +203,11 @@ export default function ProcesarVideoPage() {
     conteoIdParam ?? "",
   );
   const [conteoActivo, setConteoActivo] = useState<Conteo | null>(null);
+
+  // Procesamientos existentes del conteo activo (para bloqueo de surcos)
+  const [procesamientosExistentes, setProcesamientosExistentes] = useState<
+    ProcesamientoVideo[]
+  >([]);
 
   const [surcoInicio, setSurcoInicio] = useState("");
   const [surcoFin, setSurcoFin] = useState("");
@@ -70,19 +256,36 @@ export default function ProcesarVideoPage() {
     });
   }, [cultivoId, conteoIdParam]);
 
+  // Cuando se confirma el conteo activo, cargar sus procesamientos existentes
+  const cargarProcesamientosExistentes = async (conteoId: number) => {
+    try {
+      const { data } = await api.get<ProcesamientoVideo[]>(
+        `/procesamientos/conteo/${conteoId}`,
+      );
+      setProcesamientosExistentes(data);
+    } catch {
+      setProcesamientosExistentes([]);
+    }
+  };
+
   const handleConfirmarConteo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let conteo: Conteo;
       if (modoConteo === "nuevo") {
-        const { data } = await api.post("/conteos/", {
+        const { data } = await api.post<Conteo>("/conteos/", {
           cultivo_id: parseInt(cultivoId as string),
           variedad_id: parseInt(variedadId),
         });
-        setConteoActivo(data);
+        conteo = data;
       } else {
-        const { data } = await api.get(`/conteos/${conteoSeleccionado}`);
-        setConteoActivo(data);
+        const { data } = await api.get<Conteo>(
+          `/conteos/${conteoSeleccionado}`,
+        );
+        conteo = data;
       }
+      setConteoActivo(conteo);
+      await cargarProcesamientosExistentes(conteo.id);
     } catch (err: any) {
       alert(err.response?.data?.detail || "Error al configurar el conteo.");
     }
@@ -104,12 +307,29 @@ export default function ProcesarVideoPage() {
   const handleSubirVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoFile || !conteoActivo) return;
-    if (parseInt(surcoFin) < parseInt(surcoInicio)) {
+
+    const inicio = parseInt(surcoInicio);
+    const fin = parseInt(surcoFin);
+
+    if (fin < inicio) {
       alert("El surco final no puede ser menor al surco inicial.");
       return;
     }
-    setUploading(true);
 
+    // Validación client-side de solapamiento (el backend también valida)
+    const bloqueados = calcularSurcosBloqueados(procesamientosExistentes);
+    const errorRango = validarRango(
+      inicio,
+      fin,
+      bloqueados,
+      conteoActivo.total_surcos,
+    );
+    if (errorRango) {
+      alert(errorRango);
+      return;
+    }
+
+    setUploading(true);
     const formData = new FormData();
     formData.append("video", videoFile);
     formData.append("conteo_id", String(conteoActivo.id));
@@ -121,9 +341,7 @@ export default function ProcesarVideoPage() {
       const { data } = await api.post<ProcesamientoVideo>(
         "/procesamientos/",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
       setProcesamiento(data);
       setUploading(false);
@@ -131,9 +349,10 @@ export default function ProcesarVideoPage() {
         () => consultarEstado(data.id),
         4000,
       );
-    } catch {
+    } catch (err: any) {
       setUploading(false);
-      alert("Error al subir el video.");
+      // Mostrar error del backend (solapamiento detectado por trigger)
+      alert(err.response?.data?.detail || "Error al subir el video.");
     }
   };
 
@@ -153,6 +372,24 @@ export default function ProcesarVideoPage() {
       setAjustando(false);
     }
   };
+
+  // Valores derivados para el mapa de surcos
+  const bloqueados = calcularSurcosBloqueados(procesamientosExistentes);
+  const inicioNum = parseInt(surcoInicio);
+  const finNum = parseInt(surcoFin);
+  const rangoActual =
+    !isNaN(inicioNum) && !isNaN(finNum) && finNum >= inicioNum
+      ? { inicio: inicioNum, fin: finNum }
+      : null;
+  const errorRango =
+    conteoActivo && rangoActual
+      ? validarRango(
+          rangoActual.inicio,
+          rangoActual.fin,
+          bloqueados,
+          conteoActivo.total_surcos,
+        )
+      : null;
 
   const isCompleted = procesamiento?.resultado != null;
   const isProcessing = procesamiento && !procesamiento.resultado;
@@ -186,7 +423,7 @@ export default function ProcesarVideoPage() {
         </div>
       </div>
 
-      {/* PASO 1: Configurar conteo */}
+      {/* ── PASO 1: Configurar conteo ── */}
       {!conteoActivo && (
         <form onSubmit={handleConfirmarConteo} className={styles.uploadSection}>
           <div className={styles.steps}>
@@ -296,7 +533,7 @@ export default function ProcesarVideoPage() {
         </form>
       )}
 
-      {/* PASO 2: Subir video */}
+      {/* ── PASO 2: Subir video ── */}
       {conteoActivo && !procesamiento && (
         <form onSubmit={handleSubirVideo} className={styles.uploadSection}>
           <div className={styles.steps}>
@@ -318,27 +555,46 @@ export default function ProcesarVideoPage() {
             </div>
           </div>
 
+          {/* Mapa de surcos: solo si el conteo tiene surcos definidos */}
+          <MapaSurcos
+            totalSurcos={conteoActivo.total_surcos}
+            bloqueados={bloqueados}
+            rangoActual={rangoActual}
+          />
+
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label>Surco inicio</label>
               <input
                 type="number"
                 min="1"
+                max={conteoActivo.total_surcos}
                 required
                 value={surcoInicio}
                 onChange={(e) => setSurcoInicio(e.target.value)}
                 placeholder="Ej. 1"
+                style={
+                  errorRango
+                    ? { borderColor: "var(--color-danger)" }
+                    : undefined
+                }
               />
             </div>
             <div className={styles.formGroup}>
               <label>Surco fin</label>
               <input
                 type="number"
-                min="1"
+                min={surcoInicio || "1"}
+                max={conteoActivo.total_surcos}
                 required
                 value={surcoFin}
                 onChange={(e) => setSurcoFin(e.target.value)}
-                placeholder="Ej. 15"
+                placeholder={`Ej. ${conteoActivo.total_surcos}`}
+                style={
+                  errorRango
+                    ? { borderColor: "var(--color-danger)" }
+                    : undefined
+                }
               />
             </div>
             <div className={styles.formGroup}>
@@ -352,6 +608,24 @@ export default function ProcesarVideoPage() {
               />
             </div>
           </div>
+
+          {/* Mensaje de error de rango */}
+          {errorRango && (
+            <div
+              style={{
+                background: "#fee2e2",
+                border: "1px solid #fca5a5",
+                color: "#dc2626",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                marginBottom: "1rem",
+              }}
+            >
+              ⚠ {errorRango}
+            </div>
+          )}
 
           <div
             className={`${styles.dropZone} ${dragOver ? styles.dropZoneActive : ""} ${videoFile ? styles.dropZoneHasFile : ""}`}
@@ -376,71 +650,32 @@ export default function ProcesarVideoPage() {
               onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
             />
             {videoFile ? (
-              <div className={styles.fileSelected}>
-                <div className={styles.fileIcon}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                </div>
-                <div className={styles.fileInfo}>
-                  <span className={styles.fileName}>{videoFile.name}</span>
-                  <span className={styles.fileSize}>
-                    {(videoFile.size / (1024 * 1024)).toFixed(1)} MB
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className={styles.fileRemove}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setVideoFile(null);
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontWeight: 600, color: "var(--color-primary)" }}>
+                  ✓ {videoFile.name}
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--color-text-muted)",
                   }}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
+                  {(videoFile.size / 1024 / 1024).toFixed(1)} MB — click para
+                  cambiar
+                </p>
               </div>
             ) : (
-              <div className={styles.dropContent}>
-                <div className={styles.dropIcon}>
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                </div>
-                <p className={styles.dropTitle}>Arrastra tu video aquí</p>
-                <p className={styles.dropSubtitle}>
-                  o haz clic para seleccionar · MP4, MOV, AVI
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                <p style={{ fontWeight: 600, marginBottom: 4 }}>
+                  Arrastra el video aquí
+                </p>
+                <p style={{ fontSize: "0.8rem" }}>
+                  o haz click para seleccionar
                 </p>
               </div>
             )}
@@ -449,115 +684,116 @@ export default function ProcesarVideoPage() {
           <button
             type="submit"
             className={styles.btnSubmit}
-            disabled={uploading || !videoFile || !surcoInicio || !surcoFin}
+            disabled={uploading || !!errorRango || !videoFile}
           >
             {uploading ? (
               <>
-                <span className={styles.btnSpinner} /> Subiendo video...
+                <span className={styles.btnSpinner} /> Subiendo...
               </>
             ) : (
-              <>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>{" "}
-                Iniciar análisis con IA
-              </>
+              "Subir y procesar →"
             )}
           </button>
         </form>
       )}
 
-      {/* Procesando */}
-      {(uploading || isProcessing) && (
-        <div className={styles.processingCard}>
-          <div className={styles.processingAnim}>
-            <div className={styles.pulseRing} />
-            <div className={styles.pulseRing2} />
-            <div className={styles.processingIcon}>
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 3 Q15 8 12 12 Q9 16 12 21" />
-                <path d="M3 12 Q8 9 12 12 Q16 15 21 12" />
-              </svg>
+      {/* ── PROCESANDO ── */}
+      {isProcessing && (
+        <div className={styles.uploadSection} style={{ textAlign: "center" }}>
+          <div className={styles.steps}>
+            <div className={styles.step}>
+              <div className={styles.stepNum}>✓</div>
+              <span>Conteo #{conteoActivo?.id}</span>
+            </div>
+            <div className={styles.stepLine} />
+            <div className={styles.step}>
+              <div className={styles.stepNum}>✓</div>
+              <span>Video subido</span>
+            </div>
+            <div className={styles.stepLine} />
+            <div className={styles.step}>
+              <div className={styles.stepNum}>3</div>
+              <span>Procesando...</span>
             </div>
           </div>
-          <h3 className={styles.processingTitle}>
-            La IA está analizando tu video
-          </h3>
-          <p className={styles.processingSubtitle}>
-            Detectando y contando melones automáticamente...
+          <div
+            className={styles.btnSpinner}
+            style={{ margin: "1.5rem auto", width: 32, height: 32 }}
+          />
+          <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+            La IA está analizando el video. Esto puede tardar unos minutos...
           </p>
-          <div className={styles.processingBar}>
-            <div className={styles.processingBarFill} />
-          </div>
         </div>
       )}
 
-      {/* PASO 3: Resultado y ajuste */}
-      {isCompleted && procesamiento.resultado && (
-        <div className={styles.resultsSection}>
-          <div className={styles.resultHero}>
-            <div className={styles.resultHeroLeft}>
-              <span className={styles.resultLabel}>Resultado de la IA</span>
-              <div className={styles.resultCount}>
-                <span className={styles.resultNum}>
-                  {procesamiento.resultado.conteo_ia.toLocaleString()}
-                </span>
-                <span className={styles.resultUnit}>melones detectados</span>
-              </div>
+      {/* ── PASO 3: Ajuste ── */}
+      {isCompleted && procesamiento && conteoActivo && (
+        <div className={styles.uploadSection}>
+          <div className={styles.steps}>
+            <div className={styles.step}>
+              <div className={styles.stepNum}>✓</div>
+              <span>Conteo #{conteoActivo.id}</span>
             </div>
-            <div className={styles.resultCheckIcon}>
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
+            <div className={styles.stepLine} />
+            <div className={styles.step}>
+              <div className={styles.stepNum}>✓</div>
+              <span>Video procesado</span>
+            </div>
+            <div className={styles.stepLine} />
+            <div className={styles.step}>
+              <div className={styles.stepNum}>3</div>
+              <span>Ajuste</span>
             </div>
           </div>
 
+          <div
+            style={{
+              background: "var(--color-primary-light)",
+              border: "1px solid var(--color-accent-soft)",
+              borderRadius: 10,
+              padding: "1rem 1.25rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                color: "var(--color-text-muted)",
+                marginBottom: 2,
+              }}
+            >
+              CONTEO IA — Surcos {procesamiento.surco_inicio}–
+              {procesamiento.surco_fin}
+            </p>
+            <p
+              style={{
+                fontSize: "2rem",
+                fontWeight: 700,
+                fontFamily: "DM Mono, monospace",
+                color: "var(--color-primary)",
+              }}
+            >
+              {procesamiento.resultado?.conteo_ia.toLocaleString()}
+            </p>
+          </div>
+
           {procesamiento.video_anotado_url && (
-            <details className={styles.videoDetails}>
-              <summary className={styles.videoSummary}>
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
+            <details style={{ marginBottom: "1rem" }}>
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  color: "var(--color-primary)",
+                }}
+              >
                 Ver video anotado
               </summary>
-              <video controls className={styles.videoPlayer}>
+              <video
+                controls
+                style={{ width: "100%", borderRadius: 8, marginTop: 8 }}
+              >
                 <source
                   src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
                   type="video/mp4"
@@ -609,9 +845,8 @@ export default function ProcesarVideoPage() {
                 marginBottom: "0.5rem",
               }}
             >
-              La segmentación por calibre se realiza una sola vez desde la
-              página del conteo, aplicando el porcentaje de tu muestreo al total
-              acumulado.
+              La segmentación por calibre se realiza desde la página del conteo
+              completo.
             </p>
 
             <button

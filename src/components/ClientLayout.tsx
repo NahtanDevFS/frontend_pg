@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -18,45 +18,92 @@ export default function ClientLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<UsuarioMe | null>(null);
-  const [roles, setRoles] = useState<{ id: number; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  // Evita que el effect de auth se dispare más de una vez simultáneamente
+  const authChecked = useRef(false);
 
   useEffect(() => {
+    // Si ya corrió la verificación de auth, no repetir
+    if (authChecked.current) return;
+    authChecked.current = true;
+
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
-      if (!token && pathname !== "/login") {
-        router.push("/login");
+
+      // Sin token: si no estamos en /login, redirigir
+      if (!token) {
+        if (!window.location.pathname.startsWith("/login")) {
+          router.push("/login");
+        }
+        setLoading(false);
         return;
       }
-      if (token) {
-        try {
-          const [resMe, resRoles] = await Promise.all([
-            api.get("/usuarios/me"),
-            api.get("/catalogos/roles").catch(() => ({ data: [] })),
-          ]);
-          setUser(resMe.data);
-          setRoles(resRoles.data);
-          if (pathname === "/login") router.push("/dashboard");
-        } catch {
+
+      // Con token: verificar identidad y rol
+      try {
+        const [resMe, resRoles] = await Promise.all([
+          api.get("/usuarios/me"),
+          api.get("/catalogos/roles").catch(() => ({ data: [] })),
+        ]);
+
+        const userData: UsuarioMe = resMe.data;
+        const rolesData: { id: number; nombre: string }[] = resRoles.data;
+        const rolNombre =
+          rolesData.find((r) => r.id === userData.rol_id)?.nombre ?? "";
+
+        if (rolNombre !== "Administrador") {
+          // Operador intentando usar la web — forzar logout sin bucle
           localStorage.removeItem("token");
-          if (pathname !== "/login") router.push("/login");
+          setLoading(false);
+          // Usar replace para no añadir al historial
+          router.replace("/login?acceso=denegado");
+          return;
+        }
+
+        setUser(userData);
+
+        // Admin autenticado en /login → ir al dashboard
+        if (window.location.pathname.startsWith("/login")) {
+          router.replace("/dashboard");
+        }
+      } catch {
+        // Token inválido o expirado
+        localStorage.removeItem("token");
+        if (!window.location.pathname.startsWith("/login")) {
+          router.replace("/login");
         }
       }
+
       setLoading(false);
     };
+
     checkAuth();
-  }, [pathname, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← array vacío: solo corre una vez al montar
+
+  // Re-verificar solo cuando cambia el pathname (navegación del usuario)
+  // pero de forma ligera: solo leer el estado actual, sin llamar a la API
+  useEffect(() => {
+    if (!loading && !user) {
+      const token = localStorage.getItem("token");
+      if (!token && !pathname.startsWith("/login")) {
+        router.replace("/login");
+      }
+    }
+  }, [pathname, loading, user, router]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    router.push("/login");
+    authChecked.current = false; // permitir re-chequeo si hace login de nuevo
+    router.replace("/login");
   };
 
-  const nombreRol = user
-    ? (roles.find((r) => r.id === user.rol_id)?.nombre ?? "")
-    : "";
-  const esAdmin = nombreRol === "Administrador";
+  const NAV_LINKS = [
+    { href: "/dashboard", label: "Cultivos" },
+    { href: "/historial", label: "Historial" },
+    { href: "/usuarios", label: "Usuarios" },
+  ];
 
   if (loading)
     return (
@@ -89,7 +136,7 @@ export default function ClientLayout({
 
   return (
     <>
-      {pathname !== "/login" && user && (
+      {!pathname.startsWith("/login") && user && (
         <header
           style={{
             position: "sticky",
@@ -98,96 +145,62 @@ export default function ClientLayout({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "0 1.5rem",
+            padding: "0 2rem",
             height: "60px",
-            backgroundColor: "#fff",
-            borderBottom: "1.5px solid #dde8e2",
-            boxShadow: "0 2px 8px rgba(30,60,40,0.06)",
+            background: "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(8px)",
+            borderBottom: "1px solid #e8eeeb",
+            boxShadow: "0 1px 8px rgba(45,106,79,0.06)",
           }}
         >
-          {/* Logo */}
-          <div
-            onClick={() => router.push("/dashboard")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              cursor: "pointer",
-              userSelect: "none",
-            }}
-          >
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                background: "linear-gradient(135deg, #2d6a4f 0%, #52b788 100%)",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 3 Q15 8 12 12 Q9 16 12 21" />
-                <path d="M3 12 Q8 9 12 12 Q16 15 21 12" />
-              </svg>
-            </div>
+          {/* Logo + nav */}
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
             <span
               style={{
-                fontWeight: "700",
-                fontSize: "1rem",
-                color: "#1a2e25",
+                fontWeight: 800,
+                fontSize: "1.05rem",
+                color: "#2d6a4f",
                 letterSpacing: "-0.02em",
               }}
             >
               MelonCount
             </span>
+            <nav style={{ display: "flex", gap: "6px" }}>
+              {NAV_LINKS.map(({ href, label }) => {
+                const active =
+                  pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <button
+                    key={href}
+                    onClick={() => router.push(href)}
+                    style={{
+                      padding: "6px 14px",
+                      cursor: "pointer",
+                      backgroundColor: active
+                        ? "var(--color-primary-light, #e8f5ee)"
+                        : "transparent",
+                      color: active
+                        ? "var(--color-primary, #2d6a4f)"
+                        : "#5a7a6a",
+                      border: "1.5px solid",
+                      borderColor: active
+                        ? "var(--color-accent-soft, #b7e4c7)"
+                        : "#dde8e2",
+                      borderRadius: "8px",
+                      fontSize: "0.85rem",
+                      fontWeight: 500,
+                      fontFamily: "inherit",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Nav links */}
-          <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {esAdmin && (
-              <button
-                onClick={() => router.push("/usuarios")}
-                style={{
-                  padding: "7px 14px",
-                  cursor: "pointer",
-                  background:
-                    pathname === "/usuarios"
-                      ? "var(--color-primary-light)"
-                      : "transparent",
-                  color:
-                    pathname === "/usuarios"
-                      ? "var(--color-primary)"
-                      : "#5a7a6a",
-                  border: "1.5px solid",
-                  borderColor:
-                    pathname === "/usuarios"
-                      ? "var(--color-accent-soft)"
-                      : "#dde8e2",
-                  borderRadius: "8px",
-                  fontSize: "0.85rem",
-                  fontWeight: 500,
-                  fontFamily: "inherit",
-                }}
-              >
-                Usuarios
-              </button>
-            )}
-          </nav>
-
-          {/* Right side */}
+          {/* User info + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
@@ -233,17 +246,15 @@ export default function ClientLayout({
                 >
                   {user.nombre.toLowerCase()}
                 </span>
-                {nombreRol && (
-                  <span
-                    style={{
-                      color: "#8fa898",
-                      fontSize: "0.7rem",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {nombreRol}
-                  </span>
-                )}
+                <span
+                  style={{
+                    color: "#8fa898",
+                    fontSize: "0.7rem",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  Administrador
+                </span>
               </div>
             </div>
 

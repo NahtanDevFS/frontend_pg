@@ -5,17 +5,29 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Usuario, Rol } from "@/types";
 
+interface UsuarioEditando {
+  id: number;
+  nombre: string;
+  nuevaPassword: string;
+}
+
 export default function GestionUsuariosPage() {
   const router = useRouter();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Crear
   const [mostrarForm, setMostrarForm] = useState(false);
   const [nombre, setNombre] = useState("");
   const [password, setPassword] = useState("");
   const [rolId, setRolId] = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  // Editar
+  const [editando, setEditando] = useState<UsuarioEditando | null>(null);
+  const [guardandoEdit, setGuardandoEdit] = useState(false);
 
   const cargarDatos = async () => {
     try {
@@ -67,6 +79,26 @@ export default function GestionUsuariosPage() {
     }
   };
 
+  const handleGuardarEdicion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editando) return;
+    setGuardandoEdit(true);
+    try {
+      const payload: Record<string, string> = {};
+      if (editando.nombre.trim()) payload.nombre = editando.nombre.trim();
+      if (editando.nuevaPassword.trim())
+        payload.password = editando.nuevaPassword.trim();
+
+      await api.patch(`/usuarios/${editando.id}`, payload);
+      setEditando(null);
+      cargarDatos();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Error al guardar los cambios.");
+    } finally {
+      setGuardandoEdit(false);
+    }
+  };
+
   const handleDesactivar = async (id: number, nombre: string) => {
     if (
       !confirm(
@@ -113,23 +145,119 @@ export default function GestionUsuariosPage() {
     );
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <button
-        onClick={() => router.push("/dashboard")}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "var(--color-text-muted)",
-          marginBottom: "1rem",
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          fontSize: "0.85rem",
-        }}
-      >
-        ← Volver al dashboard
-      </button>
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1.5rem" }}>
+      {/* Modal de edición */}
+      {editando && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            zIndex: 200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 16,
+              padding: "2rem",
+              width: "100%",
+              maxWidth: 440,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3
+              style={{
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Editar usuario
+            </h3>
+            <form
+              onSubmit={handleGuardarEdicion}
+              style={{ display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  value={editando.nombre}
+                  onChange={(e) =>
+                    setEditando({ ...editando, nombre: e.target.value })
+                  }
+                  maxLength={100}
+                  required
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                  Nueva contraseña{" "}
+                  <span
+                    style={{
+                      color: "var(--color-text-muted)",
+                      fontWeight: 400,
+                    }}
+                  >
+                    (dejar vacío para no cambiar)
+                  </span>
+                </label>
+                <input
+                  type="password"
+                  value={editando.nuevaPassword}
+                  onChange={(e) =>
+                    setEditando({ ...editando, nuevaPassword: e.target.value })
+                  }
+                  placeholder="Nueva contraseña..."
+                  autoComplete="new-password"
+                />
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setEditando(null)}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "none",
+                    border: "1.5px solid var(--color-border)",
+                    borderRadius: 10,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    color: "var(--color-text-muted)",
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoEdit || !editando.nombre.trim()}
+                  style={{
+                    flex: 2,
+                    padding: "10px",
+                    background: "var(--color-primary)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 10,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    opacity: guardandoEdit ? 0.6 : 1,
+                  }}
+                >
+                  {guardandoEdit ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div
         style={{
@@ -170,39 +298,38 @@ export default function GestionUsuariosPage() {
       {error && (
         <div
           style={{
-            background: "var(--color-danger-soft)",
             color: "var(--color-danger)",
-            border: "1px solid var(--color-danger-border)",
-            padding: "10px 14px",
-            borderRadius: 8,
             marginBottom: "1rem",
+            fontSize: "0.9rem",
           }}
         >
           {error}
         </div>
       )}
 
-      {/* Formulario nuevo usuario */}
+      {/* Formulario de creación */}
       {mostrarForm && (
         <form
           onSubmit={handleCrear}
           style={{
             background: "var(--color-surface)",
-            border: "1.5px solid var(--color-accent-soft)",
-            borderRadius: 16,
+            border: "1.5px solid var(--color-border)",
+            borderRadius: 12,
             padding: "1.5rem",
             marginBottom: "1.5rem",
             display: "flex",
             flexDirection: "column",
-            gap: "1rem",
+            gap: 14,
           }}
         >
-          <h3 style={{ fontWeight: 700, margin: 0 }}>Crear nuevo usuario</h3>
+          <h3 style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>
+            Crear nuevo usuario
+          </h3>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "1rem",
+              gap: 12,
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -214,7 +341,7 @@ export default function GestionUsuariosPage() {
                 required
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej. juan.operador"
+                placeholder="ej. juan.operador"
                 maxLength={100}
               />
             </div>
@@ -251,7 +378,8 @@ export default function GestionUsuariosPage() {
             type="submit"
             disabled={guardando || !nombre || !password}
             style={{
-              padding: "11px",
+              alignSelf: "flex-end",
+              padding: "10px 24px",
               background: "var(--color-primary)",
               color: "white",
               border: "none",
@@ -266,95 +394,142 @@ export default function GestionUsuariosPage() {
         </form>
       )}
 
-      {/* Lista de usuarios */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {usuarios.map((u) => (
-          <div
-            key={u.id}
+      {/* Tabla de usuarios */}
+      <div
+        style={{
+          background: "var(--color-surface)",
+          border: "1.5px solid var(--color-border)",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        {usuarios.length === 0 ? (
+          <p
             style={{
-              background: "var(--color-surface)",
-              border: "1.5px solid var(--color-border)",
-              borderRadius: 12,
-              padding: "1rem 1.25rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
+              padding: "2rem",
+              textAlign: "center",
+              color: "var(--color-text-muted)",
             }}
           >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                background: "linear-gradient(135deg, #52b788, #2d6a4f)",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {u.nombre[0].toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 600, margin: 0 }}>{u.nombre}</p>
-              <p
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontSize: "0.8rem",
-                  margin: 0,
-                }}
-              >
-                {nombreRol(u.rol_id)} · Creado el{" "}
-                {new Date(u.created_at).toLocaleDateString("es-GT")}
-              </p>
-            </div>
-            <span
-              style={{
-                background:
-                  nombreRol(u.rol_id) === "Administrador"
-                    ? "#dbeafe"
-                    : "#dcfce7",
-                color:
-                  nombreRol(u.rol_id) === "Administrador"
-                    ? "#1e40af"
-                    : "#166534",
-                padding: "3px 10px",
-                borderRadius: 99,
-                fontSize: "0.75rem",
-                fontWeight: 600,
-              }}
-            >
-              {nombreRol(u.rol_id)}
-            </span>
-            <button
-              onClick={() => handleDesactivar(u.id, u.nombre)}
-              style={{
-                background: "none",
-                border: "1.5px solid var(--color-border)",
-                color: "var(--color-text-light)",
-                padding: "7px 10px",
-                borderRadius: 8,
-                cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.color = "var(--color-danger)";
-                e.currentTarget.style.borderColor =
-                  "var(--color-danger-border)";
-                e.currentTarget.style.background = "var(--color-danger-soft)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.color = "var(--color-text-light)";
-                e.currentTarget.style.borderColor = "var(--color-border)";
-                e.currentTarget.style.background = "none";
-              }}
-            >
-              Desactivar
-            </button>
-          </div>
-        ))}
+            No hay usuarios registrados.
+          </p>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "var(--color-surface-alt, #f4f7f5)" }}>
+                {["Usuario", "Rol", "Creado", "Acciones"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "left",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      color: "var(--color-text-muted)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.map((u, i) => (
+                <tr
+                  key={u.id}
+                  style={{
+                    borderTop: "1px solid var(--color-border)",
+                    background:
+                      i % 2 === 0
+                        ? "transparent"
+                        : "var(--color-surface-alt, #fafcfb)",
+                  }}
+                >
+                  <td
+                    style={{
+                      padding: "12px 16px",
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {u.nombre}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        padding: "3px 10px",
+                        borderRadius: 99,
+                        fontWeight: 600,
+                        background:
+                          nombreRol(u.rol_id) === "Administrador"
+                            ? "#e8f5ee"
+                            : "#fff3cd",
+                        color:
+                          nombreRol(u.rol_id) === "Administrador"
+                            ? "#2d6a4f"
+                            : "#856404",
+                      }}
+                    >
+                      {nombreRol(u.rol_id)}
+                    </span>
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 16px",
+                      fontSize: "0.85rem",
+                      color: "var(--color-text-muted)",
+                    }}
+                  >
+                    {new Date(u.created_at).toLocaleDateString("es-GT")}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() =>
+                          setEditando({
+                            id: u.id,
+                            nombre: u.nombre,
+                            nuevaPassword: "",
+                          })
+                        }
+                        style={{
+                          padding: "5px 12px",
+                          background: "none",
+                          border: "1.5px solid var(--color-border)",
+                          borderRadius: 8,
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          color: "var(--color-text-muted)",
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDesactivar(u.id, u.nombre)}
+                        style={{
+                          padding: "5px 12px",
+                          background: "none",
+                          border: "1.5px solid #fca5a5",
+                          borderRadius: 8,
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          color: "#c0392b",
+                        }}
+                      >
+                        Desactivar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

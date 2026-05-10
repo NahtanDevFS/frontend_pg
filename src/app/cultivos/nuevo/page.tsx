@@ -28,8 +28,9 @@ export default function NuevoCultivoPage() {
         hectareas: hectareas ? parseFloat(hectareas) : null,
         total_surcos: parseInt(totalSurcos),
       };
-      await api.post("/cultivos/", payload);
-      router.push("/dashboard");
+      const res = await api.post("/cultivos/", payload);
+      // Redirigir al detalle del cultivo recién creado para asignar operadores
+      router.push(`/cultivos/${res.data.id}`);
     } catch (err: any) {
       if (err instanceof Error && err.message) setError(err.message);
       else if (err.response?.data?.detail) {
@@ -64,7 +65,7 @@ export default function NuevoCultivoPage() {
         </button>
         <h1 className={styles.pageTitle}>Registrar nuevo cultivo</h1>
         <p className={styles.pageSubtitle}>
-          Agrega una nueva parcela o área de cultivo
+          Después de crearlo podrás asignar los operadores autorizados.
         </p>
       </div>
 
@@ -115,11 +116,10 @@ export default function NuevoCultivoPage() {
                 type="text"
                 value={ubicacion}
                 onChange={(e) => setUbicacion(e.target.value)}
-                placeholder="Ej. Estanzuela, Zacapa"
+                placeholder="Ej. Zacapa, sector norte"
                 maxLength={255}
               />
             </div>
-
             <div className={styles.formGroup}>
               <label htmlFor="hectareas">
                 Hectáreas <span className={styles.optional}>(opcional)</span>
@@ -127,67 +127,48 @@ export default function NuevoCultivoPage() {
               <input
                 id="hectareas"
                 type="number"
-                step="0.01"
-                min="0.1"
                 value={hectareas}
                 onChange={(e) => setHectareas(e.target.value)}
-                placeholder="Ej. 1.5"
+                placeholder="Ej. 3.5"
+                min="0.01"
+                step="0.01"
               />
             </div>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="totalSurcos">
+            <label htmlFor="surcos">
               Total de surcos <span className={styles.required}>*</span>
             </label>
             <input
-              id="totalSurcos"
+              id="surcos"
               type="number"
-              min="1"
-              step="1"
               value={totalSurcos}
               onChange={(e) => setTotalSurcos(e.target.value)}
-              placeholder="Ej. 55  (una hectárea tiene entre 50 y 55 surcos)"
+              placeholder="Ej. 48"
               required
+              min="1"
             />
           </div>
 
-          <div className={styles.formActions}>
+          <div style={{ display: "flex", gap: 10, marginTop: "0.5rem" }}>
             <button
               type="button"
-              className={styles.btnCancel}
+              className={styles.btnSecondary}
               onClick={() => router.push("/dashboard")}
+              style={{ flex: 1 }}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className={styles.btnSubmit}
-              disabled={loading || !nombre.trim() || !totalSurcos}
+              className={styles.btnPrimary}
+              disabled={loading}
+              style={{ flex: 2 }}
             >
-              {loading ? (
-                <>
-                  <span className={styles.btnSpinner} /> Guardando...
-                </>
-              ) : (
-                <>
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
-                  Guardar cultivo
-                </>
-              )}
+              {loading
+                ? "Guardando..."
+                : "Crear cultivo y asignar operadores →"}
             </button>
           </div>
         </form>

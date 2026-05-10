@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import styles from "./login.module.css";
@@ -11,6 +11,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Leer el query param directamente del browser, sin useSearchParams
+    // (evita el wrapper de Suspense requerido en Next.js 13+)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("acceso") === "denegado") {
+        setError(
+          "Esta interfaz es exclusiva para administradores. Los operadores deben usar la aplicación móvil.",
+        );
+      }
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +39,8 @@ export default function LoginPage() {
       });
 
       localStorage.setItem("token", response.data.access_token);
-      router.push("/dashboard");
+      // Redirigir al dashboard — ClientLayout verificará el rol
+      router.replace("/dashboard");
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError("Usuario o contraseña incorrectos.");
@@ -39,9 +53,19 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <form className={styles.formCard} onSubmit={handleLogin}>
-        <h2 className={styles.title}>
-          MelonCount - Sistema de conteo de melones
-        </h2>
+        <h2 className={styles.title}>MelonCount — Panel Administrativo</h2>
+        <p
+          style={{
+            textAlign: "center",
+            color: "#5a7a6a",
+            fontSize: "0.85rem",
+            marginBottom: "1rem",
+            marginTop: "-0.5rem",
+          }}
+        >
+          Acceso exclusivo para administradores
+        </p>
+
         {error && <div className={styles.errorMsg}>{error}</div>}
 
         <div className={styles.inputGroup}>
@@ -52,6 +76,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
+            autoComplete="username"
           />
         </div>
 
@@ -65,6 +90,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               style={{ paddingRight: "2.75rem" }}
+              autoComplete="current-password"
             />
             <button
               type="button"
@@ -80,18 +106,16 @@ export default function LoginPage() {
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                padding: "0",
+                padding: 0,
                 display: "flex",
                 alignItems: "center",
                 color: "var(--color-text-muted)",
               }}
             >
               {showPassword ? (
-                // Ojo cerrado (ocultar)
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -104,11 +128,9 @@ export default function LoginPage() {
                   <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
               ) : (
-                // Ojo abierto (mostrar)
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -124,8 +146,23 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <button type="submit" className={styles.submitBtn}>
-          Iniciar Sesión
+        <button
+          type="submit"
+          style={{
+            width: "100%",
+            marginTop: "0.5rem",
+            padding: "11px",
+            background: "var(--color-primary, #2d6a4f)",
+            color: "white",
+            border: "none",
+            borderRadius: 10,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontSize: "0.95rem",
+            fontFamily: "inherit",
+          }}
+        >
+          Iniciar sesión
         </button>
       </form>
     </div>

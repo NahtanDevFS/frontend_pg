@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -10,6 +10,12 @@ interface UsuarioMe {
   activo: boolean;
 }
 
+// Estado de auth fuera del componente — sobrevive re-mounts del layout
+let authCache: { user: UsuarioMe | null; checked: boolean } = {
+  user: null,
+  checked: false,
+};
+
 export default function ClientLayout({
   children,
 }: {
@@ -17,85 +23,93 @@ export default function ClientLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<UsuarioMe | null>(null);
-  const [loading, setLoading] = useState(true);
-  // Evita que el effect de auth se dispare más de una vez simultáneamente
-  const authChecked = useRef(false);
+  const [user, setUser] = useState<UsuarioMe | null>(authCache.user);
+  const [loading, setLoading] = useState(!authCache.checked);
+
+  const enLogin = pathname.startsWith("/login");
 
   useEffect(() => {
-    // Si ya corrió la verificación de auth, no repetir
-    if (authChecked.current) return;
-    authChecked.current = true;
-
-    const checkAuth = async () => {
-      const token = localStorage.getItem("token");
-
-      // Sin token: si no estamos en /login, redirigir
-      if (!token) {
-        if (!window.location.pathname.startsWith("/login")) {
-          router.push("/login");
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Con token: verificar identidad y rol
-      try {
-        const [resMe, resRoles] = await Promise.all([
-          api.get("/usuarios/me"),
-          api.get("/catalogos/roles").catch(() => ({ data: [] })),
-        ]);
-
-        const userData: UsuarioMe = resMe.data;
-        const rolesData: { id: number; nombre: string }[] = resRoles.data;
-        const rolNombre =
-          rolesData.find((r) => r.id === userData.rol_id)?.nombre ?? "";
-
-        if (rolNombre !== "Administrador") {
-          // Operador intentando usar la web — forzar logout sin bucle
-          localStorage.removeItem("token");
-          setLoading(false);
-          // Usar replace para no añadir al historial
-          router.replace("/login?acceso=denegado");
-          return;
-        }
-
-        setUser(userData);
-
-        // Admin autenticado en /login → ir al dashboard
-        if (window.location.pathname.startsWith("/login")) {
-          router.replace("/dashboard");
-        }
-      } catch {
-        // Token inválido o expirado
-        localStorage.removeItem("token");
-        if (!window.location.pathname.startsWith("/login")) {
-          router.replace("/login");
-        }
-      }
-
+    // Si ya verificamos auth antes (re-mount del layout), usar el cache
+    if (authCache.checked) {
+      setUser(authCache.user);
       setLoading(false);
-    };
+      return;
+    }
 
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← array vacío: solo corre una vez al montar
+    const token = localStorage.getItem("token");
 
-  // Re-verificar solo cuando cambia el pathname (navegación del usuario)
-  // pero de forma ligera: solo leer el estado actual, sin llamar a la API
-  useEffect(() => {
-    if (!loading && !user) {
-      const token = localStorage.getItem("token");
-      if (!token && !pathname.startsWith("/login")) {
+    if (!token) {
+      authCache.checked = true;
+      authCache.user = null;
+      setLoading(false);
+      if (!enLogin) {
         router.replace("/login");
       }
+      return;
     }
-  }, [pathname, loading, user, router]);
+
+    // Verificar token con el backend
+    api
+      .get("/usuarios/me")
+      .then(async (resMe) => {
+        const userData: UsuarioMe = resMe.data;
+
+        // Verificar rol
+        try {
+          const resRoles = await api.get("/catalogos/roles");
+          const rolesData: { id: number; nombre: string }[] = resRoles.data;
+          const rolNombre =
+            rolesData.find((r) => r.id === userData.rol_id)?.nombre ?? "";
+
+          if (rolNombre !== "Administrador") {
+            localStorage.removeItem("token");
+            authCache.checked = true;
+            authCache.user = null;
+            setLoading(false);
+            router.replace("/login?acceso=denegado");
+            return;
+          }
+        } catch {
+          // Fallo al cargar roles — continuar con el usuario igualmente
+        }
+
+        authCache.checked = true;
+        authCache.user = userData;
+        setUser(userData);
+        setLoading(false);
+
+        if (enLogin) {
+          router.replace("/dashboard");
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        authCache.checked = true;
+        authCache.user = null;
+        setLoading(false);
+        if (!enLogin) {
+          router.replace("/login");
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al montar
+
+  // Guard ligero de navegación — no llama a la API
+  useEffect(() => {
+    if (loading) return;
+    const token = localStorage.getItem("token");
+    if (!token && !enLogin) {
+      authCache.checked = false;
+      authCache.user = null;
+      router.replace("/login");
+    }
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    authCache.checked = false;
+    authCache.user = null;
     setUser(null);
-    authChecked.current = false; // permitir re-chequeo si hace login de nuevo
     router.replace("/login");
   };
 
@@ -136,7 +150,7 @@ export default function ClientLayout({
 
   return (
     <>
-      {!pathname.startsWith("/login") && user && (
+      {!enLogin && user && (
         <header
           style={{
             position: "sticky",
@@ -153,7 +167,6 @@ export default function ClientLayout({
             boxShadow: "0 1px 8px rgba(45,106,79,0.06)",
           }}
         >
-          {/* Logo + nav */}
           <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
             <span
               style={{
@@ -200,7 +213,6 @@ export default function ClientLayout({
             </nav>
           </div>
 
-          {/* User info + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{

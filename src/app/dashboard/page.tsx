@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
-  const [filtroOperador, setFiltroOperador] = useState<string>("");
+  const [filtroOperador, setFiltroOperador] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchDatos = async (usuarioId?: string) => {
@@ -23,8 +23,7 @@ export default function DashboardPage() {
         api.get<Usuario[]>("/usuarios/"),
       ]);
       setCultivos(resCultivos.data);
-      // Mostrar solo operadores en el filtro
-      setOperadores(resOperadores.data.filter((u) => u.rol_id !== 1)); // asume rol_id 1 = admin; se refina abajo
+      setOperadores(resOperadores.data.filter((u) => u.rol_id !== 1));
     } catch (err: any) {
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
@@ -44,8 +43,8 @@ export default function DashboardPage() {
     fetchDatos(id || undefined);
   };
 
-  const handleDesactivar = async (id: number) => {
-    if (!confirm("¿Seguro que deseas desactivar este cultivo?")) return;
+  const handleDesactivar = async (id: number, nombre: string) => {
+    if (!confirm(`¿Desactivar el cultivo "${nombre}"?`)) return;
     try {
       await api.patch(`/cultivos/${id}/desactivar`);
       setCultivos((prev) => prev.filter((c) => c.id !== id));
@@ -67,6 +66,7 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.container}>
+      {/* Header */}
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>Áreas de Cultivo</h1>
@@ -96,37 +96,14 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Filtro por operador */}
+      {/* Filtro */}
       {operadores.length > 0 && (
-        <div
-          style={{
-            marginBottom: "1.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <label
-            style={{
-              fontSize: "0.85rem",
-              color: "var(--color-text-muted)",
-              fontWeight: 600,
-            }}
-          >
-            Filtrar por operador:
-          </label>
+        <div className={styles.filtroRow}>
+          <label className={styles.filtroLabel}>Filtrar por operador:</label>
           <select
+            className={styles.filtroSelect}
             value={filtroOperador}
             onChange={(e) => handleFiltroOperador(e.target.value)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 8,
-              border: "1.5px solid var(--color-border)",
-              fontSize: "0.875rem",
-              background: "var(--color-surface)",
-              color: "var(--color-text)",
-              cursor: "pointer",
-            }}
           >
             <option value="">Todos los operadores</option>
             {operadores.map((u) => (
@@ -138,66 +115,134 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Vacío */}
       {cultivos.length === 0 ? (
         <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+          </div>
           <p>
             No hay cultivos registrados
             {filtroOperador ? " para este operador" : ""}.
           </p>
           <button
-            className={styles.btnPrimary}
+            className={styles.btnPrimarySmall}
             onClick={() => router.push("/cultivos/nuevo")}
           >
             Registrar primer cultivo
           </button>
         </div>
       ) : (
-        <div className={styles.cultivoGrid}>
+        <div className={styles.cultivoList}>
           {cultivos.map((cultivo) => (
             <div key={cultivo.id} className={styles.cultivoCard}>
-              <div className={styles.cultivoCardHeader}>
-                <h3 className={styles.cultivoNombre}>{cultivo.nombre}</h3>
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    background: "var(--color-primary-light, #e8f5ee)",
-                    color: "var(--color-primary, #2d6a4f)",
-                    padding: "2px 8px",
-                    borderRadius: 99,
-                    fontWeight: 600,
-                  }}
-                >
-                  {nombreOperador(cultivo.usuario_id)}
-                </span>
+              {/* Inicial */}
+              <div className={styles.cultivoBadge}>
+                {cultivo.nombre[0].toUpperCase()}
               </div>
 
-              {cultivo.ubicacion && (
-                <p className={styles.cultivoUbicacion}>{cultivo.ubicacion}</p>
-              )}
-
-              <div className={styles.cultivoMeta}>
-                {cultivo.hectareas && <span>{cultivo.hectareas} ha</span>}
-                <span>{cultivo.total_surcos} surcos</span>
+              {/* Info */}
+              <div className={styles.cultivoInfo}>
+                <p className={styles.cultivoName}>{cultivo.nombre}</p>
+                <div className={styles.cultivoMeta}>
+                  {cultivo.ubicacion && (
+                    <span className={styles.metaItem}>
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      {cultivo.ubicacion}
+                    </span>
+                  )}
+                  <span className={styles.metaItem}>
+                    {cultivo.total_surcos} surcos
+                  </span>
+                  {cultivo.hectareas && (
+                    <span className={styles.metaItem}>
+                      {cultivo.hectareas} ha
+                    </span>
+                  )}
+                  <span className={styles.operadorBadge}>
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    {nombreOperador(cultivo.usuario_id)}
+                  </span>
+                </div>
               </div>
 
-              <div className={styles.cultivoActions}>
+              {/* Acciones */}
+              <div className={styles.cardActions}>
                 <button
-                  className={styles.btnSecondary}
+                  className={styles.btnDetalle}
                   onClick={() => router.push(`/cultivos/${cultivo.id}`)}
                 >
                   Ver conteos
                 </button>
                 <button
-                  className={styles.btnSecondary}
+                  className={styles.btnDetalle}
                   onClick={() => router.push(`/cultivos/${cultivo.id}/editar`)}
+                  style={{
+                    background: "var(--color-surface)",
+                    color: "var(--color-primary)",
+                    border: "1.5px solid var(--color-primary)",
+                  }}
                 >
                   Editar
                 </button>
                 <button
-                  className={styles.btnDanger}
-                  onClick={() => handleDesactivar(cultivo.id)}
+                  className={styles.btnIcono}
+                  onClick={() => handleDesactivar(cultivo.id, cultivo.nombre)}
+                  title="Desactivar cultivo"
                 >
-                  Desactivar
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
                 </button>
               </div>
             </div>

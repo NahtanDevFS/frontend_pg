@@ -43,6 +43,8 @@ export interface Conteo {
   fecha_conteo: string;
   total_surcos: number;
   conteo_total_acumulado: number;
+  nivel_confiabilidad_agregado: "alto" | "moderado" | "bajo" | null;
+  promedio_confianza_sesion: number | null;
   observaciones: string | null;
   activo: boolean;
   created_at: string;
@@ -54,6 +56,12 @@ export interface ResultadoIa {
   conteo_ajustado: number | null;
   observaciones_ajuste: string | null;
   tiempo_procesamiento_seg: number | null;
+  promedio_confianza: number | null;
+  porcentaje_baja_confianza: number | null;
+  porcentaje_ocluidos: number | null;
+  nivel_confiabilidad: "alto" | "moderado" | "bajo" | null;
+  total_frames_procesados: number | null;
+  total_detecciones_brutas: number | null;
 }
 
 export interface ProcesamientoVideo {

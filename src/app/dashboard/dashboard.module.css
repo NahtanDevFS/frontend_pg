@@ -14,6 +14,7 @@
   }
 }
 
+/* ─── Loading ─── */
 .loadingWrap {
   display: flex;
   flex-direction: column;
@@ -26,8 +27,8 @@
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 3px solid var(--color-border);
   border-top: 3px solid var(--color-primary);
   border-radius: 50%;
@@ -66,11 +67,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-hover) 100%
-  );
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 10px 18px;
@@ -79,68 +76,68 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.25);
+  transition: all 0.2s;
 }
 
 .btnPrimary:hover {
+  background: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(45, 106, 79, 0.35);
 }
 
-/* ─── Stats ─── */
-.statsBar {
-  margin-bottom: 1.25rem;
-}
-
-.statChip {
-  display: inline-flex;
+/* ─── Filtro ─── */
+.filtroRow {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--color-primary-light);
-  border: 1px solid var(--color-accent-soft);
-  padding: 5px 14px;
-  border-radius: 99px;
+  gap: 10px;
+  margin-bottom: 1.5rem;
 }
 
-.statNum {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-primary);
+.filtroLabel {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.statLabel {
-  font-size: 0.8rem;
-  color: var(--color-primary);
-  font-weight: 500;
+.filtroSelect {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  font-size: 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+  width: auto;
 }
 
-/* ─── Cards grid ─── */
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+/* ─── Lista de cultivos ─── */
+.cultivoList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
+/* ─── Card horizontal ─── */
 .cultivoCard {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 1rem;
   transition: all 0.2s;
-  animation: fadeUp 0.4s ease both;
   box-shadow: var(--shadow-xs);
+  animation: fadeUp 0.35s ease both;
 }
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -149,25 +146,15 @@
 }
 
 .cultivoCard:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   border-color: var(--color-accent-soft);
-  transform: translateY(-2px);
 }
 
-.cardTop {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
+/* Inicial / avatar */
 .cultivoBadge {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-light),
-    var(--color-accent-soft)
-  );
+  width: 44px;
+  height: 44px;
+  background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
   font-size: 1.1rem;
@@ -179,25 +166,27 @@
   border: 1px solid var(--color-accent-soft);
 }
 
+/* Bloque de texto */
 .cultivoInfo {
   flex: 1;
   min-width: 0;
 }
 
 .cultivoName {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 4px;
 }
 
 .cultivoMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
 .metaItem {
@@ -208,52 +197,46 @@
   color: var(--color-text-muted);
 }
 
-/* ─── Card actions ─── */
+.operadorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-accent-soft);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* Acciones al lado derecho */
 .cardActions {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
-.btnCardPrimary {
-  flex: 1;
+.btnDetalle {
   background: var(--color-primary);
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 
-.btnCardPrimary:hover {
+.btnDetalle:hover {
   background: var(--color-primary-hover);
 }
 
-.btnCardSecondary {
-  background: var(--color-surface-alt);
-  color: var(--color-text-muted);
-  border: 1.5px solid var(--color-border);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btnCardSecondary:hover {
-  border-color: var(--color-accent);
-  color: var(--color-primary);
-}
-
-.btnCardDanger {
+.btnIcono {
   background: none;
   border: 1.5px solid var(--color-border);
   color: var(--color-text-light);
@@ -265,7 +248,7 @@
   transition: all 0.2s;
 }
 
-.btnCardDanger:hover {
+.btnIcono:hover {
   border-color: var(--color-danger-border);
   color: var(--color-danger);
   background: var(--color-danger-soft);
@@ -294,7 +277,6 @@
   align-items: center;
   justify-content: center;
   color: var(--color-primary);
-  margin-bottom: 4px;
 }
 
 .btnPrimarySmall {
@@ -307,7 +289,6 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  margin-top: 4px;
   transition: background 0.2s;
 }
 
@@ -315,17 +296,22 @@
   background: var(--color-primary-hover);
 }
 
-@media (max-width: 600px) {
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
-  }
-  .pageTitle {
-    font-size: 1.3rem;
   }
   .pageHeader {
     flex-wrap: wrap;
   }
-  .cardGrid {
-    grid-template-columns: 1fr;
+  .pageTitle {
+    font-size: 1.3rem;
+  }
+  .cultivoCard {
+    flex-wrap: wrap;
+  }
+  .cardActions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }

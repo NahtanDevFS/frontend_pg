@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Cultivo } from "@/types";
+import BtnBack from "@/components/BtnBack";
 
 export default function EditarCultivoPage() {
   const router = useRouter();
@@ -90,36 +91,7 @@ export default function EditarCultivoPage() {
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem 1.5rem" }}>
       <div style={{ marginBottom: "2rem" }}>
-        <button
-          onClick={() => router.push(`/cultivos/${id}`)}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "var(--color-text-muted)",
-            marginBottom: "0.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: "0.85rem",
-            padding: 0,
-            fontFamily: "inherit",
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Volver al cultivo
-        </button>
+        <BtnBack href="/dashboard" label="Volver" />
         <h1
           style={{
             fontSize: "1.5rem",

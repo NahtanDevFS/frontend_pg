@@ -262,7 +262,7 @@ export default function HistorialPage() {
                 fontFamily: "inherit",
               }}
             >
-              {v === "tabla" ? "📋 Tabla" : "📈 Tendencia"}
+              {v === "tabla" ? "Tabla" : "Tendencia"}
             </button>
           ))}
         </div>
@@ -637,7 +637,6 @@ export default function HistorialPage() {
           )}
         </div>
       ) : (
-        // ── Vista tendencia ──────────────────────────────────
         <div
           style={{
             display: "grid",

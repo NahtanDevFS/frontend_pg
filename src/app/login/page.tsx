@@ -53,18 +53,11 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <form className={styles.formCard} onSubmit={handleLogin}>
-        <h2 className={styles.title}>MelonCount — Panel Administrativo</h2>
-        <p
-          style={{
-            textAlign: "center",
-            color: "#5a7a6a",
-            fontSize: "0.85rem",
-            marginBottom: "1rem",
-            marginTop: "-0.5rem",
-          }}
-        >
-          Acceso exclusivo para administradores
-        </p>
+        <div className={styles.cardHeader}>
+          <p className={styles.subtitle}>Amadeo Export, S.A.</p>
+          <h2 className={styles.title}>MelonCount</h2>
+          <p className={styles.subtitle}>Panel administrativo</p>
+        </div>
 
         {error && <div className={styles.errorMsg}>{error}</div>}
 

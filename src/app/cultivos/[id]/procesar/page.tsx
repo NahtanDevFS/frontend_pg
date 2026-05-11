@@ -8,14 +8,6 @@ import styles from "./procesar.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// ─────────────────────────────────────────────────────────────
-// Utilidades de rangos bloqueados
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Dado los procesamientos activos de un conteo, devuelve el conjunto
- * de surcos ya cubiertos (números individuales).
- */
 function calcularSurcosBloqueados(
   procesamientos: ProcesamientoVideo[],
 ): Set<number> {
@@ -184,10 +176,6 @@ function MapaSurcos({
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────
-// Página principal
-// ─────────────────────────────────────────────────────────────
 
 export default function ProcesarVideoPage() {
   const router = useRouter();

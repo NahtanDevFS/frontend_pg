@@ -1,0 +1,324 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pageSubtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.vistaToggle {
+  display: flex;
+  gap: 6px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.vistaBtn {
+  padding: 7px 16px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+}
+
+.vistaBtnActivo {
+  background: var(--color-primary);
+  color: white;
+}
+
+/* Filtros */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.filtroGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.filtroGrupoChico {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filtroLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.filtroSelect,
+.filtroInput {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.filtroLimpiarWrap {
+  display: flex;
+  align-items: flex-end;
+}
+
+.btnLimpiar {
+  padding: 7px 14px;
+  background: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: inherit;
+}
+
+/* Loading */
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tabla */
+.tablaWrap {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tablaHead {
+  background: var(--color-surface-alt, #f4f7f5);
+}
+
+.tablaTh {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.tablaTr {
+  border-top: 1px solid var(--color-border);
+}
+
+.tablaTrImpar {
+  background: var(--color-surface-alt, #fafcfb);
+}
+
+.tablaTd {
+  padding: 11px 14px;
+  font-size: 0.85rem;
+}
+
+.tdId {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.tdCultivoBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+
+.tdCultivoBtn:hover {
+  text-decoration-color: currentColor;
+}
+
+.tdOperador {
+  color: var(--color-text-muted);
+}
+
+.tdTotal {
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: "DM Mono", monospace;
+  color: var(--color-primary);
+}
+
+.tdTotalVacio {
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: "DM Mono", monospace;
+  color: var(--color-text-muted);
+}
+
+.badgeEstado {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeCompletado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeEnProgreso {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.btnPDF {
+  padding: 5px 12px;
+  background: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: inherit;
+}
+
+.btnPDF:disabled {
+  opacity: 0.5;
+}
+
+.tablaVacia {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Vista tendencia */
+.tendenciaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.tendenciaCard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+}
+
+.tendenciaCardHeader {
+  margin-bottom: 0.75rem;
+}
+
+.tendenciaNombre {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tendenciaMeta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.tendenciaSinDatos {
+  color: var(--color-text-muted);
+  grid-column: 1 / -1;
+}
+
+.tendenciaNota {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Badge confiabilidad */
+.badgeConfiabilidad {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeAlto {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeModerado {
+  background: #fff3cd;
+  color: #856404;
+}
+.badgeBajo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badgeDefault {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Gráfica tendencia */
+.graficaLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}

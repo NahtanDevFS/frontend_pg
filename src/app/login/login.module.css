@@ -69,6 +69,7 @@
 
 .cardHeader {
   margin-bottom: 1.75rem;
+  text-align: center;
 }
 
 .title {
@@ -77,6 +78,7 @@
   color: #1a2e25;
   letter-spacing: -0.03em;
   margin-bottom: 4px;
+  text-align: center;
 }
 
 .subtitle {

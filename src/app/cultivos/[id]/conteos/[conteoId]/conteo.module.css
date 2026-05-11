@@ -1,0 +1,442 @@
+/* ── Layout general ─────────────────────────────────── */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  gap: 14px;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorWrap {
+  text-align: center;
+  padding: 3rem;
+  color: var(--color-danger);
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pageTitleMuted {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.metaRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.metaFecha {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.badgeEstado {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeCompletado {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeEnProgreso {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badgeConfiabilidad {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeAlto {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeModerado {
+  background: #fff3cd;
+  color: #856404;
+}
+.badgeBajo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badgeDefault {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btnExportar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.btnExportar:disabled {
+  opacity: 0.7;
+}
+
+/* ── Hero total ─────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1b4332 100%);
+  border-radius: 14px 14px 0 0;
+  padding: 1.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.heroLabel {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.heroTotal {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: "DM Mono", monospace;
+}
+
+.heroSub {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.heroMeta {
+  text-align: right;
+}
+
+.heroMetaVideos {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+}
+
+.heroMetaSurcos {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+/* ── Secciones del panel ────────────────────────────── */
+.panel {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-top: 0;
+  padding: 1.5rem 2rem;
+}
+
+.panelBottom {
+  border-radius: 0 0 14px 14px;
+}
+
+.panelTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.panelSubtitle {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  margin-top: -0.5rem;
+}
+
+.sinDatos {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.sinMuestreo {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  border-radius: 10px;
+  border: 1.5px dashed var(--color-border);
+}
+
+/* ── Lista de procesamientos ────────────────────────── */
+.procList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.procItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--color-surface-alt, #f9fbfa);
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.procInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.procNombre {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.procFecha {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.procRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.procStatWrap {
+  text-align: right;
+}
+
+.procStatLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.procStatVal {
+  font-weight: 700;
+  font-family: "DM Mono", monospace;
+}
+
+.procStatValPrimary {
+  font-weight: 700;
+  font-family: "DM Mono", monospace;
+  color: var(--color-primary);
+}
+
+.badgeProcEstado {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeProcCompletado {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeProcError {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badgeProcProcesando {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* ── Gráfica de distribución ────────────────────────── */
+.graficaTitulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  margin-bottom: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.graficaBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  justify-content: center;
+  height: 140px;
+  margin-bottom: 1rem;
+}
+
+.graficaBarCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.graficaBarVal {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.graficaBar {
+  width: 100%;
+  max-width: 52px;
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s;
+}
+
+.graficaBarNombre {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.graficaBarPct {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.graficaTablaWrap {
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-border);
+  margin-top: 1rem;
+}
+
+.graficaTabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.graficaTablaTh {
+  padding: 8px 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-surface-alt, #f4f7f5);
+}
+
+.graficaTablaThLeft {
+  text-align: left;
+}
+.graficaTablaThRight {
+  text-align: right;
+}
+
+.graficaTablaTr {
+  border-top: 1px solid var(--color-border);
+}
+
+.graficaTablaTrImpar {
+  background: var(--color-surface-alt);
+}
+
+.graficaTablaTd {
+  padding: 10px 14px;
+}
+
+.graficaTdNombre {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graficaTdDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.graficaTdMono {
+  padding: 10px 14px;
+  text-align: right;
+  font-family: "DM Mono", monospace;
+}
+
+.graficaTdMonoPrimary {
+  padding: 10px 14px;
+  text-align: right;
+  font-family: "DM Mono", monospace;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.graficaTdMonoBold {
+  padding: 10px 14px;
+  text-align: right;
+  font-family: "DM Mono", monospace;
+  font-weight: 700;
+}
+
+.graficaTotalTr {
+  border-top: 2px solid var(--color-border);
+  background: var(--color-primary-light, #e8f5ee);
+}
+
+.graficaTotalLabel {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.graficaTotalVal {
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-family: "DM Mono", monospace;
+}

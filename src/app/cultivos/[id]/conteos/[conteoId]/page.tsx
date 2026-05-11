@@ -6,16 +6,15 @@ import { api } from "@/lib/api";
 import {
   Conteo,
   ProcesamientoVideo,
-  Calibre,
   MuestreoResponse,
   ClasificacionCalibre,
   Cultivo,
 } from "@/types";
 import BtnBack from "@/components/BtnBack";
+import styles from "./conteo.module.css";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const colores = ["#2d6a4f", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
 
-// ── Gráfica de distribución ───────────────────────────────────
 function GraficaDistribucion({
   clasificaciones,
 }: {
@@ -25,106 +24,46 @@ function GraficaDistribucion({
 
   const max = Math.max(...clasificaciones.map((c) => c.cantidad_extrapolada));
   const total = clasificaciones.reduce((a, c) => a + c.cantidad_extrapolada, 0);
-  const colores = ["#2d6a4f", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
 
   return (
-    <div style={{ marginTop: "1.5rem" }}>
-      <h4
-        style={{
-          fontSize: "0.85rem",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          color: "var(--color-text)",
-          marginBottom: "1.25rem",
-        }}
-      >
-        Distribución por calibre
-      </h4>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 6,
-          justifyContent: "center",
-          height: 140,
-          marginBottom: "1rem",
-        }}
-      >
+    <div>
+      <h4 className={styles.graficaTitulo}>Distribución por calibre</h4>
+      <div className={styles.graficaBars}>
         {clasificaciones.map((c, i) => {
           const heightPct = max > 0 ? (c.cantidad_extrapolada / max) * 100 : 0;
           return (
-            <div
-              key={c.calibre_id}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-                flex: 1,
-              }}
-            >
+            <div key={c.calibre_id} className={styles.graficaBarCol}>
               <span
-                style={{
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  color: colores[i % colores.length],
-                }}
+                className={styles.graficaBarVal}
+                style={{ color: colores[i % colores.length] }}
               >
                 {c.cantidad_extrapolada.toLocaleString()}
               </span>
               <div
+                className={styles.graficaBar}
                 style={{
-                  width: "100%",
-                  maxWidth: 52,
                   height: `${heightPct}%`,
-                  minHeight: 4,
                   background: colores[i % colores.length],
-                  borderRadius: "4px 4px 0 0",
-                  transition: "height 0.3s",
                 }}
               />
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  color: "var(--color-text)",
-                }}
-              >
+              <span className={styles.graficaBarNombre}>
                 {c.nombre_calibre}
               </span>
-              <span
-                style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}
-              >
+              <span className={styles.graficaBarPct}>
                 {c.porcentaje.toFixed(1)}%
               </span>
             </div>
           );
         })}
       </div>
-      <div
-        style={{
-          overflow: "hidden",
-          borderRadius: 10,
-          border: "1.5px solid var(--color-border)",
-          marginTop: "1rem",
-        }}
-      >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className={styles.graficaTablaWrap}>
+        <table className={styles.graficaTabla}>
           <thead>
-            <tr style={{ background: "var(--color-surface-alt, #f4f7f5)" }}>
+            <tr>
               {["Calibre", "Muestreo", "%", "Extrapolado"].map((h) => (
                 <th
                   key={h}
-                  style={{
-                    padding: "8px 14px",
-                    textAlign: h === "Calibre" ? "left" : "right",
-                    fontWeight: 700,
-                    color: "var(--color-primary)",
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                  }}
+                  className={`${styles.graficaTablaTh} ${h === "Calibre" ? styles.graficaTablaThLeft : styles.graficaTablaThRight}`}
                 >
                   {h}
                 </th>
@@ -135,100 +74,33 @@ function GraficaDistribucion({
             {clasificaciones.map((c, i) => (
               <tr
                 key={c.calibre_id}
-                style={{
-                  borderTop: "1px solid var(--color-border)",
-                  background:
-                    i % 2 === 0 ? "transparent" : "var(--color-surface-alt)",
-                }}
+                className={`${styles.graficaTablaTr} ${i % 2 !== 0 ? styles.graficaTablaTrImpar : ""}`}
               >
-                <td style={{ padding: "10px 14px", fontWeight: 600 }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
+                <td className={styles.graficaTablaTd}>
+                  <span className={styles.graficaTdNombre}>
                     <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 2,
-                        background: colores[i % colores.length],
-                        flexShrink: 0,
-                      }}
+                      className={styles.graficaTdDot}
+                      style={{ background: colores[i % colores.length] }}
                     />
                     {c.nombre_calibre}
                   </span>
                 </td>
-                <td
-                  style={{
-                    padding: "10px 14px",
-                    textAlign: "right",
-                    fontFamily: "DM Mono, monospace",
-                  }}
-                >
+                <td className={styles.graficaTdMono}>
                   {c.cantidad_muestreo} / {c.total_muestreo}
                 </td>
-                <td
-                  style={{
-                    padding: "10px 14px",
-                    textAlign: "right",
-                    fontFamily: "DM Mono, monospace",
-                    color: "var(--color-primary)",
-                    fontWeight: 600,
-                  }}
-                >
+                <td className={styles.graficaTdMonoPrimary}>
                   {c.porcentaje.toFixed(1)}%
                 </td>
-                <td
-                  style={{
-                    padding: "10px 14px",
-                    textAlign: "right",
-                    fontFamily: "DM Mono, monospace",
-                    fontWeight: 700,
-                  }}
-                >
+                <td className={styles.graficaTdMonoBold}>
                   {c.cantidad_extrapolada.toLocaleString()}
                 </td>
               </tr>
             ))}
-            <tr
-              style={{
-                borderTop: "2px solid var(--color-border)",
-                background: "var(--color-primary-light, #e8f5ee)",
-              }}
-            >
-              <td
-                style={{
-                  padding: "10px 14px",
-                  fontWeight: 700,
-                  color: "var(--color-primary)",
-                }}
-              >
-                Total
-              </td>
-              <td style={{ padding: "10px 14px" }} />
-              <td
-                style={{
-                  padding: "10px 14px",
-                  textAlign: "right",
-                  fontWeight: 700,
-                  color: "var(--color-primary)",
-                  fontFamily: "DM Mono, monospace",
-                }}
-              >
-                100%
-              </td>
-              <td
-                style={{
-                  padding: "10px 14px",
-                  textAlign: "right",
-                  fontWeight: 700,
-                  color: "var(--color-primary)",
-                  fontFamily: "DM Mono, monospace",
-                }}
-              >
+            <tr className={styles.graficaTotalTr}>
+              <td className={styles.graficaTotalLabel}>Total</td>
+              <td className={styles.graficaTablaTd} />
+              <td className={styles.graficaTotalVal}>100%</td>
+              <td className={styles.graficaTotalVal}>
                 {total.toLocaleString()}
               </td>
             </tr>
@@ -239,36 +111,27 @@ function GraficaDistribucion({
   );
 }
 
-// ── Badge confiabilidad ───────────────────────────────────────
 function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
   if (!nivel) return null;
-  const cfg: Record<string, { bg: string; color: string; label: string }> = {
-    alto: { bg: "#d1fae5", color: "#065f46", label: "Alta confiabilidad" },
-    moderado: {
-      bg: "#fff3cd",
-      color: "#856404",
-      label: "Confiabilidad moderada",
-    },
-    bajo: { bg: "#fee2e2", color: "#991b1b", label: "Baja confiabilidad" },
+  const labels: Record<string, string> = {
+    alto: "Alta confiabilidad",
+    moderado: "Confiabilidad moderada",
+    bajo: "Baja confiabilidad",
   };
-  const s = cfg[nivel] ?? { bg: "#f3f4f6", color: "#374151", label: nivel };
+  const clases: Record<string, string> = {
+    alto: styles.badgeAlto,
+    moderado: styles.badgeModerado,
+    bajo: styles.badgeBajo,
+  };
   return (
     <span
-      style={{
-        fontSize: "0.75rem",
-        padding: "3px 10px",
-        borderRadius: 99,
-        fontWeight: 600,
-        background: s.bg,
-        color: s.color,
-      }}
+      className={`${styles.badgeConfiabilidad} ${clases[nivel] ?? styles.badgeDefault}`}
     >
-      {s.label}
+      {labels[nivel] ?? nivel}
     </span>
   );
 }
 
-// ── Página principal ──────────────────────────────────────────
 export default function DetalleConteoPage() {
   const router = useRouter();
   const { id: cultivoId, conteoId } = useParams();
@@ -286,7 +149,6 @@ export default function DetalleConteoPage() {
 
   const cargar = useCallback(async () => {
     try {
-      // Usar endpoints /admin/ — el admin es el único que accede a la web
       const [resConteo, resProcs] = await Promise.all([
         api.get(`/conteos/admin/${conteoId}`),
         api.get(`/procesamientos/admin/conteo/${conteoId}`),
@@ -296,18 +158,17 @@ export default function DetalleConteoPage() {
 
       const [resVars, resCultivos] = await Promise.all([
         api.get("/catalogos/variedades"),
-        api.get(`/cultivos/admin/todos`),
+        api.get("/cultivos/admin/todos"),
       ]);
 
-      const variedad = resVars.data.find(
-        (v: any) => v.id === resConteo.data.variedad_id,
+      setNombreVariedad(
+        resVars.data.find((v: any) => v.id === resConteo.data.variedad_id)
+          ?.nombre ?? "—",
       );
-      setNombreVariedad(variedad?.nombre ?? "—");
-
-      const cult = resCultivos.data.find(
-        (c: any) => c.id === resConteo.data.cultivo_id,
+      setCultivo(
+        resCultivos.data.find((c: any) => c.id === resConteo.data.cultivo_id) ??
+          null,
       );
-      setCultivo(cult ?? null);
 
       try {
         const resMuestreo = await api.get(
@@ -315,9 +176,7 @@ export default function DetalleConteoPage() {
         );
         if (resMuestreo.data.clasificaciones?.length)
           setMuestreo(resMuestreo.data);
-      } catch {
-        // Sin muestreo aún, es válido
-      }
+      } catch {}
     } catch {
       setError("Error al cargar el conteo.");
     } finally {
@@ -350,42 +209,15 @@ export default function DetalleConteoPage() {
 
   if (loading)
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "60vh",
-          gap: 14,
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            border: "3px solid var(--color-border)",
-            borderTop: "3px solid var(--color-primary)",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
+      <div className={styles.loadingWrap}>
+        <div className={styles.spinner} />
         <span>Cargando conteo...</span>
       </div>
     );
 
   if (!conteo || error)
     return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "3rem",
-          color: "var(--color-danger)",
-        }}
-      >
-        {error || "Conteo no encontrado."}
-      </div>
+      <div className={styles.errorWrap}>{error || "Conteo no encontrado."}</div>
     );
 
   const conteoEfectivo = (p: ProcesamientoVideo) =>
@@ -394,38 +226,18 @@ export default function DetalleConteoPage() {
   const estadoNombre = conteo.estado_id === 2 ? "Completado" : "En progreso";
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "1.5rem",
-        }}
-      >
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
         <div>
           <BtnBack onClick={() => router.back()} label="Volver" />
-
-          <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>
+          <h1 className={styles.pageTitle}>
             Conteo #{conteo.id}
             {cultivo && (
-              <span
-                style={{
-                  fontWeight: 400,
-                  color: "var(--color-text-muted)",
-                  fontSize: "1rem",
-                }}
-              >
-                {" "}
-                — {cultivo.nombre}
-              </span>
+              <span className={styles.pageTitleMuted}> — {cultivo.nombre}</span>
             )}
           </h1>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span
-              style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}
-            >
+          <div className={styles.metaRow}>
+            <span className={styles.metaFecha}>
               {new Date(conteo.fecha_conteo).toLocaleDateString("es-GT", {
                 day: "2-digit",
                 month: "long",
@@ -433,14 +245,7 @@ export default function DetalleConteoPage() {
               })}
             </span>
             <span
-              style={{
-                fontSize: "0.75rem",
-                padding: "2px 10px",
-                borderRadius: 99,
-                fontWeight: 600,
-                background: conteo.estado_id === 2 ? "#d1fae5" : "#fff3cd",
-                color: conteo.estado_id === 2 ? "#065f46" : "#856404",
-              }}
+              className={`${styles.badgeEstado} ${conteo.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
             >
               {estadoNombre}
             </span>
@@ -450,23 +255,9 @@ export default function DetalleConteoPage() {
           </div>
         </div>
         <button
+          className={styles.btnExportar}
           onClick={handleExportarPDF}
           disabled={exportando}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-            padding: "9px 18px",
-            background: "var(--color-primary)",
-            color: "white",
-            border: "none",
-            borderRadius: 10,
-            fontWeight: 600,
-            cursor: "pointer",
-            opacity: exportando ? 0.7 : 1,
-            fontSize: "0.875rem",
-            fontFamily: "inherit",
-          }}
         >
           <svg
             width="14"
@@ -486,171 +277,71 @@ export default function DetalleConteoPage() {
         </button>
       </div>
 
-      {/* Hero total */}
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, var(--color-primary) 0%, #1b4332 100%)",
-          borderRadius: "var(--radius-xl, 14px) var(--radius-xl, 14px) 0 0",
-          padding: "1.75rem 2rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      {/* Hero */}
+      <div className={styles.hero}>
         <div>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: 6,
-            }}
-          >
-            Total acumulado
-          </p>
-          <p
-            style={{
-              color: "white",
-              fontSize: "3.5rem",
-              fontWeight: 700,
-              lineHeight: 1,
-              fontFamily: "DM Mono, monospace",
-            }}
-          >
+          <p className={styles.heroLabel}>Total acumulado</p>
+          <p className={styles.heroTotal}>
             {conteo.conteo_total_acumulado.toLocaleString()}
           </p>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.7)",
-              fontSize: "0.9rem",
-              marginTop: 4,
-            }}
-          >
-            melones · {nombreVariedad}
-          </p>
+          <p className={styles.heroSub}>melones · {nombreVariedad}</p>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.8rem" }}>
+        <div className={styles.heroMeta}>
+          <p className={styles.heroMetaVideos}>
             {procesamientos.length} video
             {procesamientos.length !== 1 ? "s" : ""}
           </p>
           {cultivo && (
-            <p
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                fontSize: "0.75rem",
-                marginTop: 4,
-              }}
-            >
+            <p className={styles.heroMetaSurcos}>
               {cultivo.total_surcos} surcos totales
             </p>
           )}
         </div>
       </div>
 
-      {/* Lista de procesamientos */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderTop: 0,
-          padding: "1.5rem 2rem",
-        }}
-      >
-        <h3
-          style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: "1rem" }}
-        >
-          Videos procesados
-        </h3>
+      {/* Videos procesados */}
+      <div className={styles.panel}>
+        <h3 className={styles.panelTitle}>Videos procesados</h3>
         {procesamientos.length === 0 ? (
-          <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-            Sin videos procesados aún.
-          </p>
+          <p className={styles.sinDatos}>Sin videos procesados aún.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className={styles.procList}>
             {procesamientos.map((p) => {
-              const efectivo = conteoEfectivo(p);
               const estadoProc =
                 p.estado_id === 2
                   ? "completado"
                   : p.estado_id === 3
                     ? "error"
                     : "procesando";
+              const badgeClase =
+                estadoProc === "completado"
+                  ? styles.badgeProcCompletado
+                  : estadoProc === "error"
+                    ? styles.badgeProcError
+                    : styles.badgeProcProcesando;
               return (
-                <div
-                  key={p.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 16px",
-                    background: "var(--color-surface-alt, #f9fbfa)",
-                    borderRadius: 10,
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 3 }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                <div key={p.id} className={styles.procItem}>
+                  <div className={styles.procInfo}>
+                    <span className={styles.procNombre}>
                       Surcos {p.surco_inicio}–{p.surco_fin}
                     </span>
-                    <span
-                      style={{
-                        fontSize: "0.78rem",
-                        color: "var(--color-text-muted)",
-                      }}
-                    >
+                    <span className={styles.procFecha}>
                       {new Date(p.fecha_grabacion).toLocaleDateString("es-GT")}
                     </span>
                   </div>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 16 }}
-                  >
+                  <div className={styles.procRight}>
                     {p.resultado && (
                       <>
-                        <div style={{ textAlign: "right" }}>
-                          <p
-                            style={{
-                              fontSize: "0.7rem",
-                              color: "var(--color-text-muted)",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            IA
-                          </p>
-                          <p
-                            style={{
-                              fontWeight: 700,
-                              fontFamily: "DM Mono, monospace",
-                            }}
-                          >
+                        <div className={styles.procStatWrap}>
+                          <p className={styles.procStatLabel}>IA</p>
+                          <p className={styles.procStatVal}>
                             {p.resultado.conteo_ia.toLocaleString()}
                           </p>
                         </div>
                         {p.resultado.conteo_ajustado != null && (
-                          <div style={{ textAlign: "right" }}>
-                            <p
-                              style={{
-                                fontSize: "0.7rem",
-                                color: "var(--color-text-muted)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                              }}
-                            >
-                              Ajustado
-                            </p>
-                            <p
-                              style={{
-                                fontWeight: 700,
-                                fontFamily: "DM Mono, monospace",
-                                color: "var(--color-primary)",
-                              }}
-                            >
+                          <div className={styles.procStatWrap}>
+                            <p className={styles.procStatLabel}>Ajustado</p>
+                            <p className={styles.procStatValPrimary}>
                               {p.resultado.conteo_ajustado.toLocaleString()}
                             </p>
                           </div>
@@ -662,26 +353,7 @@ export default function DetalleConteoPage() {
                         )}
                       </>
                     )}
-                    <span
-                      style={{
-                        fontSize: "0.72rem",
-                        padding: "2px 9px",
-                        borderRadius: 99,
-                        fontWeight: 600,
-                        background:
-                          estadoProc === "completado"
-                            ? "#d1fae5"
-                            : estadoProc === "error"
-                              ? "#fee2e2"
-                              : "#fff3cd",
-                        color:
-                          estadoProc === "completado"
-                            ? "#065f46"
-                            : estadoProc === "error"
-                              ? "#991b1b"
-                              : "#856404",
-                      }}
-                    >
+                    <span className={`${styles.badgeProcEstado} ${badgeClase}`}>
                       {estadoProc}
                     </span>
                   </div>
@@ -692,39 +364,14 @@ export default function DetalleConteoPage() {
         )}
       </div>
 
-      {/* Segmentación por calibre — solo lectura para el admin */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderTop: 0,
-          borderRadius: "0 0 var(--radius-xl, 14px) var(--radius-xl, 14px)",
-          padding: "1.5rem 2rem",
-        }}
-      >
-        <h3 style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 2 }}>
-          Segmentación por calibre
-        </h3>
-        <p
-          style={{
-            color: "var(--color-text-muted)",
-            fontSize: "0.85rem",
-            marginBottom: "1rem",
-          }}
-        >
+      {/* Calibres */}
+      <div className={`${styles.panel} ${styles.panelBottom}`}>
+        <h3 className={styles.panelTitle}>Segmentación por calibre</h3>
+        <p className={styles.panelSubtitle}>
           Distribución extrapolada basada en el muestreo manual del operador.
         </p>
         {!muestreo || muestreo.clasificaciones.length === 0 ? (
-          <div
-            style={{
-              padding: "1.5rem",
-              textAlign: "center",
-              color: "var(--color-text-muted)",
-              background: "var(--color-surface-alt)",
-              borderRadius: 10,
-              border: "1.5px dashed var(--color-border)",
-            }}
-          >
+          <div className={styles.sinMuestreo}>
             El operador aún no ha registrado el muestreo de calibres para este
             conteo.
           </div>

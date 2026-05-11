@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Cultivo } from "@/types";
 import BtnBack from "@/components/BtnBack";
+import styles from "./editar.module.css";
 
 export default function EditarCultivoPage() {
   const router = useRouter();
@@ -63,92 +64,27 @@ export default function EditarCultivoPage() {
 
   if (loading)
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "60vh",
-          gap: 12,
-          flexDirection: "column",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            border: "3px solid var(--color-border)",
-            borderTop: "3px solid var(--color-primary)",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
+      <div className={styles.loadingWrap}>
+        <div className={styles.spinner} />
         <span>Cargando...</span>
       </div>
     );
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <div style={{ marginBottom: "2rem" }}>
+    <div className={styles.container}>
+      <div className={styles.header}>
         <BtnBack href="/dashboard" label="Volver" />
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 700,
-            color: "var(--color-text)",
-            letterSpacing: "-0.03em",
-            marginBottom: 4,
-          }}
-        >
-          Editar cultivo
-        </h1>
-        <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-          {cultivo?.nombre}
-        </p>
+        <h1 className={styles.pageTitle}>Editar cultivo</h1>
+        <p className={styles.pageSubtitle}>{cultivo?.nombre}</p>
       </div>
 
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: "var(--radius-xl)",
-          padding: "2rem",
-        }}
-      >
-        {error && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "var(--color-danger-soft)",
-              color: "var(--color-danger)",
-              border: "1px solid var(--color-danger-border)",
-              padding: "10px 14px",
-              borderRadius: "var(--radius)",
-              marginBottom: "1.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
+      <div className={styles.card}>
+        {error && <div className={styles.errorMsg}>{error}</div>}
 
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "var(--color-text)",
-              }}
-            >
-              Nombre del cultivo{" "}
-              <span style={{ color: "var(--color-danger)" }}>*</span>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Nombre del cultivo <span className={styles.labelRequired}>*</span>
             </label>
             <input
               type="text"
@@ -159,31 +95,11 @@ export default function EditarCultivoPage() {
             />
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label
-                style={{
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "var(--color-text)",
-                }}
-              >
+          <div className={styles.grid2}>
+            <div className={styles.field}>
+              <label className={styles.label}>
                 Ubicación{" "}
-                <span
-                  style={{
-                    color: "var(--color-text-light)",
-                    fontWeight: 400,
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  (opcional)
-                </span>
+                <span className={styles.labelOpcional}>(opcional)</span>
               </label>
               <input
                 type="text"
@@ -192,24 +108,10 @@ export default function EditarCultivoPage() {
                 maxLength={255}
               />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label
-                style={{
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "var(--color-text)",
-                }}
-              >
+            <div className={styles.field}>
+              <label className={styles.label}>
                 Hectáreas{" "}
-                <span
-                  style={{
-                    color: "var(--color-text-light)",
-                    fontWeight: 400,
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  (opcional)
-                </span>
+                <span className={styles.labelOpcional}>(opcional)</span>
               </label>
               <input
                 type="number"
@@ -222,16 +124,9 @@ export default function EditarCultivoPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "var(--color-text)",
-              }}
-            >
-              Total de surcos{" "}
-              <span style={{ color: "var(--color-danger)" }}>*</span>
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Total de surcos <span className={styles.labelRequired}>*</span>
             </label>
             <input
               type="number"
@@ -242,49 +137,18 @@ export default function EditarCultivoPage() {
             />
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: "0.5rem",
-              paddingTop: "1.25rem",
-              borderTop: "1px solid var(--color-border)",
-            }}
-          >
+          <div className={styles.actions}>
             <button
               type="button"
+              className={styles.btnCancelar}
               onClick={() => router.push(`/cultivos/${id}`)}
-              style={{
-                flex: 1,
-                padding: 11,
-                background: "none",
-                color: "var(--color-text-muted)",
-                border: "1.5px solid var(--color-border)",
-                borderRadius: "var(--radius)",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                fontFamily: "inherit",
-                cursor: "pointer",
-              }}
             >
               Cancelar
             </button>
             <button
               type="submit"
+              className={styles.btnGuardar}
               disabled={guardando}
-              style={{
-                flex: 2,
-                padding: 11,
-                background: "var(--color-primary)",
-                color: "white",
-                border: "none",
-                borderRadius: "var(--radius)",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                fontFamily: "inherit",
-                cursor: "pointer",
-                opacity: guardando ? 0.6 : 1,
-              }}
             >
               {guardando ? "Guardando..." : "Guardar cambios"}
             </button>

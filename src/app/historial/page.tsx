@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
+import styles from "./historial.module.css";
 
-// ── Mini gráfica de tendencia por cultivo ─────────────────────
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   if (conteos.length < 2) return null;
 
@@ -19,11 +19,11 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   if (completados.length < 2) return null;
 
   const max = Math.max(...completados.map((c) => c.conteo_total_acumulado));
-  const W = 300;
-  const H = 80;
-  const PAD = 10;
-  const w = W - PAD * 2;
-  const h = H - PAD * 2;
+  const W = 300,
+    H = 80,
+    PAD = 10;
+  const w = W - PAD * 2,
+    h = H - PAD * 2;
 
   const points = completados.map((c, i) => {
     const x = PAD + (i / (completados.length - 1)) * w;
@@ -31,22 +31,9 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
     return `${x},${y}`;
   });
 
-  const polyline = points.join(" ");
-
   return (
     <div>
-      <p
-        style={{
-          fontSize: "0.75rem",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          color: "var(--color-text-muted)",
-          marginBottom: 6,
-        }}
-      >
-        Tendencia (ciclos completados)
-      </p>
+      <p className={styles.graficaLabel}>Tendencia (ciclos completados)</p>
       <svg
         width={W}
         height={H}
@@ -54,7 +41,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
         style={{ overflow: "visible" }}
       >
         <polyline
-          points={polyline}
+          points={points.join(" ")}
           fill="none"
           stroke="#52b788"
           strokeWidth="2"
@@ -83,7 +70,6 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   );
 }
 
-// ── Badge de confiabilidad ─────────────────────────────────────
 function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
   if (!nivel)
     return (
@@ -91,44 +77,32 @@ function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
         —
       </span>
     );
-  const cfg: Record<string, { bg: string; color: string }> = {
-    alto: { bg: "#d1fae5", color: "#065f46" },
-    moderado: { bg: "#fff3cd", color: "#856404" },
-    bajo: { bg: "#fee2e2", color: "#991b1b" },
+
+  const claseNivel: Record<string, string> = {
+    alto: styles.badgeAlto,
+    moderado: styles.badgeModerado,
+    bajo: styles.badgeBajo,
   };
-  const s = cfg[nivel] ?? { bg: "#f3f4f6", color: "#374151" };
+
   return (
     <span
-      style={{
-        fontSize: "0.75rem",
-        padding: "2px 10px",
-        borderRadius: 99,
-        fontWeight: 600,
-        background: s.bg,
-        color: s.color,
-      }}
+      className={`${styles.badgeConfiabilidad} ${claseNivel[nivel] ?? styles.badgeDefault}`}
     >
       {nivel}
     </span>
   );
 }
 
-// ── Página principal ───────────────────────────────────────────
 export default function HistorialPage() {
   const router = useRouter();
-
   const [conteos, setConteos] = useState<Conteo[]>([]);
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filtros
   const [filtroCultivo, setFiltroCultivo] = useState("");
   const [filtroOperador, setFiltroOperador] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-
-  // Vista
   const [modoVista, setModoVista] = useState<"tabla" | "tendencia">("tabla");
   const [exportando, setExportando] = useState<number | null>(null);
 
@@ -193,7 +167,6 @@ export default function HistorialPage() {
       const variedad = resVars.data.find(
         (v: any) => v.id === resConteo.data.variedad_id,
       );
-
       const { generarReportePDF } = await import("@/lib/generarReportePDF");
       generarReportePDF({
         conteo: resConteo.data,
@@ -209,7 +182,6 @@ export default function HistorialPage() {
     }
   };
 
-  // Agrupar conteos por cultivo para la vista de tendencia
   const conteosPorCultivo = cultivos
     .map((cult) => ({
       cultivo: cult,
@@ -217,50 +189,25 @@ export default function HistorialPage() {
     }))
     .filter((g) => g.conteos.length > 0);
 
+  const hayFiltros =
+    filtroCultivo || filtroOperador || fechaDesde || fechaHasta;
+
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "1.75rem",
-        }}
-      >
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 4 }}>
-            Historial de conteos
-          </h1>
-          <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+          <h1 className={styles.pageTitle}>Historial de conteos</h1>
+          <p className={styles.pageSubtitle}>
             {conteos.length} conteo{conteos.length !== 1 ? "s" : ""} encontrado
             {conteos.length !== 1 ? "s" : ""}
           </p>
         </div>
-        {/* Toggle vista */}
-        <div
-          style={{
-            display: "flex",
-            gap: 6,
-            border: "1.5px solid var(--color-border)",
-            borderRadius: 10,
-            overflow: "hidden",
-          }}
-        >
+        <div className={styles.vistaToggle}>
           {(["tabla", "tendencia"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setModoVista(v)}
-              style={{
-                padding: "7px 16px",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                background:
-                  modoVista === v ? "var(--color-primary)" : "transparent",
-                color: modoVista === v ? "white" : "var(--color-text-muted)",
-                fontFamily: "inherit",
-              }}
+              className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
             >
               {v === "tabla" ? "Tabla" : "Tendencia"}
             </button>
@@ -268,47 +215,13 @@ export default function HistorialPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: "1.5rem",
-          padding: "1rem 1.25rem",
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: 12,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            minWidth: 180,
-          }}
-        >
-          <label
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Cultivo
-          </label>
+      <div className={styles.filtros}>
+        <div className={styles.filtroGrupo}>
+          <label className={styles.filtroLabel}>Cultivo</label>
           <select
+            className={styles.filtroSelect}
             value={filtroCultivo}
             onChange={(e) => setFiltroCultivo(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1.5px solid var(--color-border)",
-              fontSize: "0.875rem",
-            }}
           >
             <option value="">Todos</option>
             {cultivos.map((c) => (
@@ -318,34 +231,12 @@ export default function HistorialPage() {
             ))}
           </select>
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            minWidth: 160,
-          }}
-        >
-          <label
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Operador
-          </label>
+        <div className={styles.filtroGrupo}>
+          <label className={styles.filtroLabel}>Operador</label>
           <select
+            className={styles.filtroSelect}
             value={filtroOperador}
             onChange={(e) => setFiltroOperador(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1.5px solid var(--color-border)",
-              fontSize: "0.875rem",
-            }}
           >
             <option value="">Todos</option>
             {operadores.map((u) => (
@@ -355,72 +246,33 @@ export default function HistorialPage() {
             ))}
           </select>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <label
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Desde
-          </label>
+        <div className={styles.filtroGrupoChico}>
+          <label className={styles.filtroLabel}>Desde</label>
           <input
             type="date"
+            className={styles.filtroInput}
             value={fechaDesde}
             onChange={(e) => setFechaDesde(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1.5px solid var(--color-border)",
-              fontSize: "0.875rem",
-            }}
           />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <label
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Hasta
-          </label>
+        <div className={styles.filtroGrupoChico}>
+          <label className={styles.filtroLabel}>Hasta</label>
           <input
             type="date"
+            className={styles.filtroInput}
             value={fechaHasta}
             onChange={(e) => setFechaHasta(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1.5px solid var(--color-border)",
-              fontSize: "0.875rem",
-            }}
           />
         </div>
-        {(filtroCultivo || filtroOperador || fechaDesde || fechaHasta) && (
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
+        {hayFiltros && (
+          <div className={styles.filtroLimpiarWrap}>
             <button
+              className={styles.btnLimpiar}
               onClick={() => {
                 setFiltroCultivo("");
                 setFiltroOperador("");
                 setFechaDesde("");
                 setFechaHasta("");
-              }}
-              style={{
-                padding: "7px 14px",
-                background: "none",
-                border: "1.5px solid var(--color-border)",
-                borderRadius: 8,
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                color: "var(--color-text-muted)",
-                fontFamily: "inherit",
               }}
             >
               Limpiar filtros
@@ -430,49 +282,19 @@ export default function HistorialPage() {
       </div>
 
       {loading ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            padding: "3rem",
-            color: "var(--color-text-muted)",
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              border: "3px solid var(--color-border)",
-              borderTop: "3px solid var(--color-primary)",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-            }}
-          />
+        <div className={styles.loadingWrap}>
+          <div className={styles.spinner} />
         </div>
       ) : modoVista === "tabla" ? (
-        // ── Vista tabla ──────────────────────────────────────
-        <div
-          style={{
-            background: "var(--color-surface)",
-            border: "1.5px solid var(--color-border)",
-            borderRadius: 12,
-            overflow: "hidden",
-          }}
-        >
+        <div className={styles.tablaWrap}>
           {conteos.length === 0 ? (
-            <p
-              style={{
-                padding: "2rem",
-                textAlign: "center",
-                color: "var(--color-text-muted)",
-              }}
-            >
+            <p className={styles.tablaVacia}>
               No se encontraron conteos con los filtros aplicados.
             </p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "var(--color-surface-alt, #f4f7f5)" }}>
+            <table className={styles.tabla}>
+              <thead className={styles.tablaHead}>
+                <tr>
                   {[
                     "#",
                     "Cultivo",
@@ -483,19 +305,7 @@ export default function HistorialPage() {
                     "Estado",
                     "",
                   ].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        fontSize: "0.72rem",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--color-text-muted)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <th key={h} className={styles.tablaTh}>
                       {h}
                     </th>
                   ))}
@@ -505,70 +315,27 @@ export default function HistorialPage() {
                 {conteos.map((c, i) => (
                   <tr
                     key={c.id}
-                    style={{
-                      borderTop: "1px solid var(--color-border)",
-                      background:
-                        i % 2 === 0
-                          ? "transparent"
-                          : "var(--color-surface-alt, #fafcfb)",
-                    }}
+                    className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
                   >
-                    <td
-                      style={{
-                        padding: "11px 14px",
-                        color: "var(--color-text-muted)",
-                        fontSize: "0.8rem",
-                      }}
-                    >
+                    <td className={`${styles.tablaTd} ${styles.tdId}`}>
                       #{c.id}
                     </td>
-                    <td
-                      style={{
-                        padding: "11px 14px",
-                        fontWeight: 600,
-                        fontSize: "0.875rem",
-                      }}
-                    >
+                    <td className={styles.tablaTd}>
                       <button
+                        className={styles.tdCultivoBtn}
                         onClick={() =>
                           router.push(
                             `/cultivos/${c.cultivo_id}/conteos/${c.id}`,
                           )
                         }
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--color-primary)",
-                          fontWeight: 600,
-                          fontSize: "0.875rem",
-                          padding: 0,
-                          fontFamily: "inherit",
-                          textDecoration: "underline",
-                          textDecorationColor: "transparent",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.currentTarget.style.textDecorationColor =
-                            "currentColor")
-                        }
-                        onMouseOut={(e) =>
-                          (e.currentTarget.style.textDecorationColor =
-                            "transparent")
-                        }
                       >
                         {nombreCultivo(c.cultivo_id)}
                       </button>
                     </td>
-                    <td
-                      style={{
-                        padding: "11px 14px",
-                        fontSize: "0.85rem",
-                        color: "var(--color-text-muted)",
-                      }}
-                    >
+                    <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
                       {nombreOperador(c.cultivo_id)}
                     </td>
-                    <td style={{ padding: "11px 14px", fontSize: "0.85rem" }}>
+                    <td className={styles.tablaTd}>
                       {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
                         day: "2-digit",
                         month: "short",
@@ -576,56 +343,29 @@ export default function HistorialPage() {
                       })}
                     </td>
                     <td
-                      style={{
-                        padding: "11px 14px",
-                        fontWeight: 700,
-                        fontSize: "1rem",
-                        fontFamily: "DM Mono, monospace",
-                        color:
-                          c.conteo_total_acumulado > 0
-                            ? "var(--color-primary)"
-                            : "var(--color-text-muted)",
-                      }}
+                      className={`${styles.tablaTd} ${c.conteo_total_acumulado > 0 ? styles.tdTotal : styles.tdTotalVacio}`}
                     >
                       {c.conteo_total_acumulado > 0
                         ? c.conteo_total_acumulado.toLocaleString()
                         : "—"}
                     </td>
-                    <td style={{ padding: "11px 14px" }}>
+                    <td className={styles.tablaTd}>
                       <BadgeConfiabilidad
                         nivel={(c as any).nivel_confiabilidad_agregado}
                       />
                     </td>
-                    <td style={{ padding: "11px 14px" }}>
+                    <td className={styles.tablaTd}>
                       <span
-                        style={{
-                          fontSize: "0.75rem",
-                          padding: "2px 10px",
-                          borderRadius: 99,
-                          fontWeight: 600,
-                          background: c.estado_id === 2 ? "#d1fae5" : "#fff3cd",
-                          color: c.estado_id === 2 ? "#065f46" : "#856404",
-                        }}
+                        className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                       >
                         {c.estado_id === 2 ? "Completado" : "En progreso"}
                       </span>
                     </td>
-                    <td style={{ padding: "11px 14px" }}>
+                    <td className={styles.tablaTd}>
                       <button
+                        className={styles.btnPDF}
                         onClick={() => handleExportarPDF(c.id, c.cultivo_id)}
                         disabled={exportando === c.id}
-                        style={{
-                          padding: "5px 12px",
-                          background: "none",
-                          border: "1.5px solid var(--color-border)",
-                          borderRadius: 8,
-                          fontSize: "0.78rem",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          color: "var(--color-text-muted)",
-                          opacity: exportando === c.id ? 0.5 : 1,
-                          fontFamily: "inherit",
-                        }}
                       >
                         {exportando === c.id ? "..." : "PDF"}
                       </button>
@@ -637,38 +377,17 @@ export default function HistorialPage() {
           )}
         </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <div className={styles.tendenciaGrid}>
           {conteosPorCultivo.length === 0 ? (
-            <p style={{ color: "var(--color-text-muted)", gridColumn: "1/-1" }}>
+            <p className={styles.tendenciaSinDatos}>
               No hay datos de tendencia con los filtros aplicados.
             </p>
           ) : (
             conteosPorCultivo.map(({ cultivo, conteos: cs }) => (
-              <div
-                key={cultivo.id}
-                style={{
-                  background: "var(--color-surface)",
-                  border: "1.5px solid var(--color-border)",
-                  borderRadius: 14,
-                  padding: "1.25rem 1.5rem",
-                }}
-              >
-                <div style={{ marginBottom: "0.75rem" }}>
-                  <p style={{ fontWeight: 700, fontSize: "0.95rem" }}>
-                    {cultivo.nombre}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
+              <div key={cultivo.id} className={styles.tendenciaCard}>
+                <div className={styles.tendenciaCardHeader}>
+                  <p className={styles.tendenciaNombre}>{cultivo.nombre}</p>
+                  <p className={styles.tendenciaMeta}>
                     {nombreOperador(cultivo.id)} · {cs.length} conteo
                     {cs.length !== 1 ? "s" : ""}
                   </p>
@@ -677,14 +396,7 @@ export default function HistorialPage() {
                 {cs.filter(
                   (c) => c.estado_id === 2 && c.conteo_total_acumulado > 0,
                 ).length < 2 && (
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--color-text-muted)",
-                      fontStyle: "italic",
-                      marginTop: 8,
-                    }}
-                  >
+                  <p className={styles.tendenciaNota}>
                     Se necesitan al menos 2 conteos completados para ver la
                     tendencia.
                   </p>

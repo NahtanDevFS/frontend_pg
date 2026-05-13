@@ -48,6 +48,7 @@ export interface Conteo {
   observaciones: string | null;
   activo: boolean;
   created_at: string;
+  created_by: number;
 }
 
 export interface ResultadoIa {

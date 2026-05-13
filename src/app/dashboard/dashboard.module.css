@@ -14,7 +14,6 @@
   }
 }
 
-/* ─── Loading ─── */
 .loadingWrap {
   display: flex;
   flex-direction: column;
@@ -41,7 +40,6 @@
   }
 }
 
-/* ─── Header ─── */
 .pageHeader {
   display: flex;
   justify-content: space-between;
@@ -86,7 +84,6 @@
   transform: translateY(-1px);
 }
 
-/* ─── Filtro ─── */
 .filtroRow {
   display: flex;
   align-items: center;
@@ -113,14 +110,12 @@
   width: auto;
 }
 
-/* ─── Lista de cultivos ─── */
 .cultivoList {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* ─── Card horizontal ─── */
 .cultivoCard {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
@@ -150,7 +145,6 @@
   border-color: var(--color-accent-soft);
 }
 
-/* Inicial / avatar */
 .cultivoBadge {
   width: 44px;
   height: 44px;
@@ -166,7 +160,6 @@
   border: 1px solid var(--color-accent-soft);
 }
 
-/* Bloque de texto */
 .cultivoInfo {
   flex: 1;
   min-width: 0;
@@ -254,7 +247,6 @@
   background: var(--color-danger-soft);
 }
 
-/* ─── Empty state ─── */
 .emptyState {
   background: var(--color-surface);
   border: 2px dashed var(--color-border);
@@ -296,7 +288,6 @@
   background: var(--color-primary-hover);
 }
 
-/* ─── Responsive ─── */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;

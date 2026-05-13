@@ -14,12 +14,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Leer el query param directamente del browser, sin useSearchParams
-    // (evita el wrapper de Suspense requerido en Next.js 13+)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("acceso") === "denegado") {
         setError(
-          "Esta interfaz es exclusiva para administradores. Los operadores deben usar la aplicación móvil.",
+          "Esta interfaz es exclusiva para administradores. Los operadores deben usar la aplicación móvil",
         );
       }
     }

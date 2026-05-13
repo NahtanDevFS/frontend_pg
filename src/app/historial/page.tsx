@@ -111,7 +111,6 @@ export default function HistorialPage() {
     try {
       const params = new URLSearchParams();
       if (filtroCultivo) params.append("cultivo_id", filtroCultivo);
-      if (filtroOperador) params.append("usuario_id", filtroOperador);
       if (fechaDesde) params.append("fecha_desde", fechaDesde);
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
 
@@ -128,7 +127,9 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
+  }, [filtroCultivo, fechaDesde, fechaHasta]);
+  // Nota: filtroOperador se quitó del useCallback porque el filtro
+  // se aplica en cliente usando conteo.created_by
 
   useEffect(() => {
     cargar();
@@ -137,11 +138,12 @@ export default function HistorialPage() {
   const nombreCultivo = (id: number) =>
     cultivos.find((c) => c.id === id)?.nombre ?? `#${id}`;
 
-  const nombreOperador = (cultivo_id: number) => {
-    const cult = cultivos.find((c) => c.id === cultivo_id);
-    if (!cult) return "—";
-    return operadores.find((u) => u.id === cult.usuario_id)?.nombre ?? "—";
-  };
+  const nombreOperador = (conteo: Conteo) =>
+    operadores.find((u) => u.id === conteo.created_by)?.nombre ?? "—";
+
+  const conteosFiltrados = filtroOperador
+    ? conteos.filter((c) => String(c.created_by) === filtroOperador)
+    : conteos;
 
   const handleExportarPDF = async (conteoId: number, cultivoId: number) => {
     setExportando(conteoId);
@@ -185,7 +187,7 @@ export default function HistorialPage() {
   const conteosPorCultivo = cultivos
     .map((cult) => ({
       cultivo: cult,
-      conteos: conteos.filter((c) => c.cultivo_id === cult.id),
+      conteos: conteosFiltrados.filter((c) => c.cultivo_id === cult.id),
     }))
     .filter((g) => g.conteos.length > 0);
 
@@ -198,8 +200,9 @@ export default function HistorialPage() {
         <div>
           <h1 className={styles.pageTitle}>Historial de conteos</h1>
           <p className={styles.pageSubtitle}>
-            {conteos.length} conteo{conteos.length !== 1 ? "s" : ""} encontrado
-            {conteos.length !== 1 ? "s" : ""}
+            {conteosFiltrados.length} conteo
+            {conteosFiltrados.length !== 1 ? "s" : ""} encontrado
+            {conteosFiltrados.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className={styles.vistaToggle}>
@@ -287,7 +290,7 @@ export default function HistorialPage() {
         </div>
       ) : modoVista === "tabla" ? (
         <div className={styles.tablaWrap}>
-          {conteos.length === 0 ? (
+          {conteosFiltrados.length === 0 ? (
             <p className={styles.tablaVacia}>
               No se encontraron conteos con los filtros aplicados.
             </p>
@@ -312,7 +315,7 @@ export default function HistorialPage() {
                 </tr>
               </thead>
               <tbody>
-                {conteos.map((c, i) => (
+                {conteosFiltrados.map((c, i) => (
                   <tr
                     key={c.id}
                     className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
@@ -333,7 +336,7 @@ export default function HistorialPage() {
                       </button>
                     </td>
                     <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
-                      {nombreOperador(c.cultivo_id)}
+                      {nombreOperador(c)}
                     </td>
                     <td className={styles.tablaTd}>
                       {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
@@ -388,8 +391,7 @@ export default function HistorialPage() {
                 <div className={styles.tendenciaCardHeader}>
                   <p className={styles.tendenciaNombre}>{cultivo.nombre}</p>
                   <p className={styles.tendenciaMeta}>
-                    {nombreOperador(cultivo.id)} · {cs.length} conteo
-                    {cs.length !== 1 ? "s" : ""}
+                    {cs.length} conteo{cs.length !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <GraficaTendencia conteos={cs} />

@@ -3,8 +3,8 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
-  title: "Contador de melones",
-  description: "Conteo y clasificación de melones con IA",
+  title: "MelonCount",
+  description: "Conteo de melones mediante visión computacional",
 };
 
 export default function RootLayout({

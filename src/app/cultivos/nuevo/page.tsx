@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import styles from "./nuevo.module.css";
+import BtnBack from "@/components/BtnBack";
 
 export default function NuevoCultivoPage() {
   const router = useRouter();
@@ -45,24 +46,7 @@ export default function NuevoCultivoPage() {
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <button
-          className={styles.btnBack}
-          onClick={() => router.push("/dashboard")}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Volver al dashboard
-        </button>
+        <BtnBack href="/dashboard" label="Volver" />
         <h1 className={styles.pageTitle}>Registrar nuevo cultivo</h1>
         <p className={styles.pageSubtitle}>
           Después de crearlo podrás asignar los operadores autorizados.
@@ -100,7 +84,7 @@ export default function NuevoCultivoPage() {
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej. Finca El Esfuerzo — Sector A"
+              placeholder="Ej. Cultivo sector A"
               required
               maxLength={150}
             />
@@ -116,7 +100,7 @@ export default function NuevoCultivoPage() {
                 type="text"
                 value={ubicacion}
                 onChange={(e) => setUbicacion(e.target.value)}
-                placeholder="Ej. Zacapa, sector norte"
+                placeholder="Ej. sector norte"
                 maxLength={255}
               />
             </div>

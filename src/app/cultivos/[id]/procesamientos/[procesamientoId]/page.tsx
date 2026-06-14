@@ -5,21 +5,27 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ProcesamientoVideo } from "@/types";
 import styles from "./detalle.module.css";
+import { useVideoAnotado } from "@/hooks/useVideoAnotado";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function DetalleProcesamientoPage() {
   const router = useRouter();
+
   const { id: cultivoId, procesamientoId } = useParams();
 
   const [procesamiento, setProcesamiento] = useState<ProcesamientoVideo | null>(
     null,
   );
+  const [mostrarVideo, setMostrarVideo] = useState(false);
+  const { videoUrl, cargandoVideo, errorVideo } = useVideoAnotado(
+    procesamiento?.id ?? null,
+    Boolean(procesamiento?.video_anotado_url) && mostrarVideo,
+  );
   const [loading, setLoading] = useState(true);
   const [conteoAjustado, setConteoAjustado] = useState(0);
   const [observaciones, setObservaciones] = useState("");
   const [ajustando, setAjustando] = useState(false);
-  const [mostrarVideo, setMostrarVideo] = useState(false);
 
   useEffect(() => {
     if (!procesamientoId) return;
@@ -169,14 +175,14 @@ export default function DetalleProcesamientoPage() {
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          {mostrarVideo && (
-            <video controls className={styles.videoPlayer}>
-              <source
-                src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
-                type="video/mp4"
-              />
-            </video>
-          )}
+          {mostrarVideo &&
+            (cargandoVideo ? (
+              <p className={styles.noVideo}>Cargando video…</p>
+            ) : videoUrl ? (
+              <video controls className={styles.videoPlayer} src={videoUrl} />
+            ) : errorVideo ? (
+              <p className={styles.noVideo}>No se pudo cargar el video.</p>
+            ) : null)}
         </div>
       ) : (
         <div className={styles.noVideo}>Video anotado no disponible aún.</div>

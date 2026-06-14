@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ProcesamientoVideo, Conteo, Variedad } from "@/types";
+import { useVideoAnotado } from "@/hooks/useVideoAnotado";
 import styles from "./procesar.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -40,9 +41,7 @@ function validarRango(
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Componente visual: mapa de surcos
-// ─────────────────────────────────────────────────────────────
+// Componente visual mapa de surcos
 
 function MapaSurcos({
   totalSurcos,
@@ -177,7 +176,7 @@ function MapaSurcos({
   );
 }
 
-export default function ProcesarVideoPage() {
+function ProcesarVideoContenido() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
   const searchParams = useSearchParams();
@@ -215,6 +214,13 @@ export default function ProcesarVideoPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [verVideo, setVerVideo] = useState(false);
+
+  const { videoUrl, cargandoVideo, errorVideo } = useVideoAnotado(
+    procesamiento?.id ?? null,
+    Boolean(procesamiento?.video_anotado_url) && verVideo,
+  );
 
   useEffect(
     () => () => {
@@ -767,7 +773,12 @@ export default function ProcesarVideoPage() {
           </div>
 
           {procesamiento.video_anotado_url && (
-            <details style={{ marginBottom: "1rem" }}>
+            <details
+              style={{ marginBottom: "1rem" }}
+              onToggle={(e) =>
+                setVerVideo((e.target as HTMLDetailsElement).open)
+              }
+            >
               <summary
                 style={{
                   cursor: "pointer",
@@ -778,15 +789,21 @@ export default function ProcesarVideoPage() {
               >
                 Ver video anotado
               </summary>
-              <video
-                controls
-                style={{ width: "100%", borderRadius: 8, marginTop: 8 }}
-              >
-                <source
-                  src={`${API_URL}/videos/${procesamiento.video_anotado_url.split("/").pop()}`}
-                  type="video/mp4"
+              {cargandoVideo ? (
+                <p style={{ marginTop: 8, fontSize: "0.85rem" }}>
+                  Cargando video…
+                </p>
+              ) : videoUrl ? (
+                <video
+                  controls
+                  src={videoUrl}
+                  style={{ width: "100%", borderRadius: 8, marginTop: 8 }}
                 />
-              </video>
+              ) : errorVideo ? (
+                <p style={{ marginTop: 8, fontSize: "0.85rem" }}>
+                  No se pudo cargar el video.
+                </p>
+              ) : null}
             </details>
           )}
 
@@ -870,5 +887,13 @@ export default function ProcesarVideoPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProcesarVideoPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "2rem" }}>Cargando…</div>}>
+      <ProcesarVideoContenido />
+    </Suspense>
   );
 }

@@ -135,20 +135,18 @@ export default function NuevoCultivoPage() {
             />
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: "0.5rem" }}>
+          <div className={styles.formActions}>
             <button
               type="button"
-              className={styles.btnSecondary}
+              className={styles.btnCancel}
               onClick={() => router.push("/dashboard")}
-              style={{ flex: 1 }}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className={styles.btnPrimary}
+              className={styles.btnSubmit}
               disabled={loading}
-              style={{ flex: 2 }}
             >
               {loading
                 ? "Guardando..."

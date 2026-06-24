@@ -22,7 +22,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [user, setUser] = useState<UsuarioMe | null>(authCache.user);
   const [loading, setLoading] = useState(!authCache.checked);
 

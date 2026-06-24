@@ -38,7 +38,7 @@ export default function LoginPage() {
       });
 
       localStorage.setItem("token", response.data.access_token);
-      // Redirigir al dashboard — ClientLayout verificará el rol
+      // Redirigir al dashboard, ClientLayout verificará el rol
       router.replace("/dashboard");
     } catch (err: any) {
       if (err.response?.status === 401) {

@@ -86,10 +86,30 @@ export default function ClientLayout({
   useEffect(() => {
     if (loading) return;
     const token = localStorage.getItem("token");
+
     if (!token && !enLogin) {
       authCache.checked = false;
       authCache.user = null;
       router.replace("/login");
+      return;
+    }
+
+    // Hay token pero el cache no tiene usuario (tras login sin recargar) re-verificar e hidratar el header
+    if (token && !authCache.user && !enLogin) {
+      api
+        .get("/usuarios/me")
+        .then((resMe) => {
+          const userData: UsuarioMe = resMe.data;
+          authCache.checked = true;
+          authCache.user = userData;
+          setUser(userData);
+        })
+        .catch(() => {
+          localStorage.removeItem("token");
+          authCache.checked = false;
+          authCache.user = null;
+          router.replace("/login");
+        });
     }
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 

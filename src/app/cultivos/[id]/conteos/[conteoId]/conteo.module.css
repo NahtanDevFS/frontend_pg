@@ -1,4 +1,3 @@
-/* ── Layout general ─────────────────────────────────── */
 .container {
   max-width: 900px;
   margin: 0 auto;
@@ -318,6 +317,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
+  height: 100%;
   gap: 4px;
   flex: 1;
 }

@@ -319,7 +319,23 @@ export default function DetalleConteoPage() {
                     ? styles.badgeProcError
                     : styles.badgeProcProcesando;
               return (
-                <div key={p.id} className={styles.procItem}>
+                <div
+                  key={p.id}
+                  className={styles.procItem}
+                  onClick={() =>
+                    router.push(`/cultivos/${cultivoId}/procesamientos/${p.id}`)
+                  }
+                  style={{ cursor: "pointer" }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      router.push(
+                        `/cultivos/${cultivoId}/procesamientos/${p.id}`,
+                      );
+                    }
+                  }}
+                >
                   <div className={styles.procInfo}>
                     <span className={styles.procNombre}>
                       Surcos {p.surco_inicio}–{p.surco_fin}

@@ -212,7 +212,7 @@
   border: 1.5px dashed var(--color-border);
 }
 
-/* ── Lista de procesamientos ────────────────────────── */
+/*Lista de procesamientos */
 .procList {
   display: flex;
   flex-direction: column;
@@ -227,6 +227,14 @@
   background: var(--color-surface-alt, #f9fbfa);
   border-radius: 10px;
   border: 1px solid var(--color-border);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.procItem:hover {
+  border-color: var(--color-primary, #2d6a4f);
+  box-shadow: 0 1px 6px rgba(45, 106, 79, 0.12);
 }
 
 .procInfo {

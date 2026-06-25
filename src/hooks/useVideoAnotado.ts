@@ -26,7 +26,7 @@ export function useVideoAnotado(
     setErrorVideo(false);
 
     api
-      .get(`/procesamientos/${procesamientoId}/video-anotado`, {
+      .get(`/procesamientos/admin/${procesamientoId}/video-anotado`, {
         responseType: "blob",
       })
       .then(({ data }) => {

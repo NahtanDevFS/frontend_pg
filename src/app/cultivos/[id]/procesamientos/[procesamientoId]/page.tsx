@@ -26,11 +26,12 @@ export default function DetalleProcesamientoPage() {
   const [conteoAjustado, setConteoAjustado] = useState(0);
   const [observaciones, setObservaciones] = useState("");
   const [ajustando, setAjustando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
 
   useEffect(() => {
     if (!procesamientoId) return;
     api
-      .get<ProcesamientoVideo>(`/procesamientos/${procesamientoId}`)
+      .get<ProcesamientoVideo>(`/procesamientos/admin/${procesamientoId}`)
       .then(({ data }) => {
         setProcesamiento(data);
         if (data.resultado) {
@@ -59,6 +60,30 @@ export default function DetalleProcesamientoPage() {
       alert(err.response?.data?.detail || "Error al guardar el ajuste.");
     } finally {
       setAjustando(false);
+    }
+  };
+
+  // Descarga el video anotado como archivo. Usa el endpoint autenticado y obtiene un blob (un <a href> normal no puede mandar el token Bearer), luego dispara la descarga del navegador con un nombre de archivo claro.
+  const handleDescargarVideo = async () => {
+    if (!procesamiento) return;
+    setDescargando(true);
+    try {
+      const { data } = await api.get(
+        `/procesamientos/admin/${procesamiento.id}/video-anotado`,
+        { responseType: "blob" },
+      );
+      const objectUrl = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `video_anotado_procesamiento_${procesamiento.id}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      alert("No se pudo descargar el video.");
+    } finally {
+      setDescargando(false);
     }
   };
 
@@ -174,6 +199,27 @@ export default function DetalleProcesamientoPage() {
             >
               <path d="m6 9 6 6 6-6" />
             </svg>
+          </button>
+          <button
+            className={styles.videoDownload}
+            onClick={handleDescargarVideo}
+            disabled={descargando}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {descargando ? "Descargando…" : "Descargar video anotado"}
           </button>
           {mostrarVideo &&
             (cargandoVideo ? (

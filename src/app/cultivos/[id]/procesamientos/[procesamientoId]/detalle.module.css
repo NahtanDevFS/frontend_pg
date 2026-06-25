@@ -178,6 +178,33 @@
   background: var(--color-surface-alt);
 }
 
+.videoDownload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 1.5rem;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary, #2d6a4f);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.videoDownload:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+
+.videoDownload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .videoPlayer {
   width: 100%;
   background: #000;

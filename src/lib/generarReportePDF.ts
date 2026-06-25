@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Conteo, Cultivo, ProcesamientoVideo, MuestreoResponse } from "@/types";
 
-// ── Paleta ───────────────────────────────────────────────────
+//Paleta
 const VERDE = [45, 106, 79] as [number, number, number];
 const VERDE_OS = [27, 67, 50] as [number, number, number];
 const VERDE_CL = [216, 243, 220] as [number, number, number];
@@ -19,12 +19,18 @@ const COLORES_CALIBRE: [number, number, number][] = [
   [183, 228, 199],
 ];
 
-function formatFecha(fecha: string) {
-  return new Date(fecha).toLocaleDateString("es-GT", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+// Validación agregada para evitar error de "Invalid Date"
+function formatFecha(fecha: string | null | undefined) {
+  if (!fecha) return "—";
+  try {
+    return new Date(fecha).toLocaleDateString("es-GT", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch (e) {
+    return "Fecha inválida";
+  }
 }
 
 function formatNum(n: number | null | undefined) {
@@ -32,7 +38,7 @@ function formatNum(n: number | null | undefined) {
   return n.toLocaleString("es-GT");
 }
 
-// ── Gráfica de barras manual ─────────────────────────────────
+//Gráfica de barras manual
 function dibujarGraficaBarras(
   doc: jsPDF,
   clasificaciones: MuestreoResponse["clasificaciones"],
@@ -41,7 +47,7 @@ function dibujarGraficaBarras(
   ancho: number,
   alto: number,
 ) {
-  if (!clasificaciones.length) return;
+  if (!clasificaciones || !clasificaciones.length) return;
 
   const max = Math.max(...clasificaciones.map((c) => c.cantidad_extrapolada));
   const n = clasificaciones.length;
@@ -90,7 +96,7 @@ function dibujarGraficaBarras(
   doc.line(x, baseY, x + ancho, baseY);
 }
 
-// ── Función principal ─────────────────────────────────────────
+//Función principal
 export function generarReportePDF(params: {
   conteo: Conteo;
   cultivo: Cultivo;
@@ -112,7 +118,7 @@ export function generarReportePDF(params: {
   const ANCHO = W - ML - MR;
   let y = 20;
 
-  // ── Encabezado ──────────────────────────────────────────────
+  //Encabezado
   doc.setFillColor(...VERDE);
   doc.rect(0, 0, W, 28, "F");
 
@@ -148,6 +154,7 @@ export function generarReportePDF(params: {
 
   const cap = (t?: string | null) =>
     t ? t.replace(/\b\w/g, (m) => m.toUpperCase()) : "—";
+
   const infoLeft = [
     ["Cultivo", cultivo.nombre],
     ["Variedad", nombreVariedad],
@@ -159,10 +166,12 @@ export function generarReportePDF(params: {
     ],
     ["Dirección", cultivo.ubicacion || "—"],
   ];
+
   const infoRight = [
     ["Hectáreas", cultivo.hectareas ? `${cultivo.hectareas} ha` : "—"],
     ["Total surcos", String(cultivo.total_surcos)],
     ["Estado", conteo.estado_id === 2 ? "Completado" : "En progreso"],
+    ["", ""], //igualar los 4 elementos de infoLeft
   ];
 
   infoLeft.forEach(([label, valor], i) => {
@@ -176,19 +185,23 @@ export function generarReportePDF(params: {
     doc.setTextColor(...GRIS);
     doc.text(valor, ML + 30, yRow);
 
-    const [label2, valor2] = infoRight[i];
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...GRIS_M);
-    doc.text(label2, ML + ANCHO / 2, yRow);
+    // Se añadió fallback por seguridad extra
+    const [label2, valor2] = infoRight[i] || ["", ""];
 
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...GRIS);
-    doc.text(valor2, ML + ANCHO / 2 + 30, yRow);
+    if (label2) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...GRIS_M);
+      doc.text(label2, ML + ANCHO / 2, yRow);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRIS);
+      doc.text(valor2, ML + ANCHO / 2 + 30, yRow);
+    }
   });
 
   y += infoLeft.length * 6 + 8;
 
-  // ── Total acumulado ─────────────────────────────────────────
+  // Total acumulado
   doc.setFillColor(...VERDE_CL);
   doc.roundedRect(ML, y, ANCHO, 22, 3, 3, "F");
   doc.setDrawColor(...VERDE);
@@ -222,7 +235,7 @@ export function generarReportePDF(params: {
     y += 6;
   }
 
-  // ── Videos procesados ───────────────────────────────────────
+  //Videos procesados
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...VERDE);
@@ -232,7 +245,10 @@ export function generarReportePDF(params: {
   doc.line(ML, y, ML + ANCHO, y);
   y += 3;
 
-  const videosRows = procesamientos.map((p) => {
+  // Agregada validación de seguridad (|| [])
+  const procesamientosSeguros = procesamientos || [];
+
+  const videosRows = procesamientosSeguros.map((p) => {
     const ia = p.resultado?.conteo_ia;
     const ajustado = p.resultado?.conteo_ajustado;
     const efectivo = ajustado ?? ia;
@@ -245,7 +261,7 @@ export function generarReportePDF(params: {
     ];
   });
 
-  const totalEfectivo = procesamientos.reduce((acc, p) => {
+  const totalEfectivo = procesamientosSeguros.reduce((acc, p) => {
     return acc + (p.resultado?.conteo_ajustado ?? p.resultado?.conteo_ia ?? 0);
   }, 0);
 
@@ -265,7 +281,7 @@ export function generarReportePDF(params: {
       4: { halign: "right", fontStyle: "bold" },
     },
     didParseCell: (data) => {
-      // Fila TOTAL
+      // Fila total
       if (data.row.index === videosRows.length - 1) {
         data.cell.styles.fillColor = VERDE_CL;
         data.cell.styles.textColor = VERDE;
@@ -285,8 +301,9 @@ export function generarReportePDF(params: {
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  // ── Segmentación por calibre ────────────────────────────────
-  if (muestreo && muestreo.clasificaciones.length > 0) {
+  //Segmentación por calibre
+  // Agregada validación segura con el Optional Chaining (?)
+  if (muestreo && muestreo.clasificaciones?.length > 0) {
     // Nueva página si no hay espacio suficiente
     if (y > H - 100) {
       doc.addPage();
@@ -382,7 +399,7 @@ export function generarReportePDF(params: {
     y += 8;
   }
 
-  // ── Pie de página en todas las páginas ──────────────────────
+  //Pie de página en todas las páginas
   const totalPaginas = doc.getNumberOfPages();
   for (let i = 1; i <= totalPaginas; i++) {
     doc.setPage(i);

@@ -123,7 +123,7 @@ export default function ClientLayout({
 
   const NAV_LINKS = [
     { href: "/dashboard", label: "Campos de cultivo" },
-    { href: "/historial", label: "Historial" },
+    { href: "/historial", label: "Historial de conteos" },
     { href: "/usuarios", label: "Usuarios" },
   ];
 

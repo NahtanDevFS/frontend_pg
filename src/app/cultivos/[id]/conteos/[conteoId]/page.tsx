@@ -150,6 +150,11 @@ export default function DetalleConteoPage() {
   const [videoExpandido, setVideoExpandido] = useState<number | null>(null);
   // Id del procesamiento cuyo video se está descargando
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
+  // Estados de conteo disponibles + control de cambio (admin)
+  const [estadosConteo, setEstadosConteo] = useState<
+    { id: number; nombre: string }[]
+  >([]);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
@@ -159,6 +164,11 @@ export default function DetalleConteoPage() {
       ]);
       setConteo(resConteo.data);
       setProcesamientos(resProcs.data);
+
+      api
+        .get<{ id: number; nombre: string }[]>("/catalogos/estados-conteo")
+        .then((r) => setEstadosConteo(r.data))
+        .catch(() => {});
 
       const [resVars, resCultivos] = await Promise.all([
         api.get("/catalogos/variedades"),
@@ -192,6 +202,32 @@ export default function DetalleConteoPage() {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  // Cambia el estado del conteo (admin, libre entre estados)
+  const handleCambiarEstado = async (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nuevoEstadoId = Number(e.target.value);
+    if (!conteo || nuevoEstadoId === conteo.estado_id) return;
+    const estadoNombreNuevo =
+      estadosConteo.find((es) => es.id === nuevoEstadoId)?.nombre ??
+      "ese estado";
+    const ok = window.confirm(
+      `¿Cambiar el estado del conteo a "${estadoNombreNuevo.replace(/_/g, " ")}"?`,
+    );
+    if (!ok) return;
+    setCambiandoEstado(true);
+    try {
+      const { data } = await api.patch(`/conteos/admin/${conteoId}/estado`, {
+        estado_id: nuevoEstadoId,
+      });
+      setConteo(data);
+    } catch (err: any) {
+      alert(err.response?.data?.detail ?? "No se pudo cambiar el estado.");
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
 
   const handleExportarPDF = async () => {
     if (!conteo || !cultivo) return;
@@ -279,6 +315,22 @@ export default function DetalleConteoPage() {
               {estadoNombre}
             </span>
             <BadgeConfiabilidad nivel={(conteo as any).nivel_confiabilidad} />
+            {estadosConteo.length > 0 && (
+              <select
+                className={styles.estadoSelect}
+                value={conteo.estado_id}
+                onChange={handleCambiarEstado}
+                disabled={cambiandoEstado}
+                title="Cambiar estado del conteo"
+                style={{ textTransform: "capitalize" }}
+              >
+                {estadosConteo.map((es) => (
+                  <option key={es.id} value={es.id}>
+                    {es.nombre.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
         <button

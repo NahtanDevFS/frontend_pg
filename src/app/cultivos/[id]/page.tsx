@@ -251,6 +251,17 @@ export default function DetalleCultivoPage() {
           {cultivo?.nombre ?? `Cultivo #${cultivoId}`}
         </h1>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {cultivo?.municipio_nombre && (
+            <span
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-muted)",
+                textTransform: "capitalize",
+              }}
+            >
+              {cultivo.municipio_nombre}, {cultivo.departamento_nombre}
+            </span>
+          )}
           {cultivo?.ubicacion && (
             <span
               style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}

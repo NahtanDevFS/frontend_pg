@@ -135,7 +135,7 @@ export function generarReportePDF(params: {
 
   y = 36;
 
-  // ── Info del cultivo ────────────────────────────────────────
+  //Info del cultivo
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...VERDE);
@@ -146,10 +146,18 @@ export function generarReportePDF(params: {
   doc.line(ML, y, ML + ANCHO, y);
   y += 5;
 
+  const cap = (t?: string | null) =>
+    t ? t.replace(/\b\w/g, (m) => m.toUpperCase()) : "—";
   const infoLeft = [
     ["Cultivo", cultivo.nombre],
     ["Variedad", nombreVariedad],
-    ["Ubicación", cultivo.ubicacion || "—"],
+    [
+      "Municipio",
+      cultivo.municipio_nombre
+        ? `${cap(cultivo.municipio_nombre)}, ${cap(cultivo.departamento_nombre)}`
+        : "—",
+    ],
+    ["Dirección", cultivo.ubicacion || "—"],
   ];
   const infoRight = [
     ["Hectáreas", cultivo.hectareas ? `${cultivo.hectareas} ha` : "—"],

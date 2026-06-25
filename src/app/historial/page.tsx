@@ -105,21 +105,33 @@ export default function HistorialPage() {
   const [fechaHasta, setFechaHasta] = useState("");
   const [modoVista, setModoVista] = useState<"tabla" | "tendencia">("tabla");
   const [exportando, setExportando] = useState<number | null>(null);
+  // Paginación numérica
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 20;
+  // Data completa (sin paginar) para la vista de tendencia
+  const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (filtroCultivo) params.append("cultivo_id", filtroCultivo);
+      if (filtroOperador) params.append("usuario_id", filtroOperador);
       if (fechaDesde) params.append("fecha_desde", fechaDesde);
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
+      params.append("skip", String((pagina - 1) * PAGE_SIZE));
+      params.append("limit", String(PAGE_SIZE));
 
-      const [resConteos, resCultivos, resOps] = await Promise.all([
-        api.get<Conteo[]>(`/conteos/admin/historial?${params}`),
+      const [resHist, resCultivos, resOps] = await Promise.all([
+        api.get<{ items: Conteo[]; total: number }>(
+          `/conteos/admin/historial?${params}`,
+        ),
         api.get<Cultivo[]>("/cultivos/admin/todos"),
         api.get<Usuario[]>("/usuarios/"),
       ]);
-      setConteos(resConteos.data);
+      setConteos(resHist.data.items);
+      setTotal(resHist.data.total);
       setCultivos(resCultivos.data);
       setOperadores(resOps.data);
     } catch (err: any) {
@@ -127,9 +139,30 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }, [filtroCultivo, fechaDesde, fechaHasta]);
-  // Nota: filtroOperador se quitó del useCallback porque el filtro
-  // se aplica en cliente usando conteo.created_by
+  }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta, pagina]);
+
+  // Al cambiar cualquier filtro, volver a la página 1
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
+
+  // Cargar TODOS los conteos (respetando filtros) cuando se entra a tendencia
+  useEffect(() => {
+    if (modoVista !== "tendencia") return;
+    const params = new URLSearchParams();
+    if (filtroCultivo) params.append("cultivo_id", filtroCultivo);
+    if (filtroOperador) params.append("usuario_id", filtroOperador);
+    if (fechaDesde) params.append("fecha_desde", fechaDesde);
+    if (fechaHasta) params.append("fecha_hasta", fechaHasta);
+    params.append("skip", "0");
+    params.append("limit", "10000"); // traer todo para la gráfica
+    api
+      .get<{ items: Conteo[]; total: number }>(
+        `/conteos/admin/historial?${params}`,
+      )
+      .then((r) => setConteosTendencia(r.data.items))
+      .catch((err) => console.error(err));
+  }, [modoVista, filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
 
   useEffect(() => {
     cargar();
@@ -141,9 +174,7 @@ export default function HistorialPage() {
   const nombreOperador = (conteo: Conteo) =>
     operadores.find((u) => u.id === conteo.created_by)?.nombre ?? "—";
 
-  const conteosFiltrados = filtroOperador
-    ? conteos.filter((c) => String(c.created_by) === filtroOperador)
-    : conteos;
+  const conteosFiltrados = conteos;
 
   const handleExportarPDF = async (conteoId: number, cultivoId: number) => {
     setExportando(conteoId);
@@ -184,10 +215,11 @@ export default function HistorialPage() {
     }
   };
 
+  // La vista tendencia necesita todos los conteos (no solo la página actual), así que carga su propia data sin paginar cuando se activa ese modo
   const conteosPorCultivo = cultivos
     .map((cult) => ({
       cultivo: cult,
-      conteos: conteosFiltrados.filter((c) => c.campo_cultivo_id === cult.id),
+      conteos: conteosTendencia.filter((c) => c.campo_cultivo_id === cult.id),
     }))
     .filter((g) => g.conteos.length > 0);
 
@@ -200,9 +232,9 @@ export default function HistorialPage() {
         <div>
           <h1 className={styles.pageTitle}>Historial de conteos</h1>
           <p className={styles.pageSubtitle}>
-            {conteosFiltrados.length} conteo
-            {conteosFiltrados.length !== 1 ? "s" : ""} encontrado
-            {conteosFiltrados.length !== 1 ? "s" : ""}
+            {total} conteo
+            {total !== 1 ? "s" : ""} encontrado
+            {total !== 1 ? "s" : ""}
           </p>
         </div>
         <div className={styles.vistaToggle}>
@@ -220,7 +252,7 @@ export default function HistorialPage() {
 
       <div className={styles.filtros}>
         <div className={styles.filtroGrupo}>
-          <label className={styles.filtroLabel}>Cultivo</label>
+          <label className={styles.filtroLabel}>Campo de cultivo</label>
           <select
             className={styles.filtroSelect}
             value={filtroCultivo}
@@ -300,7 +332,7 @@ export default function HistorialPage() {
                 <tr>
                   {[
                     "#",
-                    "Cultivo",
+                    "Campo de cultivo",
                     "Operador",
                     "Fecha",
                     "Total melones",
@@ -318,25 +350,33 @@ export default function HistorialPage() {
                 {conteosFiltrados.map((c, i) => (
                   <tr
                     key={c.id}
-                    className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
+                    className={`${styles.tablaTr} ${styles.tablaTrClick} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
+                    onClick={() =>
+                      router.push(
+                        `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
+                      )
+                    }
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(
+                          `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
+                        );
+                      }
+                    }}
                   >
                     <td className={`${styles.tablaTd} ${styles.tdId}`}>
                       #{c.id}
                     </td>
                     <td className={styles.tablaTd}>
-                      <button
-                        className={styles.tdCultivoBtn}
-                        onClick={() =>
-                          router.push(
-                            `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
-                          )
-                        }
-                      >
-                        {nombreCultivo(c.campo_cultivo_id)}
-                      </button>
+                      <span className={styles.tdCultivoNombre}>
+                        {c.cultivo_nombre ?? `#${c.campo_cultivo_id}`}
+                      </span>
                     </td>
                     <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
-                      {nombreOperador(c)}
+                      {c.operador_nombre ?? "—"}
                     </td>
                     <td className={styles.tablaTd}>
                       {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
@@ -365,20 +405,61 @@ export default function HistorialPage() {
                       </span>
                     </td>
                     <td className={styles.tablaTd}>
-                      <button
-                        className={styles.btnPDF}
-                        onClick={() =>
-                          handleExportarPDF(c.id, c.campo_cultivo_id)
-                        }
-                        disabled={exportando === c.id}
-                      >
-                        {exportando === c.id ? "..." : "PDF"}
-                      </button>
+                      <div className={styles.tdAcciones}>
+                        <button
+                          className={styles.btnPDF}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportarPDF(c.id, c.campo_cultivo_id);
+                          }}
+                          disabled={exportando === c.id}
+                        >
+                          {exportando === c.id ? "..." : "PDF"}
+                        </button>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={styles.tdChevron}
+                        >
+                          <path d="m9 18 6-6-6-6" />
+                        </svg>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          )}
+          {total > PAGE_SIZE && (
+            <div className={styles.paginacion}>
+              <button
+                className={styles.pagBtn}
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={pagina === 1}
+              >
+                ← Anterior
+              </button>
+              <span className={styles.pagInfo}>
+                Página {pagina} de {Math.ceil(total / PAGE_SIZE)}
+              </span>
+              <button
+                className={styles.pagBtn}
+                onClick={() =>
+                  setPagina((p) =>
+                    Math.min(Math.ceil(total / PAGE_SIZE), p + 1),
+                  )
+                }
+                disabled={pagina >= Math.ceil(total / PAGE_SIZE)}
+              >
+                Siguiente →
+              </button>
+            </div>
           )}
         </div>
       ) : (

@@ -140,7 +140,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   );
 }
 
-// ── Página principal ──────────────────────────────────────────
+//Página principal
 export default function DetalleCultivoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
@@ -156,12 +156,14 @@ export default function DetalleCultivoPage() {
   const cargar = async () => {
     try {
       const [resConteos, resCultivos, resOps, resTodos] = await Promise.all([
-        api.get(`/conteos/admin/historial?cultivo_id=${cultivoId}`),
+        api.get<{ items: Conteo[]; total: number }>(
+          `/conteos/admin/historial?cultivo_id=${cultivoId}`,
+        ),
         api.get(`/cultivos/admin/todos`),
         api.get(`/cultivos/${cultivoId}/operadores`),
         api.get<Usuario[]>(`/usuarios/`),
       ]);
-      setConteos(resConteos.data);
+      setConteos(resConteos.data.items);
       setCultivo(
         resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
           null,

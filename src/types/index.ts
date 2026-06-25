@@ -56,12 +56,15 @@ export interface Municipio {
 export interface Conteo {
   id: number;
   campo_cultivo_id: number;
+  // nombres desnormalizados resueltos por el backend
+  cultivo_nombre: string | null;
+  operador_nombre: string | null;
   variedad_id: number;
+  variedad_nombre: string | null;
   estado_id: number;
   fecha_conteo: string;
   total_surcos: number;
   conteo_total_acumulado: number;
-  // nivel derivado por el backend a partir de las métricas agregadas de la sesión
   nivel_confiabilidad: "alto" | "moderado" | "bajo" | null;
   promedio_confianza_sesion: number | null;
   porcentaje_baja_confianza_sesion: number | null;

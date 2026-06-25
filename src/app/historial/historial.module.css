@@ -163,6 +163,70 @@
   background: var(--color-surface-alt, #fafcfb);
 }
 
+.tablaTrClick {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.tablaTrClick:hover {
+  background: rgba(45, 106, 79, 0.06);
+}
+
+.tdCultivoNombre {
+  color: var(--color-primary, #2d6a4f);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.tdAcciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.tdChevron {
+  color: var(--color-text-muted, #b7c9bf);
+  flex-shrink: 0;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.pagBtn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1a2e25);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.pagBtn:hover:not(:disabled) {
+  border-color: var(--color-primary, #2d6a4f);
+}
+
+.pagBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagInfo {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #5a7a6a);
+  font-weight: 500;
+}
+
 .tablaTd {
   padding: 11px 14px;
   font-size: 0.85rem;

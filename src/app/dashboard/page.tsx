@@ -69,9 +69,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Áreas de Cultivo</h1>
+          <h1 className={styles.pageTitle}>Campos de cultivo</h1>
           <p className={styles.pageSubtitle}>
-            {cultivos.length} cultivo{cultivos.length !== 1 ? "s" : ""}{" "}
+            {cultivos.length} campo de cultivo{cultivos.length !== 1 ? "s" : ""}{" "}
             registrado{cultivos.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function DashboardPage() {
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Nuevo cultivo
+          Nuevo campo de cultivo
         </button>
       </div>
 

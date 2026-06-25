@@ -146,6 +146,10 @@ export default function DetalleConteoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportando, setExportando] = useState(false);
+  // Acordeón: id del procesamiento expandido (o null)
+  const [videoExpandido, setVideoExpandido] = useState<number | null>(null);
+  // Id del procesamiento cuyo video se está descargando
+  const [descargandoId, setDescargandoId] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     try {
@@ -205,6 +209,30 @@ export default function DetalleConteoPage() {
       alert("Error al generar el reporte PDF.");
     } finally {
       setExportando(false);
+    }
+  };
+
+  // Descarga el video anotado de un procesamiento. Usa el endpoint admin
+  // autenticado (blob) porque un <a href> no puede enviar el token Bearer.
+  const handleDescargarVideo = async (procId: number) => {
+    setDescargandoId(procId);
+    try {
+      const { data } = await api.get(
+        `/procesamientos/admin/${procId}/video-anotado`,
+        { responseType: "blob" },
+      );
+      const objectUrl = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `video_anotado_procesamiento_${procId}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      alert("No se pudo descargar el video.");
+    } finally {
+      setDescargandoId(null);
     }
   };
 
@@ -298,83 +326,189 @@ export default function DetalleConteoPage() {
         </div>
       </div>
 
+      {/* Descripción del nivel de confianza */}
+      {(conteo as any).nivel_confiabilidad && (
+        <div className={styles.confianzaCard}>
+          <p className={styles.confianzaTitulo}>
+            Nivel de confianza IA:{" "}
+            <span style={{ textTransform: "capitalize" }}>
+              {(conteo as any).nivel_confiabilidad}
+            </span>
+          </p>
+          {conteo.porcentaje_baja_confianza_sesion != null && (
+            <p className={styles.confianzaDesc}>
+              {Math.round((1 - conteo.porcentaje_baja_confianza_sesion) * 100)}%
+              de detecciones con alta confianza,{" "}
+              {Math.round(conteo.porcentaje_baja_confianza_sesion * 100)}% con
+              baja confianza.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Videos procesados */}
       <div className={styles.panel}>
         <h3 className={styles.panelTitle}>Videos procesados</h3>
         {procesamientos.length === 0 ? (
           <p className={styles.sinDatos}>Sin videos procesados aún.</p>
         ) : (
-          <div className={styles.procList}>
-            {procesamientos.map((p) => {
-              const estadoProc =
-                p.estado_id === 2
-                  ? "completado"
-                  : p.estado_id === 3
-                    ? "error"
-                    : "procesando";
-              const badgeClase =
-                estadoProc === "completado"
-                  ? styles.badgeProcCompletado
-                  : estadoProc === "error"
-                    ? styles.badgeProcError
-                    : styles.badgeProcProcesando;
-              return (
-                <div
-                  key={p.id}
-                  className={styles.procItem}
-                  onClick={() =>
-                    router.push(`/cultivos/${cultivoId}/procesamientos/${p.id}`)
-                  }
-                  style={{ cursor: "pointer" }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      router.push(
-                        `/cultivos/${cultivoId}/procesamientos/${p.id}`,
-                      );
-                    }
-                  }}
-                >
-                  <div className={styles.procInfo}>
-                    <span className={styles.procNombre}>
-                      Surcos {p.surco_inicio}–{p.surco_fin}
-                    </span>
-                    <span className={styles.procFecha}>
-                      {new Date(p.fecha_grabacion).toLocaleDateString("es-GT")}
-                    </span>
-                  </div>
-                  <div className={styles.procRight}>
-                    {p.resultado && (
-                      <>
-                        <div className={styles.procStatWrap}>
-                          <p className={styles.procStatLabel}>IA</p>
-                          <p className={styles.procStatVal}>
-                            {p.resultado.conteo_ia.toLocaleString()}
+          <div className={styles.procListScroll}>
+            <div className={styles.procList}>
+              {procesamientos.map((p) => {
+                const estadoProc =
+                  p.estado_id === 2
+                    ? "completado"
+                    : p.estado_id === 3
+                      ? "error"
+                      : "procesando";
+                const badgeClase =
+                  estadoProc === "completado"
+                    ? styles.badgeProcCompletado
+                    : estadoProc === "error"
+                      ? styles.badgeProcError
+                      : styles.badgeProcProcesando;
+                const expandido = videoExpandido === p.id;
+                const obs = p.resultado?.observaciones_ajuste;
+                return (
+                  <div key={p.id} className={styles.procCard}>
+                    <div
+                      className={styles.procItem}
+                      onClick={() => setVideoExpandido(expandido ? null : p.id)}
+                      style={{ cursor: "pointer" }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setVideoExpandido(expandido ? null : p.id);
+                        }
+                      }}
+                    >
+                      <div className={styles.procInfo}>
+                        <span className={styles.procNombre}>
+                          Surcos {p.surco_inicio}–{p.surco_fin}
+                        </span>
+                        <span className={styles.procFecha}>
+                          {new Date(p.fecha_grabacion).toLocaleDateString(
+                            "es-GT",
+                          )}
+                        </span>
+                      </div>
+                      <div className={styles.procRight}>
+                        {p.resultado && (
+                          <>
+                            <div className={styles.procStatWrap}>
+                              <p className={styles.procStatLabel}>IA</p>
+                              <p className={styles.procStatVal}>
+                                {p.resultado.conteo_ia.toLocaleString()}
+                              </p>
+                            </div>
+                            {p.resultado.conteo_ajustado != null && (
+                              <div className={styles.procStatWrap}>
+                                <p className={styles.procStatLabel}>Ajustado</p>
+                                <p className={styles.procStatValPrimary}>
+                                  {p.resultado.conteo_ajustado.toLocaleString()}
+                                </p>
+                              </div>
+                            )}
+                            {(p.resultado as any).nivel_confiabilidad && (
+                              <BadgeConfiabilidad
+                                nivel={(p.resultado as any).nivel_confiabilidad}
+                              />
+                            )}
+                          </>
+                        )}
+                        <span
+                          className={`${styles.badgeProcEstado} ${badgeClase}`}
+                        >
+                          {estadoProc}
+                        </span>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: expandido ? "rotate(180deg)" : "none",
+                            transition: "transform 0.2s",
+                            color: "var(--color-text-muted, #8fa898)",
+                          }}
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {expandido && (
+                      <div className={styles.procDetalle}>
+                        {p.resultado?.nivel_confiabilidad &&
+                          p.resultado.porcentaje_baja_confianza != null && (
+                            <div className={styles.procDetalleObs}>
+                              <p className={styles.procDetalleLabel}>
+                                Confianza de este video
+                              </p>
+                              <p className={styles.procDetalleTexto}>
+                                {Math.round(
+                                  (1 - p.resultado.porcentaje_baja_confianza) *
+                                    100,
+                                )}
+                                % de detecciones con alta confianza,{" "}
+                                {Math.round(
+                                  p.resultado.porcentaje_baja_confianza * 100,
+                                )}
+                                % con baja confianza.
+                              </p>
+                            </div>
+                          )}
+                        <div className={styles.procDetalleObs}>
+                          <p className={styles.procDetalleLabel}>
+                            Observaciones del operador
+                          </p>
+                          <p className={styles.procDetalleTexto}>
+                            {obs && obs.trim()
+                              ? obs
+                              : "Sin observaciones registradas."}
                           </p>
                         </div>
-                        {p.resultado.conteo_ajustado != null && (
-                          <div className={styles.procStatWrap}>
-                            <p className={styles.procStatLabel}>Ajustado</p>
-                            <p className={styles.procStatValPrimary}>
-                              {p.resultado.conteo_ajustado.toLocaleString()}
-                            </p>
-                          </div>
+                        {p.video_anotado_url ? (
+                          <button
+                            className={styles.btnDescargarVideo}
+                            onClick={() => handleDescargarVideo(p.id)}
+                            disabled={descargandoId === p.id}
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="7 10 12 15 17 10" />
+                              <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            {descargandoId === p.id
+                              ? "Descargando…"
+                              : "Descargar video anotado"}
+                          </button>
+                        ) : (
+                          <p className={styles.procDetalleSinVideo}>
+                            Video anotado no disponible.
+                          </p>
                         )}
-                        {(p.resultado as any).nivel_confiabilidad && (
-                          <BadgeConfiabilidad
-                            nivel={(p.resultado as any).nivel_confiabilidad}
-                          />
-                        )}
-                      </>
+                      </div>
                     )}
-                    <span className={`${styles.badgeProcEstado} ${badgeClase}`}>
-                      {estadoProc}
-                    </span>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

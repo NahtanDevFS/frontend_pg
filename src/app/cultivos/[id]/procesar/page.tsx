@@ -268,7 +268,7 @@ function ProcesarVideoContenido() {
       let conteo: Conteo;
       if (modoConteo === "nuevo") {
         const { data } = await api.post<Conteo>("/conteos/", {
-          cultivo_id: parseInt(cultivoId as string),
+          campo_cultivo_id: parseInt(cultivoId as string),
           variedad_id: parseInt(variedadId),
         });
         conteo = data;

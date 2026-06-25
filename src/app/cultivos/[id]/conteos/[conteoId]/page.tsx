@@ -166,8 +166,9 @@ export default function DetalleConteoPage() {
           ?.nombre ?? "—",
       );
       setCultivo(
-        resCultivos.data.find((c: any) => c.id === resConteo.data.cultivo_id) ??
-          null,
+        resCultivos.data.find(
+          (c: any) => c.id === resConteo.data.campo_cultivo_id,
+        ) ?? null,
       );
 
       try {
@@ -249,9 +250,7 @@ export default function DetalleConteoPage() {
             >
               {estadoNombre}
             </span>
-            <BadgeConfiabilidad
-              nivel={(conteo as any).nivel_confiabilidad_agregado}
-            />
+            <BadgeConfiabilidad nivel={(conteo as any).nivel_confiabilidad} />
           </div>
         </div>
         <button

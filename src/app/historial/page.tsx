@@ -187,7 +187,7 @@ export default function HistorialPage() {
   const conteosPorCultivo = cultivos
     .map((cult) => ({
       cultivo: cult,
-      conteos: conteosFiltrados.filter((c) => c.cultivo_id === cult.id),
+      conteos: conteosFiltrados.filter((c) => c.campo_cultivo_id === cult.id),
     }))
     .filter((g) => g.conteos.length > 0);
 
@@ -328,11 +328,11 @@ export default function HistorialPage() {
                         className={styles.tdCultivoBtn}
                         onClick={() =>
                           router.push(
-                            `/cultivos/${c.cultivo_id}/conteos/${c.id}`,
+                            `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
                           )
                         }
                       >
-                        {nombreCultivo(c.cultivo_id)}
+                        {nombreCultivo(c.campo_cultivo_id)}
                       </button>
                     </td>
                     <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
@@ -354,7 +354,7 @@ export default function HistorialPage() {
                     </td>
                     <td className={styles.tablaTd}>
                       <BadgeConfiabilidad
-                        nivel={(c as any).nivel_confiabilidad_agregado}
+                        nivel={(c as any).nivel_confiabilidad}
                       />
                     </td>
                     <td className={styles.tablaTd}>
@@ -367,7 +367,9 @@ export default function HistorialPage() {
                     <td className={styles.tablaTd}>
                       <button
                         className={styles.btnPDF}
-                        onClick={() => handleExportarPDF(c.id, c.cultivo_id)}
+                        onClick={() =>
+                          handleExportarPDF(c.id, c.campo_cultivo_id)
+                        }
                         disabled={exportando === c.id}
                       >
                         {exportando === c.id ? "..." : "PDF"}

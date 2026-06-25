@@ -600,7 +600,7 @@ export default function DetalleCultivoPage() {
                       : "—"}
                   </td>
                   <td style={{ padding: "12px 16px" }}>
-                    {(c as any).nivel_confiabilidad_agregado ? (
+                    {(c as any).nivel_confiabilidad ? (
                       <span
                         style={{
                           fontSize: "0.72rem",
@@ -608,22 +608,20 @@ export default function DetalleCultivoPage() {
                           borderRadius: 99,
                           fontWeight: 600,
                           background:
-                            (c as any).nivel_confiabilidad_agregado === "alto"
+                            (c as any).nivel_confiabilidad === "alto"
                               ? "#d1fae5"
-                              : (c as any).nivel_confiabilidad_agregado ===
-                                  "moderado"
+                              : (c as any).nivel_confiabilidad === "moderado"
                                 ? "#fff3cd"
                                 : "#fee2e2",
                           color:
-                            (c as any).nivel_confiabilidad_agregado === "alto"
+                            (c as any).nivel_confiabilidad === "alto"
                               ? "#065f46"
-                              : (c as any).nivel_confiabilidad_agregado ===
-                                  "moderado"
+                              : (c as any).nivel_confiabilidad === "moderado"
                                 ? "#856404"
                                 : "#991b1b",
                         }}
                       >
-                        {(c as any).nivel_confiabilidad_agregado}
+                        {(c as any).nivel_confiabilidad}
                       </span>
                     ) : (
                       <span

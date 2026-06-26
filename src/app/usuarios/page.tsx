@@ -58,6 +58,7 @@ export default function GestionUsuariosPage() {
 
   useEffect(() => {
     cargarDatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCrear = async (e: React.FormEvent) => {
@@ -258,63 +259,65 @@ export default function GestionUsuariosPage() {
         {usuarios.length === 0 ? (
           <p className={styles.tablaVacia}>No hay usuarios registrados.</p>
         ) : (
-          <table className={styles.table}>
-            <thead className={styles.tableHead}>
-              <tr>
-                {["Usuario", "Rol", "Creado", "Acciones"].map((h) => (
-                  <th key={h} className={styles.th}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u, i) => (
-                <tr
-                  key={u.id}
-                  className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""}`}
-                >
-                  <td className={styles.tdNombre}>{u.nombre}</td>
-                  <td className={styles.tdRol}>
-                    <span
-                      className={
-                        nombreRol(u.rol_id) === "Administrador"
-                          ? styles.badgeAdmin
-                          : styles.badgeOperador
-                      }
-                    >
-                      {nombreRol(u.rol_id)}
-                    </span>
-                  </td>
-                  <td className={styles.tdFecha}>
-                    {new Date(u.created_at).toLocaleDateString("es-GT")}
-                  </td>
-                  <td className={styles.tdAcciones}>
-                    <div className={styles.accionesWrap}>
-                      <button
-                        onClick={() =>
-                          setEditando({
-                            id: u.id,
-                            nombre: u.nombre,
-                            nuevaPassword: "",
-                          })
-                        }
-                        className={styles.btnEditar}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDesactivar(u.id, u.nombre)}
-                        className={styles.btnDesactivar}
-                      >
-                        Desactivar
-                      </button>
-                    </div>
-                  </td>
+          <div className={styles.tableScroll}>
+            <table className={styles.table}>
+              <thead className={styles.tableHead}>
+                <tr>
+                  {["Usuario", "Rol", "Creado", "Acciones"].map((h) => (
+                    <th key={h} className={styles.th}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuarios.map((u, i) => (
+                  <tr
+                    key={u.id}
+                    className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""}`}
+                  >
+                    <td className={styles.tdNombre}>{u.nombre}</td>
+                    <td className={styles.tdRol}>
+                      <span
+                        className={
+                          nombreRol(u.rol_id) === "Administrador"
+                            ? styles.badgeAdmin
+                            : styles.badgeOperador
+                        }
+                      >
+                        {nombreRol(u.rol_id)}
+                      </span>
+                    </td>
+                    <td className={styles.tdFecha}>
+                      {new Date(u.created_at).toLocaleDateString("es-GT")}
+                    </td>
+                    <td className={styles.tdAcciones}>
+                      <div className={styles.accionesWrap}>
+                        <button
+                          onClick={() =>
+                            setEditando({
+                              id: u.id,
+                              nombre: u.nombre,
+                              nuevaPassword: "",
+                            })
+                          }
+                          className={styles.btnEditar}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDesactivar(u.id, u.nombre)}
+                          className={styles.btnDesactivar}
+                        >
+                          Desactivar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

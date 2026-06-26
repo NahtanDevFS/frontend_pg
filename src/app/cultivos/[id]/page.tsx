@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
 import BtnBack from "@/components/BtnBack";
+import styles from "./detalle_cultivo.module.css";
 
 interface OperadorAsignado {
   id: number;
@@ -25,13 +26,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
 
   if (completados.length < 2)
     return (
-      <p
-        style={{
-          fontSize: "0.85rem",
-          color: "var(--color-text-muted)",
-          fontStyle: "italic",
-        }}
-      >
+      <p className={styles.graficaSinDatos}>
         Se necesitan al menos 2 ciclos completados para mostrar la tendencia.
       </p>
     );
@@ -51,12 +46,8 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   }));
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <svg
-        width="100%"
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ display: "block", minWidth: 300 }}
-      >
+    <div className={styles.graficaContainer}>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className={styles.graficaSvg}>
         <line
           x1={PAD_X}
           y1={PAD_Y}
@@ -152,18 +143,43 @@ export default function DetalleCultivoPage() {
   const [asignando, setAsignando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Filtros globales (afectan gráfica e historial)
+  const [filtroOperador, setFiltroOperador] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  // Paginación del historial
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 20;
+  // Data completa (sin paginar) para la gráfica de tendencia
+  const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
 
-  const cargar = async () => {
+  // Construye los query params de filtros comunes a tabla y gráfica
+  const buildFiltros = useCallback(() => {
+    const params = new URLSearchParams();
+    params.append("cultivo_id", String(cultivoId));
+    if (filtroOperador) params.append("usuario_id", filtroOperador);
+    if (fechaDesde) params.append("fecha_desde", fechaDesde);
+    if (fechaHasta) params.append("fecha_hasta", fechaHasta);
+    return params;
+  }, [cultivoId, filtroOperador, fechaDesde, fechaHasta]);
+
+  const cargar = useCallback(async () => {
     try {
+      const paramsTabla = buildFiltros();
+      paramsTabla.append("skip", String((pagina - 1) * PAGE_SIZE));
+      paramsTabla.append("limit", String(PAGE_SIZE));
+
       const [resConteos, resCultivos, resOps, resTodos] = await Promise.all([
         api.get<{ items: Conteo[]; total: number }>(
-          `/conteos/admin/historial?cultivo_id=${cultivoId}`,
+          `/conteos/admin/historial?${paramsTabla}`,
         ),
         api.get(`/cultivos/admin/todos`),
         api.get(`/cultivos/${cultivoId}/operadores`),
         api.get<Usuario[]>(`/usuarios/`),
       ]);
       setConteos(resConteos.data.items);
+      setTotal(resConteos.data.total);
       setCultivo(
         resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
           null,
@@ -175,11 +191,29 @@ export default function DetalleCultivoPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cultivoId, buildFiltros, pagina]);
 
   useEffect(() => {
     cargar();
-  }, [cultivoId]);
+  }, [cargar]);
+
+  // Al cambiar filtros, volver a página 1
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroOperador, fechaDesde, fechaHasta]);
+
+  // Cargar TODOS los conteos del rango (sin paginar) para la gráfica
+  useEffect(() => {
+    const params = buildFiltros();
+    params.append("skip", "0");
+    params.append("limit", "10000");
+    api
+      .get<{ items: Conteo[]; total: number }>(
+        `/conteos/admin/historial?${params}`,
+      )
+      .then((r) => setConteosTendencia(r.data.items))
+      .catch(() => {});
+  }, [buildFiltros]);
 
   const handleAsignar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,185 +250,72 @@ export default function DetalleCultivoPage() {
 
   if (loading)
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "60vh",
-          gap: 12,
-          flexDirection: "column",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            border: "3px solid var(--color-border)",
-            borderTop: "3px solid var(--color-primary)",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
+      <div className={styles.loadingWrap}>
+        <div className={styles.spinner} />
         <span>Cargando...</span>
       </div>
     );
 
-  const completados = conteos.filter((c) => c.estado_id === 2).length;
+  const completados = conteosTendencia.filter((c) => c.estado_id === 2).length;
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "1.75rem" }}>
+    <div className={styles.container}>
+      {/* Header / Hero */}
+      <div className={styles.header}>
         <BtnBack href="/dashboard" label="Volver a cultivos" />
 
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 4 }}>
-          {cultivo?.nombre ?? `Cultivo #${cultivoId}`}
-        </h1>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {cultivo?.municipio_nombre && (
-            <span
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--color-text-muted)",
-                textTransform: "capitalize",
-              }}
-            >
-              {cultivo.municipio_nombre}, {cultivo.departamento_nombre}
+        <div className={styles.heroBox}>
+          <h1 className={styles.heroTitle}>
+            {cultivo?.nombre ?? `Cultivo #${cultivoId}`}
+          </h1>
+          <div className={styles.heroMetaWrap}>
+            {cultivo?.municipio_nombre && (
+              <span className={styles.heroMeta}>
+                {cultivo.municipio_nombre}, {cultivo.departamento_nombre}
+              </span>
+            )}
+            {cultivo?.ubicacion && (
+              <span className={styles.heroMeta}>{cultivo.ubicacion}</span>
+            )}
+            {cultivo?.hectareas && (
+              <span className={styles.heroMeta}>{cultivo.hectareas} ha</span>
+            )}
+            {cultivo?.total_surcos && (
+              <span className={styles.heroMeta}>
+                {cultivo.total_surcos} surcos
+              </span>
+            )}
+            <span className={styles.heroMeta}>
+              {completados} conteo{completados !== 1 ? "s" : ""} completado
+              {completados !== 1 ? "s" : ""}
             </span>
-          )}
-          {cultivo?.ubicacion && (
-            <span
-              style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}
-            >
-              {cultivo.ubicacion}
-            </span>
-          )}
-          {cultivo?.hectareas && (
-            <span
-              style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}
-            >
-              {cultivo.hectareas} ha
-            </span>
-          )}
-          {cultivo?.total_surcos && (
-            <span
-              style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}
-            >
-              {cultivo.total_surcos} surcos
-            </span>
-          )}
-          <span
-            style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}
-          >
-            {completados} conteo{completados !== 1 ? "s" : ""} completado
-            {completados !== 1 ? "s" : ""}
-          </span>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: "1rem",
-            background: "#fee2e2",
-            borderRadius: 10,
-            color: "#991b1b",
-            marginBottom: "1.5rem",
-            fontSize: "0.9rem",
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className={styles.errorAlert}>{error}</div>}
 
       {/* Panel de operadores asignados */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: 14,
-          padding: "1.5rem 1.75rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h3
-          style={{
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            marginBottom: "0.25rem",
-          }}
-        >
-          Operadores asignados
-        </h3>
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--color-text-muted)",
-            marginBottom: "1.25rem",
-          }}
-        >
+      <div className={styles.panelCard}>
+        <h3 className={styles.panelTitle}>Operadores asignados</h3>
+        <p className={styles.panelSubtitle}>
           Solo los operadores asignados pueden subir videos y gestionar conteos
           de este cultivo.
         </p>
 
         {/* Lista de asignados */}
         {operadores.length === 0 ? (
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--color-text-muted)",
-              fontStyle: "italic",
-              marginBottom: "1rem",
-            }}
-          >
-            Ningún operador asignado todavía.
-          </p>
+          <p className={styles.emptyText}>Ningún operador asignado todavía.</p>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              marginBottom: "1.25rem",
-            }}
-          >
+          <div className={styles.tagsContainer}>
             {operadores.map((op) => (
-              <div
-                key={op.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "6px 12px",
-                  background: "#e8f5ee",
-                  border: "1.5px solid #b7e4c7",
-                  borderRadius: 99,
-                }}
-              >
-                <span
-                  style={{
-                    fontWeight: 600,
-                    fontSize: "0.85rem",
-                    color: "#2d6a4f",
-                  }}
-                >
-                  {op.nombre}
-                </span>
+              <div key={op.id} className={styles.opTag}>
+                <span className={styles.opName}>{op.nombre}</span>
                 <button
                   onClick={() => handleQuitar(op.usuario_id, op.nombre)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#52b788",
-                    padding: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    lineHeight: 1,
-                  }}
+                  className={styles.opRemoveBtn}
                   title={`Quitar a ${op.nombre}`}
+                  aria-label={`Quitar operador ${op.nombre}`}
                 >
                   <svg
                     width="14"
@@ -417,21 +338,11 @@ export default function DetalleCultivoPage() {
 
         {/* Asignar nuevo operador */}
         {disponibles.length > 0 && (
-          <form
-            onSubmit={handleAsignar}
-            style={{ display: "flex", gap: 10, alignItems: "center" }}
-          >
+          <form onSubmit={handleAsignar} className={styles.asignarForm}>
             <select
               value={nuevoOpId}
               onChange={(e) => setNuevoOpId(e.target.value)}
-              style={{
-                padding: "7px 12px",
-                borderRadius: 8,
-                border: "1.5px solid var(--color-border)",
-                fontSize: "0.875rem",
-                flex: 1,
-                maxWidth: 240,
-              }}
+              className={styles.selectInput}
             >
               <option value="">Seleccionar operador...</option>
               {disponibles.map((u) => (
@@ -443,243 +354,219 @@ export default function DetalleCultivoPage() {
             <button
               type="submit"
               disabled={asignando || !nuevoOpId}
-              style={{
-                padding: "7px 18px",
-                background: "var(--color-primary)",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: "0.875rem",
-                opacity: asignando || !nuevoOpId ? 0.6 : 1,
-                fontFamily: "inherit",
-              }}
+              className={styles.btnAsignar}
             >
               {asignando ? "Asignando..." : "+ Asignar"}
             </button>
           </form>
         )}
         {disponibles.length === 0 && todosOperadores.length > 0 && (
-          <p
-            style={{
-              fontSize: "0.8rem",
-              color: "var(--color-text-muted)",
-              fontStyle: "italic",
-            }}
-          >
+          <p className={styles.emptyText}>
             Todos los operadores disponibles ya están asignados.
           </p>
         )}
       </div>
 
+      {/* Filtros globales */}
+      <div className={styles.filtrosRow}>
+        <div className={styles.filtroCol}>
+          <label className={styles.filtroLabel}>Operador</label>
+          <select
+            value={filtroOperador}
+            onChange={(e) => setFiltroOperador(e.target.value)}
+            className={styles.filtroControl}
+          >
+            <option value="">Todos</option>
+            {todosOperadores
+              .filter((u) => u.rol_id !== 1)
+              .map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div className={styles.filtroCol}>
+          <label className={styles.filtroLabel}>Desde</label>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            className={styles.filtroControl}
+          />
+        </div>
+        <div className={styles.filtroCol}>
+          <label className={styles.filtroLabel}>Hasta</label>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+            className={styles.filtroControl}
+          />
+        </div>
+        {(filtroOperador || fechaDesde || fechaHasta) && (
+          <button
+            onClick={() => {
+              setFiltroOperador("");
+              setFechaDesde("");
+              setFechaHasta("");
+            }}
+            className={styles.btnLimpiar}
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       {/* Gráfica de tendencia */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: 14,
-          padding: "1.5rem 1.75rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h3
-          style={{
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            marginBottom: "0.25rem",
-          }}
-        >
-          Tendencia histórica
-        </h3>
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--color-text-muted)",
-            marginBottom: "1.25rem",
-          }}
-        >
+      <div className={styles.panelCard}>
+        <h3 className={styles.panelTitle}>Tendencia histórica</h3>
+        <p className={styles.panelSubtitle}>
           Total de melones por ciclo completado y variación porcentual entre
           ciclos.
         </p>
-        <GraficaTendencia conteos={conteos} />
+        <GraficaTendencia conteos={conteosTendencia} />
       </div>
 
       {/* Lista de conteos */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: 14,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "1.25rem 1.75rem",
-            borderBottom: "1px solid var(--color-border)",
-          }}
-        >
-          <h3 style={{ fontWeight: 700, fontSize: "0.95rem" }}>
-            Historial de conteos ({conteos.length})
+      <div className={styles.tablaContainer}>
+        <div className={styles.tablaHeader}>
+          <h3 className={styles.panelTitle} style={{ marginBottom: 0 }}>
+            Historial de conteos ({total})
           </h3>
         </div>
+
         {conteos.length === 0 ? (
-          <p
-            style={{
-              padding: "2rem",
-              textAlign: "center",
-              color: "var(--color-text-muted)",
-            }}
-          >
+          <p className={styles.tablaVaciaMsg}>
             No hay conteos registrados para este cultivo.
           </p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--color-surface-alt, #f4f7f5)" }}>
-                {[
-                  "#",
-                  "Fecha",
-                  "Total melones",
-                  "Confiabilidad",
-                  "Estado",
-                  "",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "10px 16px",
-                      textAlign: h === "Total melones" ? "right" : "left",
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {conteos.map((c, i) => (
-                <tr
-                  key={c.id}
-                  style={{
-                    borderTop: "1px solid var(--color-border)",
-                    background:
-                      i % 2 === 0
-                        ? "transparent"
-                        : "var(--color-surface-alt, #fafcfb)",
-                    cursor: "pointer",
-                  }}
-                  onClick={() =>
-                    router.push(`/cultivos/${cultivoId}/conteos/${c.id}`)
-                  }
-                >
-                  <td
-                    style={{
-                      padding: "12px 16px",
-                      color: "var(--color-text-muted)",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    #{c.id}
-                  </td>
-                  <td style={{ padding: "12px 16px", fontSize: "0.875rem" }}>
-                    {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "right",
-                      fontWeight: 700,
-                      fontFamily: "DM Mono, monospace",
-                      fontSize: "1rem",
-                      color:
-                        c.conteo_total_acumulado > 0
-                          ? "var(--color-primary)"
-                          : "var(--color-text-muted)",
-                    }}
-                  >
-                    {c.conteo_total_acumulado > 0
-                      ? c.conteo_total_acumulado.toLocaleString()
-                      : "—"}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    {(c as any).nivel_confiabilidad ? (
-                      <span
-                        style={{
-                          fontSize: "0.72rem",
-                          padding: "2px 9px",
-                          borderRadius: 99,
-                          fontWeight: 600,
-                          background:
-                            (c as any).nivel_confiabilidad === "alto"
-                              ? "#d1fae5"
-                              : (c as any).nivel_confiabilidad === "moderado"
-                                ? "#fff3cd"
-                                : "#fee2e2",
-                          color:
-                            (c as any).nivel_confiabilidad === "alto"
-                              ? "#065f46"
-                              : (c as any).nivel_confiabilidad === "moderado"
-                                ? "#856404"
-                                : "#991b1b",
-                        }}
-                      >
-                        {(c as any).nivel_confiabilidad}
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          color: "var(--color-text-muted)",
-                          fontSize: "0.8rem",
-                        }}
-                      >
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span
-                      style={{
-                        fontSize: "0.72rem",
-                        padding: "2px 9px",
-                        borderRadius: 99,
-                        fontWeight: 600,
-                        background: c.estado_id === 2 ? "#d1fae5" : "#fff3cd",
-                        color: c.estado_id === 2 ? "#065f46" : "#856404",
-                      }}
+          <div className={styles.tablaScrollWrapper}>
+            <table className={styles.tabla}>
+              <thead>
+                <tr className={styles.tablaTheadRow}>
+                  {[
+                    "#",
+                    "Operador",
+                    "Fecha",
+                    "Total melones",
+                    "Confiabilidad",
+                    "Estado",
+                    "",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className={
+                        h === "Total melones"
+                          ? styles.thAlignRight
+                          : styles.thAlignLeft
+                      }
                     >
-                      {c.estado_id === 2 ? "Completado" : "En progreso"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      style={{ color: "var(--color-text-muted)" }}
-                    >
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {conteos.map((c, i) => (
+                  <tr
+                    key={c.id}
+                    className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrAlt : ""}`}
+                    onClick={() =>
+                      router.push(`/cultivos/${cultivoId}/conteos/${c.id}`)
+                    }
+                  >
+                    <td className={styles.tdId}>#{c.id}</td>
+                    <td className={styles.tdNombre}>
+                      {c.operador_nombre ?? "—"}
+                    </td>
+                    <td className={styles.tdBase}>
+                      {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td
+                      className={`${styles.tdTotal} ${
+                        c.conteo_total_acumulado > 0 ? styles.totalValido : ""
+                      }`}
+                    >
+                      {c.conteo_total_acumulado > 0
+                        ? c.conteo_total_acumulado.toLocaleString()
+                        : "—"}
+                    </td>
+                    <td className={styles.tdBase}>
+                      {(c as any).nivel_confiabilidad ? (
+                        <span
+                          className={`${styles.badgeConfianza} ${
+                            (c as any).nivel_confiabilidad === "alto"
+                              ? styles.badgeAlto
+                              : (c as any).nivel_confiabilidad === "moderado"
+                                ? styles.badgeModerado
+                                : styles.badgeBajo
+                          }`}
+                        >
+                          {(c as any).nivel_confiabilidad}
+                        </span>
+                      ) : (
+                        <span className={styles.badgeVacio}>—</span>
+                      )}
+                    </td>
+                    <td className={styles.tdBase}>
+                      <span
+                        className={`${styles.badgeEstado} ${
+                          c.estado_id === 2
+                            ? styles.badgeCompletado
+                            : styles.badgeEnProgreso
+                        }`}
+                      >
+                        {c.estado_id === 2 ? "Completado" : "En progreso"}
+                      </span>
+                    </td>
+                    <td className={styles.tdChevron}>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {total > PAGE_SIZE && (
+          <div className={styles.paginacion}>
+            <button
+              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              disabled={pagina === 1}
+              className={styles.btnPag}
+            >
+              ← Anterior
+            </button>
+            <span className={styles.pagInfo}>
+              Página {pagina} de {Math.ceil(total / PAGE_SIZE)}
+            </span>
+            <button
+              onClick={() =>
+                setPagina((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))
+              }
+              disabled={pagina >= Math.ceil(total / PAGE_SIZE)}
+              className={styles.btnPag}
+            >
+              Siguiente →
+            </button>
+          </div>
         )}
       </div>
     </div>

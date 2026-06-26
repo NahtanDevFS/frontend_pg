@@ -225,7 +225,40 @@ export function generarReportePDF(params: {
     align: "right",
   });
 
-  y += 30;
+  y += 28; // Bajamos el puntero para colocar el texto de confianza
+
+  //DATOS DE CONFIANZA IA
+  const nivelConfiabilidad = (conteo as any).nivel_confiabilidad;
+  if (nivelConfiabilidad) {
+    // Capitalizamos la primera letra
+    const capNivel =
+      nivelConfiabilidad.charAt(0).toUpperCase() + nivelConfiabilidad.slice(1);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...VERDE_OS);
+    doc.text(`Nivel de confianza IA: ${capNivel}`, ML, y);
+
+    if (conteo.porcentaje_baja_confianza_sesion != null) {
+      const pctBaja = Math.round(conteo.porcentaje_baja_confianza_sesion * 100);
+      const pctAlta = Math.round(
+        (1 - conteo.porcentaje_baja_confianza_sesion) * 100,
+      );
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(...GRIS_M);
+      doc.text(
+        `${pctAlta}% de detecciones con alta confianza, ${pctBaja}% con baja confianza.`,
+        ML,
+        y + 5,
+      );
+      y += 5;
+    }
+    y += 8; // Espacio posterior al bloque de confianza
+  } else {
+    y += 4; // Si no hay confianza, dejamos un margen menor
+  }
 
   if (conteo.observaciones) {
     doc.setFontSize(8);
@@ -234,6 +267,8 @@ export function generarReportePDF(params: {
     doc.text(`Observaciones: ${conteo.observaciones}`, ML, y);
     y += 6;
   }
+
+  y += 4;
 
   //Videos procesados
   doc.setFontSize(10);

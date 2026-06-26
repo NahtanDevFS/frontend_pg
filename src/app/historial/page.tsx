@@ -32,13 +32,13 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   });
 
   return (
-    <div>
+    <div className={styles.graficaContenedor}>
       <p className={styles.graficaLabel}>Tendencia (ciclos completados)</p>
       <svg
-        width={W}
+        width="100%"
         height={H}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ overflow: "visible" }}
+        style={{ overflow: "visible", maxWidth: "300px" }}
       >
         <polyline
           points={points.join(" ")}
@@ -215,7 +215,6 @@ export default function HistorialPage() {
     }
   };
 
-  // La vista tendencia necesita todos los conteos (no solo la página actual), así que carga su propia data sin paginar cuando se activa ese modo
   const conteosPorCultivo = cultivos
     .map((cult) => ({
       cultivo: cult,
@@ -232,8 +231,7 @@ export default function HistorialPage() {
         <div>
           <h1 className={styles.pageTitle}>Historial de conteos</h1>
           <p className={styles.pageSubtitle}>
-            {total} conteo
-            {total !== 1 ? "s" : ""} encontrado
+            {total} conteo{total !== 1 ? "s" : ""} encontrado
             {total !== 1 ? "s" : ""}
           </p>
         </div>
@@ -327,114 +325,117 @@ export default function HistorialPage() {
               No se encontraron conteos con los filtros aplicados.
             </p>
           ) : (
-            <table className={styles.tabla}>
-              <thead className={styles.tablaHead}>
-                <tr>
-                  {[
-                    "#",
-                    "Campo de cultivo",
-                    "Operador",
-                    "Fecha",
-                    "Total melones",
-                    "Confiabilidad",
-                    "Estado",
-                    "",
-                  ].map((h) => (
-                    <th key={h} className={styles.tablaTh}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {conteosFiltrados.map((c, i) => (
-                  <tr
-                    key={c.id}
-                    className={`${styles.tablaTr} ${styles.tablaTrClick} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
-                    onClick={() =>
-                      router.push(
-                        `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
-                      )
-                    }
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
+            /* NUEVO CONTENEDOR DE SCROLL PARA LA TABLA */
+            <div className={styles.tablaScroll}>
+              <table className={styles.tabla}>
+                <thead className={styles.tablaHead}>
+                  <tr>
+                    {[
+                      "#",
+                      "Campo de cultivo",
+                      "Operador",
+                      "Fecha",
+                      "Total melones",
+                      "Confiabilidad",
+                      "Estado",
+                      "",
+                    ].map((h) => (
+                      <th key={h} className={styles.tablaTh}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {conteosFiltrados.map((c, i) => (
+                    <tr
+                      key={c.id}
+                      className={`${styles.tablaTr} ${styles.tablaTrClick} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
+                      onClick={() =>
                         router.push(
                           `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
-                        );
+                        )
                       }
-                    }}
-                  >
-                    <td className={`${styles.tablaTd} ${styles.tdId}`}>
-                      #{c.id}
-                    </td>
-                    <td className={styles.tablaTd}>
-                      <span className={styles.tdCultivoNombre}>
-                        {c.cultivo_nombre ?? `#${c.campo_cultivo_id}`}
-                      </span>
-                    </td>
-                    <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
-                      {c.operador_nombre ?? "—"}
-                    </td>
-                    <td className={styles.tablaTd}>
-                      {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td
-                      className={`${styles.tablaTd} ${c.conteo_total_acumulado > 0 ? styles.tdTotal : styles.tdTotalVacio}`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          router.push(
+                            `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
+                          );
+                        }
+                      }}
                     >
-                      {c.conteo_total_acumulado > 0
-                        ? c.conteo_total_acumulado.toLocaleString()
-                        : "—"}
-                    </td>
-                    <td className={styles.tablaTd}>
-                      <BadgeConfiabilidad
-                        nivel={(c as any).nivel_confiabilidad}
-                      />
-                    </td>
-                    <td className={styles.tablaTd}>
-                      <span
-                        className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                      <td className={`${styles.tablaTd} ${styles.tdId}`}>
+                        #{c.id}
+                      </td>
+                      <td className={styles.tablaTd}>
+                        <span className={styles.tdCultivoNombre}>
+                          {c.cultivo_nombre ?? `#${c.campo_cultivo_id}`}
+                        </span>
+                      </td>
+                      <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
+                        {c.operador_nombre ?? "—"}
+                      </td>
+                      <td className={styles.tablaTd}>
+                        {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td
+                        className={`${styles.tablaTd} ${c.conteo_total_acumulado > 0 ? styles.tdTotal : styles.tdTotalVacio}`}
                       >
-                        {c.estado_id === 2 ? "Completado" : "En progreso"}
-                      </span>
-                    </td>
-                    <td className={styles.tablaTd}>
-                      <div className={styles.tdAcciones}>
-                        <button
-                          className={styles.btnPDF}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExportarPDF(c.id, c.campo_cultivo_id);
-                          }}
-                          disabled={exportando === c.id}
+                        {c.conteo_total_acumulado > 0
+                          ? c.conteo_total_acumulado.toLocaleString()
+                          : "—"}
+                      </td>
+                      <td className={styles.tablaTd}>
+                        <BadgeConfiabilidad
+                          nivel={(c as any).nivel_confiabilidad}
+                        />
+                      </td>
+                      <td className={styles.tablaTd}>
+                        <span
+                          className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                         >
-                          {exportando === c.id ? "..." : "PDF"}
-                        </button>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={styles.tdChevron}
-                        >
-                          <path d="m9 18 6-6-6-6" />
-                        </svg>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          {c.estado_id === 2 ? "Completado" : "En progreso"}
+                        </span>
+                      </td>
+                      <td className={styles.tablaTd}>
+                        <div className={styles.tdAcciones}>
+                          <button
+                            className={styles.btnPDF}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportarPDF(c.id, c.campo_cultivo_id);
+                            }}
+                            disabled={exportando === c.id}
+                          >
+                            {exportando === c.id ? "..." : "PDF"}
+                          </button>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={styles.tdChevron}
+                          >
+                            <path d="m9 18 6-6-6-6" />
+                          </svg>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           {total > PAGE_SIZE && (
             <div className={styles.paginacion}>

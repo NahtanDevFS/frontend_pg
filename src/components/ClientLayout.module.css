@@ -16,12 +16,6 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .loadingText {
   color: #5a7a6a;
   font-size: 0.9rem;
@@ -46,6 +40,21 @@
   display: flex;
   align-items: center;
   gap: 2rem;
+}
+
+.hamburgerBtn {
+  display: none;
+  background: none;
+  border: none;
+  color: #2d6a4f;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.hamburgerBtn:active {
+  background-color: #e8f5ee;
 }
 
 .brandName {
@@ -146,6 +155,10 @@
   gap: 6px;
 }
 
+.btnLogoutText {
+  display: inline;
+}
+
 .btnLogout:hover {
   color: #c0392b;
   border-color: #f5b7b1;
@@ -155,4 +168,101 @@
 .main {
   min-height: calc(100vh - 60px);
   padding-bottom: 3rem;
+}
+
+.mobileOverlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 1rem;
+  }
+
+  .headerLeft {
+    gap: 0.75rem;
+  }
+
+  .hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ocultar textos de usuario para ahorrar espacio */
+  .userInfo {
+    display: none;
+  }
+
+  .userPill {
+    padding: 4px; /* Ajustamos padding porque solo hay avatar */
+    border-radius: 50%; /* Lo hacemos redondo perfecto */
+  }
+
+  /* Ocultar texto de salir, dejamos solo el icono */
+  .btnLogoutText {
+    display: none;
+  }
+
+  .btnLogout {
+    padding: 8px; /* Botón cuadrado para el icono */
+  }
+
+  /* Transformar la navegación en menú móvil */
+  .nav {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 0.75rem;
+    border-bottom: 1px solid #e8eeeb;
+    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.1);
+    display: none; /* Oculto por defecto */
+    z-index: 100;
+  }
+
+  .navOpen {
+    display: flex;
+    animation: slideDown 0.2s ease forwards;
+  }
+
+  .navBtn {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .mobileOverlay {
+    display: block;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 90;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Teléfonos muy pequeños */
+@media (max-width: 360px) {
+  .brandName {
+    display: none; /* Ocultar el nombre de marca si la pantalla es enana, priorizamos botones */
+  }
 }

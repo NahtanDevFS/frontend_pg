@@ -36,6 +36,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFiltroOperador = (id: string) => {
@@ -68,7 +69,7 @@ export default function DashboardPage() {
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.pageHeader}>
-        <div>
+        <div className={styles.headerTitles}>
           <h1 className={styles.pageTitle}>Campos de cultivo</h1>
           <p className={styles.pageSubtitle}>
             {cultivos.length} campo de cultivo{cultivos.length !== 1 ? "s" : ""}{" "}
@@ -99,8 +100,11 @@ export default function DashboardPage() {
       {/* Filtro */}
       {operadores.length > 0 && (
         <div className={styles.filtroRow}>
-          <label className={styles.filtroLabel}>Filtrar por operador:</label>
+          <label htmlFor="filtroOperador" className={styles.filtroLabel}>
+            Filtrar por operador:
+          </label>
           <select
+            id="filtroOperador"
             className={styles.filtroSelect}
             value={filtroOperador}
             onChange={(e) => handleFiltroOperador(e.target.value)}
@@ -150,23 +154,50 @@ export default function DashboardPage() {
         <div className={styles.cultivoList}>
           {cultivos.map((cultivo) => (
             <div key={cultivo.id} className={styles.cultivoCard}>
-              {/* Inicial */}
-              <div className={styles.cultivoBadge}>
-                {cultivo.nombre[0].toUpperCase()}
-              </div>
+              <div className={styles.cultivoData}>
+                {/* Inicial */}
+                <div className={styles.cultivoBadge}>
+                  {cultivo.nombre[0].toUpperCase()}
+                </div>
 
-              {/* Info */}
-              <div className={styles.cultivoInfo}>
-                <p className={styles.cultivoName}>{cultivo.nombre}</p>
-                <div className={styles.cultivoMeta}>
-                  {cultivo.municipio_nombre && (
-                    <span
-                      className={styles.metaItem}
-                      style={{ textTransform: "capitalize" }}
-                    >
+                {/* Info */}
+                <div className={styles.cultivoInfo}>
+                  <p className={styles.cultivoName}>{cultivo.nombre}</p>
+                  <div className={styles.cultivoMeta}>
+                    {cultivo.municipio_nombre && (
+                      <span
+                        className={styles.metaItem}
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        {cultivo.municipio_nombre},{" "}
+                        {cultivo.departamento_nombre}
+                      </span>
+                    )}
+                    <span className={styles.metaItem}>
+                      {cultivo.total_surcos} surcos
+                    </span>
+                    {cultivo.hectareas && (
+                      <span className={styles.metaItem}>
+                        {cultivo.hectareas} ha
+                      </span>
+                    )}
+                    <span className={styles.operadorBadge}>
                       <svg
-                        width="11"
-                        height="11"
+                        width="10"
+                        height="10"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -174,36 +205,12 @@ export default function DashboardPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
                       </svg>
-                      {cultivo.municipio_nombre}, {cultivo.departamento_nombre}
+                      {nombreOperador(cultivo.usuario_id)}
                     </span>
-                  )}
-                  <span className={styles.metaItem}>
-                    {cultivo.total_surcos} surcos
-                  </span>
-                  {cultivo.hectareas && (
-                    <span className={styles.metaItem}>
-                      {cultivo.hectareas} ha
-                    </span>
-                  )}
-                  <span className={styles.operadorBadge}>
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    {nombreOperador(cultivo.usuario_id)}
-                  </span>
+                  </div>
                 </div>
               </div>
 
@@ -216,13 +223,8 @@ export default function DashboardPage() {
                   Ver conteos
                 </button>
                 <button
-                  className={styles.btnDetalle}
+                  className={`${styles.btnDetalle} ${styles.btnEditar}`}
                   onClick={() => router.push(`/cultivos/${cultivo.id}/editar`)}
-                  style={{
-                    background: "var(--color-surface)",
-                    color: "var(--color-primary)",
-                    border: "1.5px solid var(--color-primary)",
-                  }}
                 >
                   Editar
                 </button>
@@ -230,6 +232,7 @@ export default function DashboardPage() {
                   className={styles.btnIcono}
                   onClick={() => handleDesactivar(cultivo.id, cultivo.nombre)}
                   title="Desactivar cultivo"
+                  aria-label="Desactivar cultivo"
                 >
                   <svg
                     width="14"

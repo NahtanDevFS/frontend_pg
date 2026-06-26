@@ -80,8 +80,8 @@ export default function NuevoCultivoPage() {
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <BtnBack href="/dashboard" label="Volver" />
-        <h1 className={styles.pageTitle}>Registrar nuevo cultivo</h1>
+        <BtnBack href="/dashboard" label="Volver al panel" />
+        <h1 className={styles.pageTitle}>Registrar nuevo campo de cultivo</h1>
         <p className={styles.pageSubtitle}>
           Después de crearlo podrás asignar los operadores autorizados.
         </p>
@@ -91,8 +91,8 @@ export default function NuevoCultivoPage() {
         {error && (
           <div className={styles.errorMsg}>
             <svg
-              width="15"
-              height="15"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -104,14 +104,15 @@ export default function NuevoCultivoPage() {
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            {error}
+            <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <label htmlFor="nombre">
-              Nombre del cultivo <span className={styles.required}>*</span>
+              Nombre del campo de cultivo{" "}
+              <span className={styles.required}>*</span>
             </label>
             <input
               id="nombre"
@@ -233,7 +234,7 @@ export default function NuevoCultivoPage() {
             >
               {loading
                 ? "Guardando..."
-                : "Crear cultivo y asignar operadores →"}
+                : "Crear campo de cultivo y asignar operadores"}
             </button>
           </div>
         </form>

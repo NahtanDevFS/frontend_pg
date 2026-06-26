@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { api } from "@/lib/api";
 import styles from "./login.module.css";
 
@@ -53,6 +54,17 @@ export default function LoginPage() {
     <div className={styles.container}>
       <form className={styles.formCard} onSubmit={handleLogin}>
         <div className={styles.cardHeader}>
+          {/* Logo agregado */}
+          <div className={styles.logoContainer}>
+            <Image
+              src="/logo_meloncount.png"
+              alt="Logo MelonCount"
+              width={100}
+              height={100}
+              className={styles.logo}
+              priority
+            />
+          </div>
           <p className={styles.subtitle}>Amadeo Export, S.A.</p>
           <h2 className={styles.title}>MelonCount</h2>
           <p className={styles.subtitle}>Panel administrativo</p>
@@ -67,6 +79,7 @@ export default function LoginPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            placeholder="Ingrese su usuario"
             required
             autoComplete="username"
           />
@@ -74,35 +87,23 @@ export default function LoginPage() {
 
         <div className={styles.inputGroup}>
           <label htmlFor="password">Contraseña</label>
-          <div style={{ position: "relative" }}>
+          <div className={styles.inputWrapper}>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Ingrese su contraseña"
               required
-              style={{ paddingRight: "2.75rem" }}
               autoComplete="current-password"
             />
             <button
               type="button"
+              className={styles.eyeBtn}
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={
                 showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
               }
-              style={{
-                position: "absolute",
-                right: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                color: "var(--color-text-muted)",
-              }}
             >
               {showPassword ? (
                 <svg
@@ -138,25 +139,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            marginTop: "0.5rem",
-            padding: "11px",
-            background: "var(--color-primary, #2d6a4f)",
-            color: "white",
-            border: "none",
-            borderRadius: 10,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontSize: "0.95rem",
-            fontFamily: "inherit",
-          }}
-        >
+        <button type="submit" className={styles.submitBtn}>
           Iniciar sesión
         </button>
       </form>
+
+      {/* Mensaje de exclusividad agregado */}
+      <div className={styles.adminMessage}>
+        <p>Acceso exclusivo para administradores del sistema</p>
+      </div>
     </div>
   );
 }

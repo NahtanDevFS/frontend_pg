@@ -1,0 +1,523 @@
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  animation: fadeIn 0.3s ease;
+  box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  gap: 12px;
+  flex-direction: column;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.header {
+  margin-bottom: 1.75rem;
+}
+
+.heroBox {
+  background: #2d6a4f;
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  color: #fff;
+  margin-top: 0.75rem;
+}
+
+.heroTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.heroMetaWrap {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heroMeta {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: capitalize;
+}
+
+.errorAlert {
+  padding: 1rem;
+  background: #fee2e2;
+  border-radius: 10px;
+  color: #991b1b;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* Tarjetas y Paneles Blancos */
+.panelCard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  box-sizing: border-box;
+}
+
+.panelTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.panelSubtitle {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+/* Operadores */
+.emptyText {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+
+.opTag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #e8f5ee;
+  border: 1.5px solid #b7e4c7;
+  border-radius: 99px;
+}
+
+.opName {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #2d6a4f;
+}
+
+.opRemoveBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #52b788;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.opRemoveBtn:hover {
+  color: #1b4332;
+}
+
+.asignarForm {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.selectInput {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  font-size: 0.875rem;
+  flex: 1;
+  max-width: 240px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.selectInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btnAsignar {
+  padding: 9px 18px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: background 0.2s;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.btnAsignar:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btnAsignar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Filtros */
+.filtrosRow {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  box-sizing: border-box;
+}
+
+.filtroCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filtroLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.filtroControl {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filtroControl:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btnLimpiar {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.btnLimpiar:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* Gráficas */
+.graficaSinDatos {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.graficaContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.graficaSvg {
+  display: block;
+  min-width: 300px;
+}
+
+/* Tabla */
+.tablaContainer {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.tablaHeader {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tablaScrollWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* Evita que la tabla colapse en móviles */
+}
+
+.tablaTheadRow {
+  background: var(--color-surface-alt, #f4f7f5);
+}
+
+.thAlignLeft {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.thAlignRight {
+  padding: 10px 16px;
+  text-align: right;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.tablaTr {
+  border-top: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tablaTrAlt {
+  background: var(--color-surface-alt, #fafcfb);
+}
+
+.tablaTr:hover {
+  background: rgba(45, 106, 79, 0.06);
+}
+
+.tdId {
+  padding: 12px 16px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.tdNombre {
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tdBase {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.tdTotal {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 700;
+  font-family: "DM Mono", monospace;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.totalValido {
+  color: var(--color-primary);
+}
+
+.badgeConfianza {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeAlto {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeModerado {
+  background: #fff3cd;
+  color: #856404;
+}
+.badgeBajo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badgeVacio {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.badgeEstado {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.badgeCompletado {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeEnProgreso {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.tdChevron {
+  padding: 12px 16px;
+  color: var(--color-text-muted);
+}
+
+.tablaVaciaMsg {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Paginación */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.btnPag {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.btnPag:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btnPag:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagInfo {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* =========================================
+   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
+   ========================================= */
+@media (max-width: 640px) {
+  .container {
+    padding: 1.25rem 1rem;
+  }
+
+  .heroBox {
+    padding: 1.25rem;
+  }
+
+  .panelCard {
+    padding: 1.25rem;
+  }
+
+  .tablaHeader {
+    padding: 1.25rem;
+  }
+
+  /* Formulario asignar operador */
+  .asignarForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selectInput {
+    max-width: 100%;
+  }
+
+  .btnAsignar {
+    width: 100%;
+  }
+
+  /* Filtros */
+  .filtrosRow {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.25rem;
+    gap: 12px;
+  }
+
+  .filtroCol {
+    width: 100%;
+  }
+
+  .btnLimpiar {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  /* Paginación apilada para pantallas muy pequeñas */
+  .paginacion {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btnPag {
+    width: 100%;
+  }
+}

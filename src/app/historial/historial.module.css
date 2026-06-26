@@ -2,6 +2,7 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  box-sizing: border-box;
 }
 
 .pageHeader {
@@ -28,6 +29,7 @@
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
   overflow: hidden;
+  background-color: var(--color-surface);
 }
 
 .vistaBtn {
@@ -39,6 +41,7 @@
   background: transparent;
   color: var(--color-text-muted);
   font-family: inherit;
+  transition: all 0.2s;
 }
 
 .vistaBtnActivo {
@@ -56,12 +59,14 @@
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: 12px;
+  box-sizing: border-box;
 }
 
 .filtroGrupo {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
   min-width: 180px;
 }
 
@@ -81,11 +86,19 @@
 
 .filtroSelect,
 .filtroInput {
-  padding: 7px 10px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1.5px solid var(--color-border);
   font-size: 0.875rem;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filtroSelect:focus,
+.filtroInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .filtroLimpiarWrap {
@@ -94,7 +107,7 @@
 }
 
 .btnLimpiar {
-  padding: 7px 14px;
+  padding: 8px 14px;
   background: none;
   border: 1.5px solid var(--color-border);
   border-radius: 8px;
@@ -102,6 +115,13 @@
   cursor: pointer;
   color: var(--color-text-muted);
   font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btnLimpiar:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
 }
 
 /* Loading */
@@ -127,7 +147,7 @@
   }
 }
 
-/* Tabla */
+/* Tabla y Scroll */
 .tablaWrap {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
@@ -135,9 +155,17 @@
   overflow: hidden;
 }
 
+/* NUEVA REGLA CRUCIAL PARA MÓVILES */
+.tablaScroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+}
+
 .tabla {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px; /* Asegura que no se aplaste el contenido */
 }
 
 .tablaHead {
@@ -193,7 +221,7 @@
 .paginacion {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 16px;
   padding: 16px;
   border-top: 1px solid var(--color-border);
@@ -237,24 +265,6 @@
   font-size: 0.8rem;
 }
 
-.tdCultivoBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-primary);
-  font-weight: 600;
-  font-size: 0.875rem;
-  padding: 0;
-  font-family: inherit;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: text-decoration-color 0.15s;
-}
-
-.tdCultivoBtn:hover {
-  text-decoration-color: currentColor;
-}
-
 .tdOperador {
   color: var(--color-text-muted);
 }
@@ -278,6 +288,7 @@
   padding: 2px 10px;
   border-radius: 99px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .badgeCompletado {
@@ -291,7 +302,7 @@
 }
 
 .btnPDF {
-  padding: 5px 12px;
+  padding: 6px 12px;
   background: none;
   border: 1.5px solid var(--color-border);
   border-radius: 8px;
@@ -300,10 +311,17 @@
   cursor: pointer;
   color: var(--color-text-muted);
   font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btnPDF:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btnPDF:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tablaVacia {
@@ -343,6 +361,8 @@
 .tendenciaSinDatos {
   color: var(--color-text-muted);
   grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
 }
 
 .tendenciaNota {
@@ -378,6 +398,11 @@
 }
 
 /* Gráfica tendencia */
+.graficaContenedor {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .graficaLabel {
   font-size: 0.75rem;
   font-weight: 600;
@@ -385,4 +410,63 @@
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
   margin-bottom: 6px;
+}
+
+/* =========================================
+   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
+   ========================================= */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.25rem 1rem;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .vistaToggle {
+    width: 100%;
+  }
+
+  .vistaBtn {
+    flex: 1; /* Los botones de tabla/tendencia toman la mitad de la pantalla c/u */
+    text-align: center;
+  }
+
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.25rem;
+  }
+
+  .filtroGrupo,
+  .filtroGrupoChico {
+    width: 100%;
+  }
+
+  .filtroLimpiarWrap {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .btnLimpiar {
+    width: 100%; /* Botón de limpiar ocupa todo el ancho */
+  }
+
+  /* Ajustar la paginación para pantallas pequeñas */
+  .paginacion {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pagBtn {
+    width: 100%;
+  }
+
+  /* Reducir columnas de tendencia */
+  .tendenciaGrid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,8 +1,9 @@
 .container {
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
   animation: fadeIn 0.3s ease;
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {
@@ -18,27 +19,8 @@
   margin-bottom: 2rem;
 }
 
-.btnBack {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: 8px;
-  transition: color 0.15s;
-}
-
-.btnBack:hover {
-  color: var(--color-primary);
-}
-
 .pageTitle {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: -0.03em;
@@ -47,7 +29,7 @@
 
 .pageSubtitle {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .formCard {
@@ -56,19 +38,21 @@
   border-radius: var(--radius-xl);
   padding: 2rem;
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .errorMsg {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--color-danger-soft);
   color: var(--color-danger);
   border: 1px solid var(--color-danger-border);
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius);
   margin-bottom: 1.5rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .form {
@@ -87,6 +71,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .formGroup label {
@@ -98,10 +83,43 @@
   gap: 5px;
 }
 
+/* Base Inputs y Selects totalmente responsivos */
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  font-family: inherit;
+  transition: all 0.2s;
+  box-sizing: border-box; /* Fundamental para evitar desbordes */
+}
+
+.formGroup input::placeholder {
+  color: var(--color-text-light);
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+}
+
+.formGroup select:disabled {
+  background-color: #f4f7f5;
+  color: #a3b8ad;
+  cursor: not-allowed;
+}
+
 .required {
   color: var(--color-danger);
   font-size: 0.85rem;
 }
+
 .optional {
   color: var(--color-text-light);
   font-weight: 400;
@@ -110,7 +128,7 @@
 
 .formActions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: 0.75rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--color-border);
@@ -118,7 +136,7 @@
 
 .btnCancel {
   flex: 1;
-  padding: 11px;
+  padding: 12px;
   background: none;
   color: var(--color-text-muted);
   border: 1.5px solid var(--color-border);
@@ -128,16 +146,21 @@
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .btnCancel:hover {
   border-color: var(--color-border-strong);
   color: var(--color-text);
+  background-color: #f8faf9;
 }
 
 .btnSubmit {
   flex: 2;
-  padding: 11px;
+  padding: 12px;
   background: linear-gradient(
     135deg,
     var(--color-primary),
@@ -156,6 +179,7 @@
   justify-content: center;
   gap: 8px;
   box-shadow: 0 2px 8px rgba(45, 106, 79, 0.2);
+  box-sizing: border-box;
 }
 
 .btnSubmit:hover:not(:disabled) {
@@ -164,35 +188,44 @@
 }
 
 .btnSubmit:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
-.btnSpinner {
-  width: 15px;
-  height: 15px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 500px) {
+/* =========================================
+   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
+   ========================================= */
+@media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
   }
+
   .formCard {
     padding: 1.25rem;
+    border-radius: var(--radius-lg);
   }
+
+  .pageTitle {
+    font-size: 1.4rem;
+  }
+
+  /* Apilar las columnas en dispositivos pequeños */
   .formRow {
     grid-template-columns: 1fr;
+    gap: 1.25rem; /* Aumenta ligeramente el gap vertical para que respiren */
+  }
+
+  /* Apilar botones de acción */
+  .formActions {
+    flex-direction: column-reverse; /* El botón de "Crear cultivo" queda arriba, el de cancelar abajo */
+    gap: 10px;
+  }
+
+  .btnCancel,
+  .btnSubmit {
+    width: 100%;
+    flex: none; /* Eliminar los ratios para forzar que ocupen todo el bloque */
   }
 }

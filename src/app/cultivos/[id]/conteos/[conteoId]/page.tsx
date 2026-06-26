@@ -285,15 +285,12 @@ export default function DetalleConteoPage() {
       <div className={styles.errorWrap}>{error || "Conteo no encontrado."}</div>
     );
 
-  const conteoEfectivo = (p: ProcesamientoVideo) =>
-    p.resultado?.conteo_ajustado ?? p.resultado?.conteo_ia ?? 0;
-
   const estadoNombre = conteo.estado_id === 2 ? "Completado" : "En progreso";
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <div>
+        <div className={styles.headerInfo}>
           <BtnBack onClick={() => router.back()} label="Volver" />
           <h1 className={styles.pageTitle}>
             Conteo #{conteo.id}
@@ -339,8 +336,8 @@ export default function DetalleConteoPage() {
           disabled={exportando}
         >
           <svg
-            width="14"
-            height="14"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -358,7 +355,7 @@ export default function DetalleConteoPage() {
 
       {/* Hero */}
       <div className={styles.hero}>
-        <div>
+        <div className={styles.heroLeft}>
           <p className={styles.heroLabel}>Total acumulado</p>
           <p className={styles.heroTotal}>
             {conteo.conteo_total_acumulado.toLocaleString()}
@@ -447,37 +444,45 @@ export default function DetalleConteoPage() {
                         </span>
                       </div>
                       <div className={styles.procRight}>
-                        {p.resultado && (
-                          <>
-                            <div className={styles.procStatWrap}>
-                              <p className={styles.procStatLabel}>IA</p>
-                              <p className={styles.procStatVal}>
-                                {p.resultado.conteo_ia.toLocaleString()}
-                              </p>
-                            </div>
-                            {p.resultado.conteo_ajustado != null && (
+                        <div className={styles.procStats}>
+                          {p.resultado && (
+                            <>
                               <div className={styles.procStatWrap}>
-                                <p className={styles.procStatLabel}>Ajustado</p>
-                                <p className={styles.procStatValPrimary}>
-                                  {p.resultado.conteo_ajustado.toLocaleString()}
+                                <p className={styles.procStatLabel}>IA</p>
+                                <p className={styles.procStatVal}>
+                                  {p.resultado.conteo_ia.toLocaleString()}
                                 </p>
                               </div>
-                            )}
-                            {(p.resultado as any).nivel_confiabilidad && (
-                              <BadgeConfiabilidad
-                                nivel={(p.resultado as any).nivel_confiabilidad}
-                              />
-                            )}
-                          </>
-                        )}
-                        <span
-                          className={`${styles.badgeProcEstado} ${badgeClase}`}
-                        >
-                          {estadoProc}
-                        </span>
+                              {p.resultado.conteo_ajustado != null && (
+                                <div className={styles.procStatWrap}>
+                                  <p className={styles.procStatLabel}>
+                                    Ajustado
+                                  </p>
+                                  <p className={styles.procStatValPrimary}>
+                                    {p.resultado.conteo_ajustado.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                              {(p.resultado as any).nivel_confiabilidad && (
+                                <div className={styles.procBadgeWrapper}>
+                                  <BadgeConfiabilidad
+                                    nivel={
+                                      (p.resultado as any).nivel_confiabilidad
+                                    }
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
+                          <span
+                            className={`${styles.badgeProcEstado} ${badgeClase}`}
+                          >
+                            {estadoProc}
+                          </span>
+                        </div>
                         <svg
-                          width="16"
-                          height="16"
+                          width="18"
+                          height="18"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -488,6 +493,7 @@ export default function DetalleConteoPage() {
                             transform: expandido ? "rotate(180deg)" : "none",
                             transition: "transform 0.2s",
                             color: "var(--color-text-muted, #8fa898)",
+                            flexShrink: 0,
                           }}
                         >
                           <path d="m6 9 6 6 6-6" />
@@ -533,8 +539,8 @@ export default function DetalleConteoPage() {
                             disabled={descargandoId === p.id}
                           >
                             <svg
-                              width="14"
-                              height="14"
+                              width="16"
+                              height="16"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"

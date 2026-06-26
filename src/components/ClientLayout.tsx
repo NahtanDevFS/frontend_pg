@@ -26,7 +26,15 @@ export default function ClientLayout({
   const [user, setUser] = useState<UsuarioMe | null>(authCache.user);
   const [loading, setLoading] = useState(!authCache.checked);
 
+  // Estado para el menú responsivo
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const enLogin = pathname.startsWith("/login");
+
+  // Cerrar el menú móvil al cambiar de ruta
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (authCache.checked) {
@@ -141,8 +149,30 @@ export default function ClientLayout({
       {!enLogin && user && (
         <header className={styles.header}>
           <div className={styles.headerLeft}>
+            <button
+              className={styles.hamburgerBtn}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Abrir menú"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
             <span className={styles.brandName}>MelonCount</span>
-            <nav className={styles.nav}>
+            <nav
+              className={`${styles.nav} ${isMobileMenuOpen ? styles.navOpen : ""}`}
+            >
               {NAV_LINKS.map(({ href, label }) => {
                 const active =
                   pathname === href || pathname.startsWith(href + "/");
@@ -174,10 +204,14 @@ export default function ClientLayout({
               </div>
             </div>
 
-            <button className={styles.btnLogout} onClick={handleLogout}>
+            <button
+              className={styles.btnLogout}
+              onClick={handleLogout}
+              aria-label="Cerrar sesión"
+            >
               <svg
-                width="14"
-                height="14"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -189,12 +223,20 @@ export default function ClientLayout({
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              salir
+              <span className={styles.btnLogoutText}>salir</span>
             </button>
           </div>
         </header>
       )}
       <main className={styles.main}>{children}</main>
+
+      {/* Overlay oscuro para móviles cuando el menú está abierto */}
+      {isMobileMenuOpen && (
+        <div
+          className={styles.mobileOverlay}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </>
   );
 }

@@ -11,13 +11,18 @@ export default function DashboardPage() {
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
   const [filtroOperador, setFiltroOperador] = useState("");
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchDatos = async (usuarioId?: string) => {
+  const fetchDatos = async (usuarioId?: string, inactivos?: boolean) => {
     try {
-      const url = usuarioId
-        ? `/cultivos/admin/todos?usuario_id=${usuarioId}`
+      const incluir = inactivos ?? mostrarInactivos;
+      let url = incluir
+        ? "/cultivos/admin/todos?incluir_inactivos=true"
         : "/cultivos/admin/todos";
+      if (usuarioId) {
+        url += `${incluir ? "&" : "?"}usuario_id=${usuarioId}`;
+      }
       const [resCultivos, resOperadores] = await Promise.all([
         api.get<Cultivo[]>(url),
         api.get<Usuario[]>("/usuarios/"),
@@ -44,6 +49,11 @@ export default function DashboardPage() {
     fetchDatos(id || undefined);
   };
 
+  const handleToggleInactivos = (checked: boolean) => {
+    setMostrarInactivos(checked);
+    fetchDatos(filtroOperador || undefined, checked);
+  };
+
   const handleDesactivar = async (id: number, nombre: string) => {
     if (!confirm(`¿Desactivar el cultivo "${nombre}"?`)) return;
     try {
@@ -51,6 +61,16 @@ export default function DashboardPage() {
       setCultivos((prev) => prev.filter((c) => c.id !== id));
     } catch {
       alert("Error al desactivar el cultivo.");
+    }
+  };
+
+  const handleReactivar = async (id: number, nombre: string) => {
+    if (!confirm(`¿Reactivar el cultivo "${nombre}"?`)) return;
+    try {
+      await api.patch(`/cultivos/${id}/reactivar`);
+      await fetchDatos(filtroOperador || undefined);
+    } catch {
+      alert("Error al reactivar el cultivo.");
     }
   };
 
@@ -65,6 +85,9 @@ export default function DashboardPage() {
       </div>
     );
 
+  const cultivosActivos = cultivos.filter((c) => c.activo);
+  const cultivosInactivos = cultivos.filter((c) => !c.activo);
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -72,8 +95,12 @@ export default function DashboardPage() {
         <div className={styles.headerTitles}>
           <h1 className={styles.pageTitle}>Campos de cultivo</h1>
           <p className={styles.pageSubtitle}>
-            {cultivos.length} campo de cultivo{cultivos.length !== 1 ? "s" : ""}{" "}
-            registrado{cultivos.length !== 1 ? "s" : ""}
+            {cultivosActivos.length} campo de cultivo
+            {cultivosActivos.length !== 1 ? "s" : ""} activo
+            {cultivosActivos.length !== 1 ? "s" : ""}
+            {mostrarInactivos && cultivosInactivos.length > 0
+              ? ` · ${cultivosInactivos.length} desactivado${cultivosInactivos.length !== 1 ? "s" : ""}`
+              : ""}
           </p>
         </div>
         <button
@@ -97,30 +124,50 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Filtro */}
-      {operadores.length > 0 && (
-        <div className={styles.filtroRow}>
-          <label htmlFor="filtroOperador" className={styles.filtroLabel}>
-            Filtrar por operador:
-          </label>
-          <select
-            id="filtroOperador"
-            className={styles.filtroSelect}
-            value={filtroOperador}
-            onChange={(e) => handleFiltroOperador(e.target.value)}
-          >
-            <option value="">Todos los operadores</option>
-            {operadores.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* Filtros */}
+      <div className={styles.filtroRow}>
+        {operadores.length > 0 && (
+          <div className={styles.filtroGroup}>
+            <label htmlFor="filtroOperador" className={styles.filtroLabel}>
+              Filtrar por operador:
+            </label>
+            <select
+              id="filtroOperador"
+              className={styles.filtroSelect}
+              value={filtroOperador}
+              onChange={(e) => handleFiltroOperador(e.target.value)}
+            >
+              <option value="">Todos los operadores</option>
+              {operadores.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-      {/* Vacío */}
-      {cultivos.length === 0 ? (
+        <label className={styles.toggleLabel}>
+          <div
+            className={`${styles.toggle} ${mostrarInactivos ? styles.toggleOn : ""}`}
+            onClick={() => handleToggleInactivos(!mostrarInactivos)}
+            role="switch"
+            aria-checked={mostrarInactivos}
+            tabIndex={0}
+            onKeyDown={(e) =>
+              e.key === "Enter" || e.key === " "
+                ? handleToggleInactivos(!mostrarInactivos)
+                : null
+            }
+          >
+            <div className={styles.toggleThumb} />
+          </div>
+          <span className={styles.toggleText}>Mostrar desactivados</span>
+        </label>
+      </div>
+
+      {/* Lista activos */}
+      {cultivosActivos.length === 0 && !mostrarInactivos ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>
             <svg
@@ -152,15 +199,12 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className={styles.cultivoList}>
-          {cultivos.map((cultivo) => (
+          {cultivosActivos.map((cultivo) => (
             <div key={cultivo.id} className={styles.cultivoCard}>
               <div className={styles.cultivoData}>
-                {/* Inicial */}
                 <div className={styles.cultivoBadge}>
                   {cultivo.nombre[0].toUpperCase()}
                 </div>
-
-                {/* Info */}
                 <div className={styles.cultivoInfo}>
                   <p className={styles.cultivoName}>{cultivo.nombre}</p>
                   <div className={styles.cultivoMeta}>
@@ -214,7 +258,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Acciones */}
               <div className={styles.cardActions}>
                 <button
                   className={styles.btnDetalle}
@@ -253,6 +296,108 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
+
+          {/* Sección de inactivos */}
+          {mostrarInactivos && cultivosInactivos.length > 0 && (
+            <>
+              <div className={styles.seccionInactivosDivider}>
+                <span>Desactivados ({cultivosInactivos.length})</span>
+              </div>
+              {cultivosInactivos.map((cultivo) => (
+                <div
+                  key={cultivo.id}
+                  className={`${styles.cultivoCard} ${styles.cultivoCardInactivo}`}
+                >
+                  <div className={styles.cultivoData}>
+                    <div
+                      className={`${styles.cultivoBadge} ${styles.cultivoBadgeInactivo}`}
+                    >
+                      {cultivo.nombre[0].toUpperCase()}
+                    </div>
+                    <div className={styles.cultivoInfo}>
+                      <div className={styles.cultivoNameRow}>
+                        <p
+                          className={`${styles.cultivoName} ${styles.cultivoNameInactivo}`}
+                        >
+                          {cultivo.nombre}
+                        </p>
+                        <span className={styles.badgeInactivo}>
+                          Desactivado
+                        </span>
+                      </div>
+                      <div className={styles.cultivoMeta}>
+                        {cultivo.municipio_nombre && (
+                          <span
+                            className={styles.metaItem}
+                            style={{ textTransform: "capitalize" }}
+                          >
+                            <svg
+                              width="11"
+                              height="11"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            {cultivo.municipio_nombre},{" "}
+                            {cultivo.departamento_nombre}
+                          </span>
+                        )}
+                        <span className={styles.metaItem}>
+                          {cultivo.total_surcos} surcos
+                        </span>
+                        {cultivo.hectareas && (
+                          <span className={styles.metaItem}>
+                            {cultivo.hectareas} ha
+                          </span>
+                        )}
+                        <span className={styles.operadorBadge}>
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          {nombreOperador(cultivo.usuario_id)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.cardActions}>
+                    <button
+                      className={`${styles.btnDetalle} ${styles.btnReactivar}`}
+                      onClick={() =>
+                        handleReactivar(cultivo.id, cultivo.nombre)
+                      }
+                    >
+                      Reactivar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {mostrarInactivos &&
+            cultivosInactivos.length === 0 &&
+            cultivosActivos.length > 0 && (
+              <p className={styles.sinInactivosMsg}>
+                No hay cultivos desactivados.
+              </p>
+            )}
         </div>
       )}
     </div>

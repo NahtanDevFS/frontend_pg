@@ -145,7 +145,9 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fill="#a3b8ad"
                   fontSize="10"
                 >
-                  {new Date(p.conteo.fecha_conteo).toLocaleDateString("es-GT", {
+                  {new Date(
+                    p.conteo.fecha_conteo + "T00:00:00",
+                  ).toLocaleDateString("es-GT", {
                     day: "2-digit",
                     month: "short",
                   })}

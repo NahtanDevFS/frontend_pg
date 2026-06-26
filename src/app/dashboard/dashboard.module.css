@@ -388,3 +388,151 @@
     flex-shrink: 0;
   }
 }
+
+/* =========================================
+   TOGGLE MOSTRAR DESACTIVADOS
+   ========================================= */
+.filtroRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.filtroGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  margin-left: auto;
+}
+
+.toggle {
+  width: 38px;
+  height: 22px;
+  background: var(--color-border);
+  border-radius: 99px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.toggleOn {
+  background: var(--color-primary);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleText {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =========================================
+   CARDS INACTIVAS
+   ========================================= */
+.seccionInactivosDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.seccionInactivosDivider::before,
+.seccionInactivosDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.cultivoCardInactivo {
+  opacity: 0.65;
+  border-style: dashed;
+}
+
+.cultivoCardInactivo:hover {
+  opacity: 0.85;
+}
+
+.cultivoBadgeInactivo {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+
+.cultivoNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cultivoNameInactivo {
+  color: var(--color-text-muted);
+  margin-bottom: 0;
+}
+
+.badgeInactivo {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: 1px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.btnReactivar {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+.btnReactivar:hover {
+  background: var(--color-primary-light);
+}
+
+.sinInactivosMsg {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  padding: 1rem 0;
+}

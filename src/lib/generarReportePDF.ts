@@ -23,7 +23,7 @@ const COLORES_CALIBRE: [number, number, number][] = [
 function formatFecha(fecha: string | null | undefined) {
   if (!fecha) return "—";
   try {
-    return new Date(fecha).toLocaleDateString("es-GT", {
+    return new Date(fecha + "T00:00:00").toLocaleDateString("es-GT", {
       day: "2-digit",
       month: "long",
       year: "numeric",

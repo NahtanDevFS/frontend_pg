@@ -466,7 +466,9 @@ export default function HistorialPage() {
                         {c.operador_nombre ?? "—"}
                       </td>
                       <td className={styles.tablaTd}>
-                        {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
+                        {new Date(
+                          c.fecha_conteo + "T00:00:00",
+                        ).toLocaleDateString("es-GT", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",

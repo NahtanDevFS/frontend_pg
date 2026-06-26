@@ -15,7 +15,7 @@ interface OperadorAsignado {
   created_at: string;
 }
 
-// ── Gráfica de tendencia histórica ────────────────────────────
+//Gráfica de tendencia histórica
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const completados = conteos
     .filter((c) => c.estado_id === 2 && c.conteo_total_acumulado > 0)
@@ -481,7 +481,9 @@ export default function DetalleCultivoPage() {
                       {c.operador_nombre ?? "—"}
                     </td>
                     <td className={styles.tdBase}>
-                      {new Date(c.fecha_conteo).toLocaleDateString("es-GT", {
+                      {new Date(
+                        c.fecha_conteo + "T00:00:00",
+                      ).toLocaleDateString("es-GT", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",

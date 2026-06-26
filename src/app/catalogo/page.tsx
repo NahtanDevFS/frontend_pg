@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { CalibreAdmin, VariedadAdmin, CalibreDeVariedad } from "@/types";
+import styles from "./catalogo.module.css";
 
 type Pestana = "calibres" | "variedades";
 
@@ -234,34 +235,17 @@ export default function GestionMelonesPage() {
   };
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "2rem 1.5rem" }}>
+    <div className={styles.container}>
       {/* Hero */}
-      <div
-        style={{
-          background: "#2d6a4f",
-          borderRadius: 14,
-          padding: "1.5rem 1.75rem",
-          color: "#fff",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 4 }}>
-          Gestión de melones
-        </h1>
-        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.85)" }}>
+      <div className={styles.hero}>
+        <h1 className={styles.heroTitle}>Gestión de melones</h1>
+        <p className={styles.heroDesc}>
           Administra los calibres y las variedades de melón del sistema.
         </p>
       </div>
 
       {/* Pestañas */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          marginBottom: "1.5rem",
-          borderBottom: "1.5px solid var(--color-border)",
-        }}
-      >
+      <div className={styles.tabsWrap}>
         {(
           [
             ["calibres", "Calibres"],
@@ -271,24 +255,7 @@ export default function GestionMelonesPage() {
           <button
             key={key}
             onClick={() => setPestana(key)}
-            style={{
-              padding: "10px 18px",
-              border: "none",
-              background: "none",
-              fontFamily: "inherit",
-              fontSize: "0.9rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              color:
-                pestana === key
-                  ? "var(--color-primary, #2d6a4f)"
-                  : "var(--color-text-muted)",
-              borderBottom:
-                pestana === key
-                  ? "2.5px solid var(--color-primary, #2d6a4f)"
-                  : "2.5px solid transparent",
-              marginBottom: -1.5,
-            }}
+            className={`${styles.tabBtn} ${pestana === key ? styles.tabBtnActive : ""}`}
           >
             {label}
           </button>
@@ -297,167 +264,169 @@ export default function GestionMelonesPage() {
 
       {pestana === "calibres" ? (
         <>
-          <div style={cabeceraSeccion}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>
               Calibres ({calibres.length})
             </h2>
-            <button onClick={abrirCrearCal} style={btnPrimary}>
+            <button onClick={abrirCrearCal} className={styles.btnPrimary}>
               + Nuevo calibre
             </button>
           </div>
 
-          {errorCal && <div style={errorBox}>{errorCal}</div>}
+          {errorCal && <div className={styles.errorBox}>{errorCal}</div>}
 
           {loadingCal ? (
-            <p style={{ color: "var(--color-text-muted)" }}>Cargando...</p>
+            <p className={styles.loadingText}>Cargando...</p>
           ) : (
-            <div style={tablaWrap}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr
-                    style={{ background: "var(--color-surface-alt, #f4f7f5)" }}
-                  >
-                    {[
-                      "Orden",
-                      "Nombre",
-                      "Descripción",
-                      "Conteos",
-                      "Estado",
-                      "",
-                    ].map((h) => (
-                      <th key={h} style={thStyle}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {calibres.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={tdVacio}>
-                        No hay calibres registrados.
-                      </td>
+            <div className={styles.tableWrap}>
+              <div className={styles.tableScroll}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr className={styles.theadRow}>
+                      {[
+                        "Orden",
+                        "Nombre",
+                        "Descripción",
+                        "Conteos",
+                        "Estado",
+                        "",
+                      ].map((h) => (
+                        <th key={h} className={styles.th}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ) : (
-                    calibres.map((c, i) => (
-                      <tr key={c.id} style={trStyle(i, c.activo)}>
-                        <td style={tdMuted}>{c.orden}</td>
-                        <td style={tdNombre}>{c.nombre}</td>
-                        <td style={tdMuted}>{c.descripcion ?? "—"}</td>
-                        <td style={tdMuted}>{c.conteos_asociados}</td>
-                        <td style={{ padding: "12px 16px" }}>
-                          <BadgeActivo activo={c.activo} />
-                        </td>
-                        <td
-                          style={{ padding: "12px 16px", textAlign: "right" }}
-                        >
-                          <div style={accionesWrap}>
-                            <button
-                              onClick={() => abrirEditarCal(c)}
-                              style={btnSec}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => toggleActivoCal(c)}
-                              style={btnToggle(c.activo)}
-                            >
-                              {c.activo ? "Desactivar" : "Activar"}
-                            </button>
-                          </div>
+                  </thead>
+                  <tbody>
+                    {calibres.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className={styles.tdVacio}>
+                          No hay calibres registrados.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      calibres.map((c, i) => (
+                        <tr
+                          key={c.id}
+                          className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""} ${!c.activo ? styles.trInactive : ""}`}
+                        >
+                          <td className={styles.tdMuted}>{c.orden}</td>
+                          <td className={styles.tdNombre}>{c.nombre}</td>
+                          <td className={styles.tdDesc}>
+                            {c.descripcion ?? "—"}
+                          </td>
+                          <td className={styles.tdMuted}>
+                            {c.conteos_asociados}
+                          </td>
+                          <td className={styles.tdCenter}>
+                            <BadgeActivo activo={c.activo} />
+                          </td>
+                          <td className={styles.tdAcciones}>
+                            <div className={styles.accionesWrap}>
+                              <button
+                                onClick={() => abrirEditarCal(c)}
+                                className={styles.btnSec}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => toggleActivoCal(c)}
+                                className={`${styles.btnSec} ${c.activo ? styles.btnToggleActive : styles.btnToggleInactive}`}
+                              >
+                                {c.activo ? "Desactivar" : "Activar"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
       ) : (
         <>
-          <div style={cabeceraSeccion}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>
               Variedades ({variedades.length})
             </h2>
-            <button onClick={abrirCrearVar} style={btnPrimary}>
+            <button onClick={abrirCrearVar} className={styles.btnPrimary}>
               + Nueva variedad
             </button>
           </div>
 
-          {errorVar && <div style={errorBox}>{errorVar}</div>}
+          {errorVar && <div className={styles.errorBox}>{errorVar}</div>}
 
           {loadingVar ? (
-            <p style={{ color: "var(--color-text-muted)" }}>Cargando...</p>
+            <p className={styles.loadingText}>Cargando...</p>
           ) : (
-            <div style={tablaWrap}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr
-                    style={{ background: "var(--color-surface-alt, #f4f7f5)" }}
-                  >
-                    {["Nombre", "Descripción", "Conteos", "Estado", ""].map(
-                      (h) => (
-                        <th key={h} style={thStyle}>
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {variedades.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={tdVacio}>
-                        No hay variedades registradas.
-                      </td>
+            <div className={styles.tableWrap}>
+              <div className={styles.tableScroll}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr className={styles.theadRow}>
+                      {["Nombre", "Descripción", "Conteos", "Estado", ""].map(
+                        (h) => (
+                          <th key={h} className={styles.th}>
+                            {h}
+                          </th>
+                        ),
+                      )}
                     </tr>
-                  ) : (
-                    variedades.map((v, i) => (
-                      <tr key={v.id} style={trStyle(i, v.activo)}>
-                        <td style={tdNombre}>{v.nombre}</td>
-                        <td
-                          style={{
-                            ...tdMuted,
-                            maxWidth: 320,
-                            whiteSpace: "normal",
-                          }}
-                        >
-                          {v.descripcion ?? "—"}
-                        </td>
-                        <td style={tdMuted}>{v.conteos_asociados}</td>
-                        <td style={{ padding: "12px 16px" }}>
-                          <BadgeActivo activo={v.activo} />
-                        </td>
-                        <td
-                          style={{ padding: "12px 16px", textAlign: "right" }}
-                        >
-                          <div style={accionesWrap}>
-                            <button
-                              onClick={() => abrirCalibresVar(v)}
-                              style={btnSec}
-                            >
-                              Calibres
-                            </button>
-                            <button
-                              onClick={() => abrirEditarVar(v)}
-                              style={btnSec}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => toggleActivoVar(v)}
-                              style={btnToggle(v.activo)}
-                            >
-                              {v.activo ? "Desactivar" : "Activar"}
-                            </button>
-                          </div>
+                  </thead>
+                  <tbody>
+                    {variedades.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className={styles.tdVacio}>
+                          No hay variedades registradas.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      variedades.map((v, i) => (
+                        <tr
+                          key={v.id}
+                          className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""} ${!v.activo ? styles.trInactive : ""}`}
+                        >
+                          <td className={styles.tdNombre}>{v.nombre}</td>
+                          <td className={styles.tdDesc}>
+                            {v.descripcion ?? "—"}
+                          </td>
+                          <td className={styles.tdMuted}>
+                            {v.conteos_asociados}
+                          </td>
+                          <td className={styles.tdCenter}>
+                            <BadgeActivo activo={v.activo} />
+                          </td>
+                          <td className={styles.tdAcciones}>
+                            <div className={styles.accionesWrap}>
+                              <button
+                                onClick={() => abrirCalibresVar(v)}
+                                className={styles.btnSec}
+                              >
+                                Calibres
+                              </button>
+                              <button
+                                onClick={() => abrirEditarVar(v)}
+                                className={styles.btnSec}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => toggleActivoVar(v)}
+                                className={`${styles.btnSec} ${v.activo ? styles.btnToggleActive : styles.btnToggleInactive}`}
+                              >
+                                {v.activo ? "Desactivar" : "Activar"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
@@ -466,18 +435,18 @@ export default function GestionMelonesPage() {
       {/* Modal crear/editar calibre */}
       {editCal && (
         <Modal onClose={() => !guardandoCal && setEditCal(null)}>
-          <h3 style={modalTitulo}>
+          <h3 className={styles.modalTitle}>
             {editCal.id === null ? "Nuevo calibre" : "Editar calibre"}
           </h3>
-          <label style={labelStyle}>Nombre *</label>
+          <label className={styles.label}>Nombre *</label>
           <input
             value={editCal.nombre}
             onChange={(e) => setEditCal({ ...editCal, nombre: e.target.value })}
             maxLength={20}
             placeholder="Ej: 12J"
-            style={inputStyle}
+            className={styles.input}
           />
-          <label style={labelStyle}>Descripción</label>
+          <label className={styles.label}>Descripción</label>
           <input
             value={editCal.descripcion}
             onChange={(e) =>
@@ -485,33 +454,30 @@ export default function GestionMelonesPage() {
             }
             maxLength={255}
             placeholder="Opcional"
-            style={inputStyle}
+            className={styles.input}
           />
-          <label style={labelStyle}>Orden</label>
+          <label className={styles.label}>Orden</label>
           <input
             type="number"
             value={editCal.orden}
             onChange={(e) => setEditCal({ ...editCal, orden: e.target.value })}
-            style={inputStyle}
+            className={styles.input}
           />
-          <p style={ayudaStyle}>
+          <p className={styles.ayuda}>
             Define la secuencia en que aparece el calibre (menor primero).
           </p>
-          <div style={modalAcciones}>
+          <div className={styles.modalAcciones}>
             <button
               onClick={() => setEditCal(null)}
               disabled={guardandoCal}
-              style={btnSec}
+              className={styles.btnSec}
             >
               Cancelar
             </button>
             <button
               onClick={guardarCal}
               disabled={guardandoCal || !editCal.nombre.trim()}
-              style={{
-                ...btnPrimary,
-                opacity: guardandoCal || !editCal.nombre.trim() ? 0.6 : 1,
-              }}
+              className={styles.btnPrimary}
             >
               {guardandoCal ? "Guardando..." : "Guardar"}
             </button>
@@ -522,18 +488,18 @@ export default function GestionMelonesPage() {
       {/* Modal crear/editar variedad */}
       {editVar && (
         <Modal onClose={() => !guardandoVar && setEditVar(null)}>
-          <h3 style={modalTitulo}>
+          <h3 className={styles.modalTitle}>
             {editVar.id === null ? "Nueva variedad" : "Editar variedad"}
           </h3>
-          <label style={labelStyle}>Nombre *</label>
+          <label className={styles.label}>Nombre *</label>
           <input
             value={editVar.nombre}
             onChange={(e) => setEditVar({ ...editVar, nombre: e.target.value })}
             maxLength={100}
             placeholder="Ej: Caribbean Gold RZ"
-            style={inputStyle}
+            className={styles.input}
           />
-          <label style={labelStyle}>Descripción</label>
+          <label className={styles.label}>Descripción</label>
           <textarea
             value={editVar.descripcion}
             onChange={(e) =>
@@ -542,23 +508,20 @@ export default function GestionMelonesPage() {
             maxLength={2000}
             placeholder="Opcional"
             rows={4}
-            style={{ ...inputStyle, resize: "vertical" }}
+            className={`${styles.input} ${styles.textarea}`}
           />
-          <div style={modalAcciones}>
+          <div className={styles.modalAcciones}>
             <button
               onClick={() => setEditVar(null)}
               disabled={guardandoVar}
-              style={btnSec}
+              className={styles.btnSec}
             >
               Cancelar
             </button>
             <button
               onClick={guardarVar}
               disabled={guardandoVar || !editVar.nombre.trim()}
-              style={{
-                ...btnPrimary,
-                opacity: guardandoVar || !editVar.nombre.trim() ? 0.6 : 1,
-              }}
+              className={styles.btnPrimary}
             >
               {guardandoVar ? "Guardando..." : "Guardar"}
             </button>
@@ -569,69 +532,40 @@ export default function GestionMelonesPage() {
       {/* Modal gestión de calibres de variedad (Fase 3) */}
       {varCalibres && (
         <Modal onClose={() => setVarCalibres(null)}>
-          <h3 style={modalTitulo}>Calibres de “{varCalibres.nombre}”</h3>
-          <p style={{ ...ayudaStyle, margin: "0 0 16px" }}>
+          <h3 className={styles.modalTitle}>
+            Calibres de “{varCalibres.nombre}”
+          </h3>
+          <p className={`${styles.ayuda} ${styles.mb16}`}>
             Activa los calibres que aplican a esta variedad. Solo los calibres
             activos del catálogo aparecen aquí. Quitar un calibre no afecta los
             conteos históricos.
           </p>
 
           {loadingCalVar ? (
-            <p style={{ color: "var(--color-text-muted)" }}>Cargando...</p>
+            <p className={styles.loadingText}>Cargando...</p>
           ) : listaCalVar.length === 0 ? (
-            <p
-              style={{ color: "var(--color-text-muted)", fontSize: "0.88rem" }}
-            >
+            <p className={styles.emptyText}>
               No hay calibres activos en el catálogo. Crea calibres primero en
               la pestaña “Calibres”.
             </p>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                maxHeight: 360,
-                overflowY: "auto",
-              }}
-            >
+            <div className={styles.calVarList}>
               {listaCalVar.map((cal) => (
                 <div
                   key={cal.calibre_id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 10,
-                    background: cal.asignado
-                      ? "rgba(45,106,79,0.06)"
-                      : "var(--color-surface)",
-                  }}
+                  className={`${styles.calVarItem} ${
+                    cal.asignado
+                      ? styles.calVarItemAsignado
+                      : styles.calVarItemNoAsignado
+                  }`}
                 >
                   <div>
-                    <div style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                      {cal.nombre}
-                    </div>
+                    <div className={styles.calVarName}>{cal.nombre}</div>
                     {cal.descripcion && (
-                      <div
-                        style={{
-                          fontSize: "0.78rem",
-                          color: "var(--color-text-muted)",
-                        }}
-                      >
-                        {cal.descripcion}
-                      </div>
+                      <div className={styles.calVarDesc}>{cal.descripcion}</div>
                     )}
                     {cal.conteos_en_variedad > 0 && (
-                      <div
-                        style={{
-                          fontSize: "0.72rem",
-                          color: "var(--color-text-muted)",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div className={styles.calVarUsage}>
                         Usado en {cal.conteos_en_variedad} conteo(s) de esta
                         variedad
                       </div>
@@ -640,26 +574,11 @@ export default function GestionMelonesPage() {
                   <button
                     onClick={() => toggleAsignacion(cal)}
                     disabled={procesandoCalId === cal.calibre_id}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 8,
-                      border: cal.asignado
-                        ? "1px solid var(--color-border)"
-                        : "none",
-                      background: cal.asignado
-                        ? "var(--color-surface)"
-                        : "#2d6a4f",
-                      color: cal.asignado ? "#991b1b" : "#fff",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      fontFamily: "inherit",
-                      cursor:
-                        procesandoCalId === cal.calibre_id
-                          ? "not-allowed"
-                          : "pointer",
-                      opacity: procesandoCalId === cal.calibre_id ? 0.6 : 1,
-                      whiteSpace: "nowrap",
-                    }}
+                    className={`${styles.btnAsignar} ${
+                      cal.asignado
+                        ? styles.btnAsignarActivo
+                        : styles.btnAsignarInactivo
+                    } ${procesandoCalId === cal.calibre_id ? styles.btnDisabled : ""}`}
                   >
                     {cal.asignado ? "Quitar" : "Asignar"}
                   </button>
@@ -668,13 +587,13 @@ export default function GestionMelonesPage() {
             </div>
           )}
 
-          <div style={{ ...modalAcciones, marginTop: 18 }}>
+          <div className={`${styles.modalAcciones} ${styles.mt18}`}>
             <button
               onClick={() => {
                 setVarCalibres(null);
                 cargarVariedades();
               }}
-              style={btnPrimary}
+              className={styles.btnPrimary}
             >
               Listo
             </button>
@@ -690,14 +609,7 @@ export default function GestionMelonesPage() {
 function BadgeActivo({ activo }: { activo: boolean }) {
   return (
     <span
-      style={{
-        fontSize: "0.75rem",
-        fontWeight: 700,
-        padding: "3px 10px",
-        borderRadius: 999,
-        background: activo ? "#d1fae5" : "#fee2e2",
-        color: activo ? "#065f46" : "#991b1b",
-      }}
+      className={`${styles.badgeActivo} ${activo ? styles.badgeGreen : styles.badgeRed}`}
     >
       {activo ? "Activo" : "Inactivo"}
     </span>
@@ -712,173 +624,10 @@ function Modal({
   onClose: () => void;
 }) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-        zIndex: 50,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--color-surface, #fff)",
-          borderRadius: 14,
-          padding: "1.75rem",
-          width: "100%",
-          maxWidth: 480,
-        }}
-      >
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
   );
 }
-
-// ── Estilos compartidos ──
-
-const cabeceraSeccion: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "1rem",
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: "8px 16px",
-  borderRadius: 8,
-  border: "none",
-  background: "#2d6a4f",
-  color: "#fff",
-  fontSize: "0.85rem",
-  fontWeight: 600,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const btnSec: React.CSSProperties = {
-  padding: "5px 12px",
-  borderRadius: 7,
-  border: "1px solid var(--color-border)",
-  background: "var(--color-surface)",
-  color: "var(--color-text)",
-  fontSize: "0.8rem",
-  fontWeight: 600,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const btnToggle = (activo: boolean): React.CSSProperties => ({
-  padding: "5px 12px",
-  borderRadius: 7,
-  border: "1px solid var(--color-border)",
-  background: "var(--color-surface)",
-  color: activo ? "#991b1b" : "#065f46",
-  fontSize: "0.8rem",
-  fontWeight: 600,
-  fontFamily: "inherit",
-  cursor: "pointer",
-});
-
-const tablaWrap: React.CSSProperties = {
-  background: "var(--color-surface)",
-  border: "1.5px solid var(--color-border)",
-  borderRadius: 14,
-  overflow: "hidden",
-};
-
-const thStyle: React.CSSProperties = {
-  padding: "10px 16px",
-  textAlign: "left",
-  fontSize: "0.72rem",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--color-text-muted)",
-};
-
-const trStyle = (i: number, activo: boolean): React.CSSProperties => ({
-  borderTop: "1px solid var(--color-border)",
-  background: i % 2 === 0 ? "transparent" : "var(--color-surface-alt, #fafcfb)",
-  opacity: activo ? 1 : 0.55,
-});
-
-const tdMuted: React.CSSProperties = {
-  padding: "12px 16px",
-  fontSize: "0.85rem",
-  color: "var(--color-text-muted)",
-};
-
-const tdNombre: React.CSSProperties = {
-  padding: "12px 16px",
-  fontSize: "0.9rem",
-  fontWeight: 600,
-};
-
-const tdVacio: React.CSSProperties = {
-  padding: "2rem",
-  textAlign: "center",
-  color: "var(--color-text-muted)",
-};
-
-const accionesWrap: React.CSSProperties = {
-  display: "flex",
-  gap: 8,
-  justifyContent: "flex-end",
-};
-
-const errorBox: React.CSSProperties = {
-  padding: "1rem",
-  background: "#fee2e2",
-  borderRadius: 10,
-  color: "#991b1b",
-  marginBottom: "1rem",
-  fontSize: "0.9rem",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: "0.78rem",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--color-text-muted)",
-  marginBottom: 4,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "9px 12px",
-  borderRadius: 8,
-  border: "1px solid var(--color-border)",
-  fontSize: "0.9rem",
-  fontFamily: "inherit",
-  background: "var(--color-surface)",
-  color: "var(--color-text)",
-  marginBottom: 14,
-  boxSizing: "border-box",
-};
-
-const ayudaStyle: React.CSSProperties = {
-  fontSize: "0.78rem",
-  color: "var(--color-text-muted)",
-  margin: "4px 0 16px",
-};
-
-const modalTitulo: React.CSSProperties = {
-  fontSize: "1.1rem",
-  fontWeight: 700,
-  marginBottom: 16,
-};
-
-const modalAcciones: React.CSSProperties = {
-  display: "flex",
-  gap: 10,
-  justifyContent: "flex-end",
-};

@@ -7,6 +7,9 @@ import { Conteo, Cultivo, Usuario } from "@/types";
 import styles from "./historial.module.css";
 
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
+  // Estado para saber qué punto está seleccionado/hovered
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
   if (conteos.length < 2) return null;
 
   const completados = conteos
@@ -25,10 +28,11 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const w = W - PAD * 2,
     h = H - PAD * 2;
 
+  // Calculamos las coordenadas x,y de cada punto
   const points = completados.map((c, i) => {
     const x = PAD + (i / (completados.length - 1)) * w;
     const y = PAD + h - (c.conteo_total_acumulado / max) * h;
-    return `${x},${y}`;
+    return { x, y, conteo: c, i };
   });
 
   return (
@@ -39,32 +43,116 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
         height={H}
         viewBox={`0 0 ${W} ${H}`}
         style={{ overflow: "visible", maxWidth: "300px" }}
+        onMouseLeave={() => setHoverIndex(null)} // Limpiar al salir del SVG
       >
+        {/* Línea principal */}
         <polyline
-          points={points.join(" ")}
+          points={points.map((p) => `${p.x},${p.y}`).join(" ")}
           fill="none"
           stroke="#52b788"
           strokeWidth="2"
           strokeLinejoin="round"
         />
-        {completados.map((c, i) => {
-          const x = PAD + (i / (completados.length - 1)) * w;
-          const y = PAD + h - (c.conteo_total_acumulado / max) * h;
-          return (
-            <g key={c.id}>
-              <circle cx={x} cy={y} r={4} fill="#2d6a4f" />
-              <text
-                x={x}
-                y={y - 8}
-                textAnchor="middle"
-                fontSize="9"
-                fill="#5a7a6a"
-              >
-                {c.conteo_total_acumulado.toLocaleString()}
-              </text>
-            </g>
-          );
-        })}
+
+        {/* Puntos de la gráfica */}
+        {points.map((p) => (
+          <g key={p.conteo.id}>
+            {/* texto estático se oculta suavemente si el tooltip lo está cubriendo */}
+            <text
+              x={p.x}
+              y={p.y - 8}
+              textAnchor="middle"
+              fontSize="9"
+              fill="#5a7a6a"
+              style={{
+                opacity: hoverIndex === p.i ? 0 : 1,
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              {p.conteo.conteo_total_acumulado.toLocaleString()}
+            </text>
+
+            {/* Círculo visual (crece al hacer hover) */}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={hoverIndex === p.i ? 5 : 3.5}
+              fill={hoverIndex === p.i ? "#1a2e25" : "#2d6a4f"}
+              style={{ transition: "all 0.2s ease" }}
+            />
+
+            {/* Área de interacción invisible (más grande para facilitar el toque en móviles) */}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={16}
+              fill="transparent"
+              style={{
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+              onMouseEnter={() => setHoverIndex(p.i)}
+              onClick={() => setHoverIndex(p.i)}
+              onTouchStart={() => setHoverIndex(p.i)}
+            />
+          </g>
+        ))}
+
+        {/* Tooltip Dinámico: Se dibuja SIEMPRE al final para quedar por encima de las líneas */}
+        {hoverIndex !== null &&
+          (() => {
+            const p = points[hoverIndex];
+            const boxWidth = 64;
+            const boxHeight = 32;
+
+            // Lógica para que el Tooltip no se salga por los lados
+            let boxX = p.x - boxWidth / 2;
+            if (boxX < 0) boxX = 0;
+            if (boxX + boxWidth > W) boxX = W - boxWidth;
+
+            // Lógica para que no se salga por arriba
+            const boxY =
+              p.y - boxHeight - 8 > 0 ? p.y - boxHeight - 8 : p.y + 8;
+
+            return (
+              <g className={styles.graficaTooltip}>
+                {/* Sombra y fondo del tooltip */}
+                <rect
+                  x={boxX}
+                  y={boxY}
+                  width={boxWidth}
+                  height={boxHeight}
+                  rx={6}
+                  fill="#1a2e25"
+                  opacity="0.95"
+                />
+                {/* Valor del conteo */}
+                <text
+                  x={boxX + boxWidth / 2}
+                  y={boxY + 12}
+                  textAnchor="middle"
+                  fill="#ffffff"
+                  fontSize="14"
+                  fontWeight="bold"
+                >
+                  {p.conteo.conteo_total_acumulado.toLocaleString()}
+                </text>
+                {/* Fecha debajo del valor */}
+                <text
+                  x={boxX + boxWidth / 2}
+                  y={boxY + 21}
+                  textAnchor="middle"
+                  fill="#a3b8ad"
+                  fontSize="10"
+                >
+                  {new Date(p.conteo.fecha_conteo).toLocaleDateString("es-GT", {
+                    day: "2-digit",
+                    month: "short",
+                  })}
+                </text>
+              </g>
+            );
+          })()}
       </svg>
     </div>
   );
@@ -325,7 +413,6 @@ export default function HistorialPage() {
               No se encontraron conteos con los filtros aplicados.
             </p>
           ) : (
-            /* NUEVO CONTENEDOR DE SCROLL PARA LA TABLA */
             <div className={styles.tablaScroll}>
               <table className={styles.tabla}>
                 <thead className={styles.tablaHead}>

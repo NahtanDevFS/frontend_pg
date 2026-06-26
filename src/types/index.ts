@@ -16,6 +16,33 @@ export interface Calibre {
   orden: number;
 }
 
+// Calibre con estado y dependencias, para el módulo de gestión admin
+export interface CalibreAdmin {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  orden: number;
+  activo: boolean;
+  conteos_asociados: number;
+}
+
+export interface VariedadAdmin {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean;
+  conteos_asociados: number;
+}
+
+export interface CalibreDeVariedad {
+  calibre_id: number;
+  nombre: string;
+  descripcion: string | null;
+  orden: number;
+  asignado: boolean;
+  conteos_en_variedad: number;
+}
+
 export interface Usuario {
   id: number;
   nombre: string;

@@ -9,6 +9,7 @@ interface UsuarioMe {
   nombre: string;
   rol_id: number;
   activo: boolean;
+  debe_cambiar_password?: boolean;
 }
 
 let authCache: { user: UsuarioMe | null; checked: boolean } = {
@@ -28,6 +29,55 @@ export default function ClientLayout({
 
   // Estado para el menú responsivo
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Estado del modal "cambiar mi contraseña"
+  const [modalPass, setModalPass] = useState(false);
+  const [passActual, setPassActual] = useState("");
+  const [passNueva, setPassNueva] = useState("");
+  const [passNueva2, setPassNueva2] = useState("");
+  const [guardandoPass, setGuardandoPass] = useState(false);
+  const [errorPass, setErrorPass] = useState("");
+
+  const cerrarModalPass = () => {
+    setModalPass(false);
+    setPassActual("");
+    setPassNueva("");
+    setPassNueva2("");
+    setErrorPass("");
+  };
+
+  const guardarPass = async () => {
+    setErrorPass("");
+    if (passNueva.length < 6) {
+      setErrorPass("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (passNueva !== passNueva2) {
+      setErrorPass("Las contraseñas no coinciden.");
+      return;
+    }
+    setGuardandoPass(true);
+    try {
+      await api.patch("/usuarios/me/password", {
+        password_actual: passActual,
+        password_nueva: passNueva,
+      });
+      // Refrescar el flag local
+      if (user) {
+        const actualizado = { ...user, debe_cambiar_password: false };
+        setUser(actualizado);
+        authCache.user = actualizado;
+      }
+      cerrarModalPass();
+      alert("Contraseña actualizada correctamente.");
+    } catch (err: any) {
+      setErrorPass(
+        err.response?.data?.detail ?? "No se pudo cambiar la contraseña.",
+      );
+    } finally {
+      setGuardandoPass(false);
+    }
+  };
 
   const enLogin = pathname.startsWith("/login");
 
@@ -207,6 +257,41 @@ export default function ClientLayout({
 
             <button
               className={styles.btnLogout}
+              onClick={() => setModalPass(true)}
+              aria-label="Cambiar contraseña"
+              title="Cambiar mi contraseña"
+              style={{ position: "relative" }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              {user.debe_cambiar_password && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 2,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#f59e0b",
+                  }}
+                />
+              )}
+            </button>
+
+            <button
+              className={styles.btnLogout}
               onClick={handleLogout}
               aria-label="Cerrar sesión"
             >
@@ -229,6 +314,38 @@ export default function ClientLayout({
           </div>
         </header>
       )}
+
+      {!enLogin && user?.debe_cambiar_password && (
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#856404",
+            padding: "10px 16px",
+            fontSize: "0.85rem",
+            textAlign: "center",
+            borderBottom: "1px solid #ffe69c",
+          }}
+        >
+          Tu contraseña fue establecida por un administrador. Te recomendamos{" "}
+          <button
+            onClick={() => setModalPass(true)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#856404",
+              fontWeight: 700,
+              textDecoration: "underline",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: "0.85rem",
+              padding: 0,
+            }}
+          >
+            cambiarla ahora
+          </button>
+          .
+        </div>
+      )}
       <main className={styles.main}>{children}</main>
 
       {/* Overlay oscuro para móviles cuando el menú está abierto */}
@@ -237,6 +354,146 @@ export default function ClientLayout({
           className={styles.mobileOverlay}
           onClick={() => setIsMobileMenuOpen(false)}
         />
+      )}
+
+      {/* Modal: cambiar mi contraseña */}
+      {modalPass && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 100,
+          }}
+          onClick={() => !guardandoPass && cerrarModalPass()}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--color-surface, #fff)",
+              borderRadius: 14,
+              padding: "1.75rem",
+              width: "100%",
+              maxWidth: 420,
+            }}
+          >
+            <h3
+              style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 16 }}
+            >
+              Cambiar mi contraseña
+            </h3>
+
+            {errorPass && (
+              <div
+                style={{
+                  padding: "0.65rem 0.85rem",
+                  background: "#fee2e2",
+                  borderRadius: 8,
+                  color: "#991b1b",
+                  fontSize: "0.83rem",
+                  marginBottom: 14,
+                }}
+              >
+                {errorPass}
+              </div>
+            )}
+
+            {(
+              [
+                ["Contraseña actual", passActual, setPassActual],
+                ["Nueva contraseña", passNueva, setPassNueva],
+                ["Confirmar nueva contraseña", passNueva2, setPassNueva2],
+              ] as [string, string, (v: string) => void][]
+            ).map(([label, val, setter]) => (
+              <div key={label}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    color: "var(--color-text-muted)",
+                    marginBottom: 4,
+                  }}
+                >
+                  {label}
+                </label>
+                <input
+                  type="password"
+                  value={val}
+                  onChange={(e) => setter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: "0.9rem",
+                    fontFamily: "inherit",
+                    background: "var(--color-surface)",
+                    color: "var(--color-text)",
+                    marginBottom: 14,
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            ))}
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                justifyContent: "flex-end",
+                marginTop: 4,
+              }}
+            >
+              <button
+                onClick={cerrarModalPass}
+                disabled={guardandoPass}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-text)",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarPass}
+                disabled={
+                  guardandoPass || !passActual || !passNueva || !passNueva2
+                }
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#2d6a4f",
+                  color: "#fff",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                  cursor: guardandoPass ? "not-allowed" : "pointer",
+                  opacity:
+                    guardandoPass || !passActual || !passNueva || !passNueva2
+                      ? 0.6
+                      : 1,
+                }}
+              >
+                {guardandoPass ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

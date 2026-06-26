@@ -47,6 +47,7 @@ export interface Usuario {
   id: number;
   nombre: string;
   rol_id: number;
+  debe_cambiar_password?: boolean;
   activo: boolean;
   created_at: string;
 }

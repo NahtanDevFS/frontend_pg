@@ -155,53 +155,68 @@ export default function DetalleConteoPage() {
     { id: number; nombre: string }[]
   >([]);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  // Toggle para mostrar procesamientos cancelados
+  const [mostrarCancelados, setMostrarCancelados] = useState(false);
+  // Id del procesamiento en acción (cancelar/reactivar)
+  const [accionProcId, setAccionProcId] = useState<number | null>(null);
 
-  const cargar = useCallback(async () => {
-    try {
-      const [resConteo, resProcs] = await Promise.all([
-        api.get(`/conteos/admin/${conteoId}`),
-        api.get(`/procesamientos/admin/conteo/${conteoId}`),
-      ]);
-      setConteo(resConteo.data);
-      setProcesamientos(resProcs.data);
-
-      api
-        .get<{ id: number; nombre: string }[]>("/catalogos/estados-conteo")
-        .then((r) => setEstadosConteo(r.data))
-        .catch(() => {});
-
-      const [resVars, resCultivos] = await Promise.all([
-        api.get("/catalogos/variedades"),
-        api.get("/cultivos/admin/todos"),
-      ]);
-
-      setNombreVariedad(
-        resVars.data.find((v: any) => v.id === resConteo.data.variedad_id)
-          ?.nombre ?? "—",
-      );
-      setCultivo(
-        resCultivos.data.find(
-          (c: any) => c.id === resConteo.data.campo_cultivo_id,
-        ) ?? null,
-      );
-
+  const cargar = useCallback(
+    async (inclCancelados?: boolean) => {
+      const incluir = inclCancelados ?? mostrarCancelados;
       try {
-        const resMuestreo = await api.get(
-          `/conteos/admin/${conteoId}/muestreo`,
+        const [resConteo, resProcs] = await Promise.all([
+          api.get(`/conteos/admin/${conteoId}`),
+          api.get(
+            `/procesamientos/admin/conteo/${conteoId}${incluir ? "?incluir_cancelados=true" : ""}`,
+          ),
+        ]);
+        setConteo(resConteo.data);
+        setProcesamientos(resProcs.data);
+
+        api
+          .get<{ id: number; nombre: string }[]>("/catalogos/estados-conteo")
+          .then((r) => setEstadosConteo(r.data))
+          .catch(() => {});
+
+        const [resVars, resCultivos] = await Promise.all([
+          api.get("/catalogos/variedades"),
+          api.get("/cultivos/admin/todos"),
+        ]);
+
+        setNombreVariedad(
+          resVars.data.find((v: any) => v.id === resConteo.data.variedad_id)
+            ?.nombre ?? "—",
         );
-        if (resMuestreo.data.clasificaciones?.length)
-          setMuestreo(resMuestreo.data);
-      } catch {}
-    } catch {
-      setError("Error al cargar el conteo.");
-    } finally {
-      setLoading(false);
-    }
-  }, [conteoId]);
+        setCultivo(
+          resCultivos.data.find(
+            (c: any) => c.id === resConteo.data.campo_cultivo_id,
+          ) ?? null,
+        );
+
+        try {
+          const resMuestreo = await api.get(
+            `/conteos/admin/${conteoId}/muestreo`,
+          );
+          if (resMuestreo.data.clasificaciones?.length)
+            setMuestreo(resMuestreo.data);
+        } catch {}
+      } catch {
+        setError("Error al cargar el conteo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [conteoId, mostrarCancelados],
+  );
 
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  const handleToggleCancelados = (checked: boolean) => {
+    setMostrarCancelados(checked);
+    cargar(checked);
+  };
 
   // Cambia el estado del conteo (admin, libre entre estados)
   const handleCambiarEstado = async (
@@ -248,8 +263,6 @@ export default function DetalleConteoPage() {
     }
   };
 
-  // Descarga el video anotado de un procesamiento. Usa el endpoint admin
-  // autenticado (blob) porque un <a href> no puede enviar el token Bearer.
   const handleDescargarVideo = async (procId: number) => {
     setDescargandoId(procId);
     try {
@@ -272,6 +285,44 @@ export default function DetalleConteoPage() {
     }
   };
 
+  const handleCancelarProcesamiento = async (p: ProcesamientoVideo) => {
+    const ok = window.confirm(
+      `¿Anular el procesamiento de surcos ${p.surco_inicio}–${p.surco_fin}? Su conteo quedará excluido del total acumulado.`,
+    );
+    if (!ok) return;
+    setAccionProcId(p.id);
+    try {
+      await api.patch(`/procesamientos/admin/${p.id}/cancelar`);
+      await cargar();
+      setVideoExpandido(null);
+    } catch (err: any) {
+      alert(
+        err.response?.data?.detail ?? "No se pudo anular el procesamiento.",
+      );
+    } finally {
+      setAccionProcId(null);
+    }
+  };
+
+  const handleReactivarProcesamiento = async (p: ProcesamientoVideo) => {
+    const ok = window.confirm(
+      `¿Reactivar el procesamiento de surcos ${p.surco_inicio}–${p.surco_fin}? Su conteo volverá a sumarse al total acumulado.`,
+    );
+    if (!ok) return;
+    setAccionProcId(p.id);
+    try {
+      await api.patch(`/procesamientos/admin/${p.id}/reactivar`);
+      await cargar();
+      setVideoExpandido(null);
+    } catch (err: any) {
+      alert(
+        err.response?.data?.detail ?? "No se pudo reactivar el procesamiento.",
+      );
+    } finally {
+      setAccionProcId(null);
+    }
+  };
+
   if (loading)
     return (
       <div className={styles.loadingWrap}>
@@ -286,6 +337,8 @@ export default function DetalleConteoPage() {
     );
 
   const estadoNombre = conteo.estado_id === 2 ? "Completado" : "En progreso";
+  const procsActivos = procesamientos.filter((p) => p.activo !== false);
+  const procsCancelados = procesamientos.filter((p) => p.activo === false);
 
   return (
     <div className={styles.container}>
@@ -364,8 +417,7 @@ export default function DetalleConteoPage() {
         </div>
         <div className={styles.heroMeta}>
           <p className={styles.heroMetaVideos}>
-            {procesamientos.length} video
-            {procesamientos.length !== 1 ? "s" : ""}
+            {procsActivos.length} video{procsActivos.length !== 1 ? "s" : ""}
           </p>
           {cultivo && (
             <p className={styles.heroMetaSurcos}>
@@ -397,19 +449,44 @@ export default function DetalleConteoPage() {
 
       {/* Videos procesados */}
       <div className={styles.panel}>
-        <h3 className={styles.panelTitle}>Videos procesados</h3>
-        {procesamientos.length === 0 ? (
-          <p className={styles.sinDatos}>Sin videos procesados aún.</p>
+        {/* Header del panel con toggle */}
+        <div className={styles.procPanelHeader}>
+          <h3 className={styles.panelTitle} style={{ marginBottom: 0 }}>
+            Videos procesados
+          </h3>
+          <label className={styles.toggleLabel}>
+            <div
+              className={`${styles.toggle} ${mostrarCancelados ? styles.toggleOn : ""}`}
+              onClick={() => handleToggleCancelados(!mostrarCancelados)}
+              role="switch"
+              aria-checked={mostrarCancelados}
+              tabIndex={0}
+              onKeyDown={(e) =>
+                e.key === "Enter" || e.key === " "
+                  ? handleToggleCancelados(!mostrarCancelados)
+                  : null
+              }
+            >
+              <div className={styles.toggleThumb} />
+            </div>
+            <span className={styles.toggleText}>Mostrar anulados</span>
+          </label>
+        </div>
+
+        {/* Procesamientos activos */}
+        {procsActivos.length === 0 ? (
+          <p className={styles.sinDatos}>Sin videos procesados activos.</p>
         ) : (
           <div className={styles.procListScroll}>
             <div className={styles.procList}>
-              {procesamientos.map((p) => {
+              {procsActivos.map((p) => {
                 const estadoProc =
-                  p.estado_id === 2
+                  p.estado_nombre ??
+                  (p.estado_id === 2
                     ? "completado"
                     : p.estado_id === 3
                       ? "error"
-                      : "procesando";
+                      : "procesando");
                 const badgeClase =
                   estadoProc === "completado"
                     ? styles.badgeProcCompletado
@@ -418,6 +495,7 @@ export default function DetalleConteoPage() {
                       : styles.badgeProcProcesando;
                 const expandido = videoExpandido === p.id;
                 const obs = p.resultado?.observaciones_ajuste;
+                const enAccion = accionProcId === p.id;
                 return (
                   <div key={p.id} className={styles.procCard}>
                     <div
@@ -532,35 +610,47 @@ export default function DetalleConteoPage() {
                               : "Sin observaciones registradas."}
                           </p>
                         </div>
-                        {p.video_anotado_url ? (
-                          <button
-                            className={styles.btnDescargarVideo}
-                            onClick={() => handleDescargarVideo(p.id)}
-                            disabled={descargandoId === p.id}
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                        <div className={styles.procDetalleAcciones}>
+                          {p.video_anotado_url ? (
+                            <button
+                              className={styles.btnDescargarVideo}
+                              onClick={() => handleDescargarVideo(p.id)}
+                              disabled={descargandoId === p.id}
                             >
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="7 10 12 15 17 10" />
-                              <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            {descargandoId === p.id
-                              ? "Descargando…"
-                              : "Descargar video anotado"}
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                              </svg>
+                              {descargandoId === p.id
+                                ? "Descargando…"
+                                : "Descargar video anotado"}
+                            </button>
+                          ) : (
+                            <p className={styles.procDetalleSinVideo}>
+                              Video anotado no disponible.
+                            </p>
+                          )}
+                          <button
+                            className={styles.btnAnularProc}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelarProcesamiento(p);
+                            }}
+                            disabled={enAccion}
+                          >
+                            {enAccion ? "Anulando…" : "Anular procesamiento"}
                           </button>
-                        ) : (
-                          <p className={styles.procDetalleSinVideo}>
-                            Video anotado no disponible.
-                          </p>
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -568,6 +658,129 @@ export default function DetalleConteoPage() {
               })}
             </div>
           </div>
+        )}
+
+        {/* Sección de cancelados */}
+        {mostrarCancelados && procsCancelados.length > 0 && (
+          <>
+            <div className={styles.seccionCanceladosDivider}>
+              <span>Anulados ({procsCancelados.length})</span>
+            </div>
+            <div className={styles.procList}>
+              {procsCancelados.map((p) => {
+                const expandido = videoExpandido === p.id;
+                const enAccion = accionProcId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`${styles.procCard} ${styles.procCardCancelado}`}
+                  >
+                    <div
+                      className={styles.procItem}
+                      onClick={() => setVideoExpandido(expandido ? null : p.id)}
+                      style={{ cursor: "pointer" }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setVideoExpandido(expandido ? null : p.id);
+                        }
+                      }}
+                    >
+                      <div className={styles.procInfo}>
+                        <span
+                          className={`${styles.procNombre} ${styles.procNombreCancelado}`}
+                        >
+                          Surcos {p.surco_inicio}–{p.surco_fin}
+                        </span>
+                        <span className={styles.procFecha}>
+                          {new Date(p.fecha_grabacion).toLocaleDateString(
+                            "es-GT",
+                          )}
+                        </span>
+                      </div>
+                      <div className={styles.procRight}>
+                        <div className={styles.procStats}>
+                          {p.resultado && (
+                            <div className={styles.procStatWrap}>
+                              <p className={styles.procStatLabel}>IA</p>
+                              <p className={styles.procStatVal}>
+                                {p.resultado.conteo_ia.toLocaleString()}
+                              </p>
+                            </div>
+                          )}
+                          <span
+                            className={`${styles.badgeProcEstado} ${styles.badgeProcCancelado}`}
+                          >
+                            anulado
+                          </span>
+                        </div>
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: expandido ? "rotate(180deg)" : "none",
+                            transition: "transform 0.2s",
+                            color: "var(--color-text-muted, #8fa898)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {expandido && (
+                      <div className={styles.procDetalle}>
+                        <div className={styles.procDetalleObs}>
+                          <p className={styles.procDetalleLabel}>
+                            Observaciones
+                          </p>
+                          <p className={styles.procDetalleTexto}>
+                            {p.resultado?.observaciones_ajuste?.trim() ||
+                              "Sin observaciones registradas."}
+                          </p>
+                        </div>
+                        <div className={styles.procDetalleAcciones}>
+                          {p.resultado ? (
+                            <button
+                              className={styles.btnReactivarProc}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReactivarProcesamiento(p);
+                              }}
+                              disabled={enAccion}
+                            >
+                              {enAccion
+                                ? "Reactivando…"
+                                : "Reactivar procesamiento"}
+                            </button>
+                          ) : (
+                            <p className={styles.procDetalleSinVideo}>
+                              Sin resultado de IA — no puede reactivarse.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {mostrarCancelados && procsCancelados.length === 0 && (
+          <p className={styles.sinCanceladosMsg}>
+            No hay procesamientos anulados en este conteo.
+          </p>
         )}
       </div>
 

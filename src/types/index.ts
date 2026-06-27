@@ -120,6 +120,8 @@ export interface ProcesamientoVideo {
   conteo_id: number;
   usuario_id: number;
   estado_id: number;
+  estado_nombre: string | null;
+  activo: boolean;
   surco_inicio: number;
   surco_fin: number;
   video_original_url: string;

@@ -36,7 +36,7 @@
   color: var(--color-danger);
 }
 
-/* ── Header ─────────────────────────────────────────── */
+/* Header */
 .pageHeader {
   display: flex;
   justify-content: space-between;
@@ -198,7 +198,7 @@
   margin-top: 4px;
 }
 
-/* ── Secciones del panel ────────────────────────────── */
+/*Secciones del panel */
 .panel {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
@@ -439,7 +439,7 @@
   color: #856404;
 }
 
-/* ── Gráfica de distribución ────────────────────────── */
+/* Gráfica de distribución */
 .graficaTitulo {
   font-size: 0.9rem;
   font-weight: 700;
@@ -616,9 +616,6 @@
   cursor: not-allowed;
 }
 
-/* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
-   ========================================= */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
@@ -674,4 +671,179 @@
   .btnDescargarVideo {
     width: 100%;
   }
+}
+
+.procPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.toggle {
+  width: 36px;
+  height: 20px;
+  background: var(--color-border);
+  border-radius: 99px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.toggleOn {
+  background: var(--color-primary);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleText {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.seccionCanceladosDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.25rem 0 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.seccionCanceladosDivider::before,
+.seccionCanceladosDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.procCardCancelado {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.procCardCancelado:hover {
+  opacity: 0.8;
+}
+
+.procNombreCancelado {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.badgeProcCancelado {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.sinCanceladosMsg {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  padding: 0.75rem 0 0;
+}
+
+.procDetalleAcciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btnAnularProc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #fca5a5;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+
+.btnAnularProc:hover:not(:disabled) {
+  background: #fecaca;
+  border-color: #f87171;
+}
+
+.btnAnularProc:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnReactivarProc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-primary, #2d6a4f);
+  background: var(--color-primary-light, #e8f5ee);
+  color: var(--color-primary, #2d6a4f);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btnReactivarProc:hover:not(:disabled) {
+  background: var(--color-accent-soft, #d1ead9);
+}
+
+.btnReactivarProc:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* También asegurar que procBadgeWrapper existe */
+.procBadgeWrapper {
+  display: flex;
+  align-items: center;
 }

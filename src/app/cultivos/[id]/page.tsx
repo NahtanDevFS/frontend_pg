@@ -153,6 +153,10 @@ export default function DetalleCultivoPage() {
   const PAGE_SIZE = 20;
   // Data completa (sin paginar) para la gráfica de tendencia
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
+  // Toggle para mostrar conteos desactivados
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  // Id del conteo en acción (desactivar/reactivar)
+  const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
 
   // Construye los query params de filtros comunes a tabla y gráfica
   const buildFiltros = useCallback(() => {
@@ -164,34 +168,39 @@ export default function DetalleCultivoPage() {
     return params;
   }, [cultivoId, filtroOperador, fechaDesde, fechaHasta]);
 
-  const cargar = useCallback(async () => {
-    try {
-      const paramsTabla = buildFiltros();
-      paramsTabla.append("skip", String((pagina - 1) * PAGE_SIZE));
-      paramsTabla.append("limit", String(PAGE_SIZE));
+  const cargar = useCallback(
+    async (inclInactivos?: boolean) => {
+      const incluir = inclInactivos ?? mostrarInactivos;
+      try {
+        const paramsTabla = buildFiltros();
+        paramsTabla.append("skip", String((pagina - 1) * PAGE_SIZE));
+        paramsTabla.append("limit", String(PAGE_SIZE));
+        if (incluir) paramsTabla.append("incluir_inactivos", "true");
 
-      const [resConteos, resCultivos, resOps, resTodos] = await Promise.all([
-        api.get<{ items: Conteo[]; total: number }>(
-          `/conteos/admin/historial?${paramsTabla}`,
-        ),
-        api.get(`/cultivos/admin/todos`),
-        api.get(`/cultivos/${cultivoId}/operadores`),
-        api.get<Usuario[]>(`/usuarios/`),
-      ]);
-      setConteos(resConteos.data.items);
-      setTotal(resConteos.data.total);
-      setCultivo(
-        resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
-          null,
-      );
-      setOperadores(resOps.data);
-      setTodosOperadores(resTodos.data);
-    } catch {
-      setError("Error al cargar los datos del cultivo.");
-    } finally {
-      setLoading(false);
-    }
-  }, [cultivoId, buildFiltros, pagina]);
+        const [resConteos, resCultivos, resOps, resTodos] = await Promise.all([
+          api.get<{ items: Conteo[]; total: number }>(
+            `/conteos/admin/historial?${paramsTabla}`,
+          ),
+          api.get(`/cultivos/admin/todos`),
+          api.get(`/cultivos/${cultivoId}/operadores`),
+          api.get<Usuario[]>(`/usuarios/`),
+        ]);
+        setConteos(resConteos.data.items);
+        setTotal(resConteos.data.total);
+        setCultivo(
+          resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
+            null,
+        );
+        setOperadores(resOps.data);
+        setTodosOperadores(resTodos.data);
+      } catch {
+        setError("Error al cargar los datos del cultivo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cultivoId, buildFiltros, pagina, mostrarInactivos],
+  );
 
   useEffect(() => {
     cargar();
@@ -239,6 +248,48 @@ export default function DetalleCultivoPage() {
       await cargar();
     } catch (err: any) {
       alert(err.response?.data?.detail || "Error al quitar operador.");
+    }
+  };
+
+  const handleToggleInactivos = (checked: boolean) => {
+    setMostrarInactivos(checked);
+    setPagina(1);
+    cargar(checked);
+  };
+
+  const handleDesactivarConteo = async (conteoId: number, fecha: string) => {
+    if (
+      !confirm(
+        `¿Desactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}? Sus procesamientos quedarán excluidos.`,
+      )
+    )
+      return;
+    setAccionConteoId(conteoId);
+    try {
+      await api.patch(`/conteos/admin/${conteoId}/desactivar`);
+      await cargar();
+    } catch (err: any) {
+      alert(err.response?.data?.detail ?? "Error al desactivar el conteo.");
+    } finally {
+      setAccionConteoId(null);
+    }
+  };
+
+  const handleReactivarConteo = async (conteoId: number, fecha: string) => {
+    if (
+      !confirm(
+        `¿Reactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
+      )
+    )
+      return;
+    setAccionConteoId(conteoId);
+    try {
+      await api.patch(`/conteos/admin/${conteoId}/reactivar`);
+      await cargar();
+    } catch (err: any) {
+      alert(err.response?.data?.detail ?? "Error al reactivar el conteo.");
+    } finally {
+      setAccionConteoId(null);
     }
   };
 
@@ -434,6 +485,23 @@ export default function DetalleCultivoPage() {
           <h3 className={styles.panelTitle} style={{ marginBottom: 0 }}>
             Historial de conteos ({total})
           </h3>
+          <label className={styles.toggleLabel}>
+            <div
+              className={`${styles.toggle} ${mostrarInactivos ? styles.toggleOn : ""}`}
+              onClick={() => handleToggleInactivos(!mostrarInactivos)}
+              role="switch"
+              aria-checked={mostrarInactivos}
+              tabIndex={0}
+              onKeyDown={(e) =>
+                e.key === "Enter" || e.key === " "
+                  ? handleToggleInactivos(!mostrarInactivos)
+                  : null
+              }
+            >
+              <div className={styles.toggleThumb} />
+            </div>
+            <span className={styles.toggleText}>Mostrar desactivados</span>
+          </label>
         </div>
 
         {conteos.length === 0 ? (
@@ -468,80 +536,138 @@ export default function DetalleCultivoPage() {
                 </tr>
               </thead>
               <tbody>
-                {conteos.map((c, i) => (
-                  <tr
-                    key={c.id}
-                    className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrAlt : ""}`}
-                    onClick={() =>
-                      router.push(`/cultivos/${cultivoId}/conteos/${c.id}`)
-                    }
-                  >
-                    <td className={styles.tdId}>#{c.id}</td>
-                    <td className={styles.tdNombre}>
-                      {c.operador_nombre ?? "—"}
-                    </td>
-                    <td className={styles.tdBase}>
-                      {new Date(
-                        c.fecha_conteo + "T00:00:00",
-                      ).toLocaleDateString("es-GT", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td
-                      className={`${styles.tdTotal} ${
-                        c.conteo_total_acumulado > 0 ? styles.totalValido : ""
-                      }`}
+                {conteos.map((c, i) => {
+                  const inactivo = !c.activo;
+                  const enAccion = accionConteoId === c.id;
+                  return (
+                    <tr
+                      key={c.id}
+                      className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrAlt : ""} ${inactivo ? styles.tablaTrInactivo : ""}`}
+                      onClick={() =>
+                        !inactivo &&
+                        router.push(`/cultivos/${cultivoId}/conteos/${c.id}`)
+                      }
+                      style={{ cursor: inactivo ? "default" : "pointer" }}
                     >
-                      {c.conteo_total_acumulado > 0
-                        ? c.conteo_total_acumulado.toLocaleString()
-                        : "—"}
-                    </td>
-                    <td className={styles.tdBase}>
-                      {(c as any).nivel_confiabilidad ? (
-                        <span
-                          className={`${styles.badgeConfianza} ${
-                            (c as any).nivel_confiabilidad === "alto"
-                              ? styles.badgeAlto
-                              : (c as any).nivel_confiabilidad === "moderado"
-                                ? styles.badgeModerado
-                                : styles.badgeBajo
-                          }`}
-                        >
-                          {(c as any).nivel_confiabilidad}
-                        </span>
-                      ) : (
-                        <span className={styles.badgeVacio}>—</span>
-                      )}
-                    </td>
-                    <td className={styles.tdBase}>
-                      <span
-                        className={`${styles.badgeEstado} ${
-                          c.estado_id === 2
-                            ? styles.badgeCompletado
-                            : styles.badgeEnProgreso
-                        }`}
+                      <td className={styles.tdId}>#{c.id}</td>
+                      <td
+                        className={`${styles.tdNombre} ${inactivo ? styles.tdInactivo : ""}`}
                       >
-                        {c.estado_id === 2 ? "Completado" : "En progreso"}
-                      </span>
-                    </td>
-                    <td className={styles.tdChevron}>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                        {c.operador_nombre ?? "—"}
+                      </td>
+                      <td
+                        className={`${styles.tdBase} ${inactivo ? styles.tdInactivo : ""}`}
                       >
-                        <path d="m9 18 6-6-6-6" />
-                      </svg>
-                    </td>
-                  </tr>
-                ))}
+                        {new Date(
+                          c.fecha_conteo + "T00:00:00",
+                        ).toLocaleDateString("es-GT", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td
+                        className={`${styles.tdTotal} ${c.conteo_total_acumulado > 0 && !inactivo ? styles.totalValido : ""}`}
+                      >
+                        {c.conteo_total_acumulado > 0
+                          ? c.conteo_total_acumulado.toLocaleString()
+                          : "—"}
+                      </td>
+                      <td className={styles.tdBase}>
+                        {!inactivo && (c as any).nivel_confiabilidad ? (
+                          <span
+                            className={`${styles.badgeConfianza} ${
+                              (c as any).nivel_confiabilidad === "alto"
+                                ? styles.badgeAlto
+                                : (c as any).nivel_confiabilidad === "moderado"
+                                  ? styles.badgeModerado
+                                  : styles.badgeBajo
+                            }`}
+                          >
+                            {(c as any).nivel_confiabilidad}
+                          </span>
+                        ) : (
+                          <span className={styles.badgeVacio}>—</span>
+                        )}
+                      </td>
+                      <td className={styles.tdBase}>
+                        {inactivo ? (
+                          <span
+                            className={`${styles.badgeEstado} ${styles.badgeDesactivado}`}
+                          >
+                            Desactivado
+                          </span>
+                        ) : (
+                          <span
+                            className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                          >
+                            {c.estado_id === 2 ? "Completado" : "En progreso"}
+                          </span>
+                        )}
+                      </td>
+                      <td
+                        className={styles.tdAcciones}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {inactivo ? (
+                          <button
+                            className={styles.btnReactivarConteo}
+                            onClick={() =>
+                              handleReactivarConteo(c.id, c.fecha_conteo)
+                            }
+                            disabled={enAccion}
+                          >
+                            {enAccion ? "…" : "Reactivar"}
+                          </button>
+                        ) : (
+                          <>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className={styles.tdChevron}
+                            >
+                              <path d="m9 18 6-6-6-6" />
+                            </svg>
+                            <button
+                              className={styles.btnDesactivarConteo}
+                              onClick={() =>
+                                handleDesactivarConteo(c.id, c.fecha_conteo)
+                              }
+                              disabled={enAccion}
+                              title="Desactivar conteo"
+                            >
+                              {enAccion ? (
+                                "…"
+                              ) : (
+                                <svg
+                                  width="13"
+                                  height="13"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                </svg>
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

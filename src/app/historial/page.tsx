@@ -145,9 +145,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fill="#a3b8ad"
                   fontSize="10"
                 >
-                  {new Date(
-                    p.conteo.fecha_conteo + "T00:00:00",
-                  ).toLocaleDateString("es-GT", {
+                  {new Date(p.conteo.fecha_conteo).toLocaleDateString("es-GT", {
                     day: "2-digit",
                     month: "short",
                   })}
@@ -201,6 +199,10 @@ export default function HistorialPage() {
   const PAGE_SIZE = 20;
   // Data completa (sin paginar) para la vista de tendencia
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
+  // Toggle para mostrar desactivados
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  // Id del conteo en acción
+  const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -210,6 +212,7 @@ export default function HistorialPage() {
       if (filtroOperador) params.append("usuario_id", filtroOperador);
       if (fechaDesde) params.append("fecha_desde", fechaDesde);
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
+      if (mostrarInactivos) params.append("incluir_inactivos", "true");
       params.append("skip", String((pagina - 1) * PAGE_SIZE));
       params.append("limit", String(PAGE_SIZE));
 
@@ -229,7 +232,14 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta, pagina]);
+  }, [
+    filtroCultivo,
+    filtroOperador,
+    fechaDesde,
+    fechaHasta,
+    pagina,
+    mostrarInactivos,
+  ]);
 
   // Al cambiar cualquier filtro, volver a la página 1
   useEffect(() => {
@@ -265,6 +275,47 @@ export default function HistorialPage() {
     operadores.find((u) => u.id === conteo.created_by)?.nombre ?? "—";
 
   const conteosFiltrados = conteos;
+
+  const handleToggleInactivos = (checked: boolean) => {
+    setMostrarInactivos(checked);
+    setPagina(1);
+  };
+
+  const handleDesactivarConteo = async (conteoId: number, fecha: string) => {
+    if (
+      !confirm(
+        `¿Desactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
+      )
+    )
+      return;
+    setAccionConteoId(conteoId);
+    try {
+      await api.patch(`/conteos/admin/${conteoId}/desactivar`);
+      await cargar();
+    } catch (err: any) {
+      alert(err.response?.data?.detail ?? "Error al desactivar el conteo.");
+    } finally {
+      setAccionConteoId(null);
+    }
+  };
+
+  const handleReactivarConteo = async (conteoId: number, fecha: string) => {
+    if (
+      !confirm(
+        `¿Reactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
+      )
+    )
+      return;
+    setAccionConteoId(conteoId);
+    try {
+      await api.patch(`/conteos/admin/${conteoId}/reactivar`);
+      await cargar();
+    } catch (err: any) {
+      alert(err.response?.data?.detail ?? "Error al reactivar el conteo.");
+    } finally {
+      setAccionConteoId(null);
+    }
+  };
 
   const handleExportarPDF = async (conteoId: number, cultivoId: number) => {
     setExportando(conteoId);
@@ -325,16 +376,84 @@ export default function HistorialPage() {
             {total !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className={styles.vistaToggle}>
-          {(["tabla", "tendencia"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setModoVista(v)}
-              className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            <div
+              onClick={() => handleToggleInactivos(!mostrarInactivos)}
+              role="switch"
+              aria-checked={mostrarInactivos}
+              tabIndex={0}
+              onKeyDown={(e) =>
+                e.key === "Enter" || e.key === " "
+                  ? handleToggleInactivos(!mostrarInactivos)
+                  : null
+              }
+              style={{
+                width: 36,
+                height: 20,
+                borderRadius: 99,
+                position: "relative",
+                background: mostrarInactivos
+                  ? "var(--color-primary)"
+                  : "var(--color-border)",
+                transition: "background 0.2s",
+                cursor: "pointer",
+                flexShrink: 0,
+                outline: "none",
+              }}
             >
-              {v === "tabla" ? "Tabla" : "Tendencia"}
-            </button>
-          ))}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  left: 2,
+                  width: 16,
+                  height: 16,
+                  background: "white",
+                  borderRadius: "50%",
+                  transition: "transform 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,.15)",
+                  transform: mostrarInactivos ? "translateX(16px)" : "none",
+                }}
+              />
+            </div>
+            <span
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--color-text-muted)",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Mostrar desactivados
+            </span>
+          </label>
+          <div className={styles.vistaToggle}>
+            {(["tabla", "tendencia"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setModoVista(v)}
+                className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
+              >
+                {v === "tabla" ? "Tabla" : "Tendencia"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -436,94 +555,220 @@ export default function HistorialPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {conteosFiltrados.map((c, i) => (
-                    <tr
-                      key={c.id}
-                      className={`${styles.tablaTr} ${styles.tablaTrClick} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
-                      onClick={() =>
-                        router.push(
-                          `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
-                        )
-                      }
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
+                  {conteosFiltrados.map((c, i) => {
+                    const inactivo = !c.activo;
+                    const enAccion = accionConteoId === c.id;
+                    return (
+                      <tr
+                        key={c.id}
+                        className={`${styles.tablaTr} ${inactivo ? "" : styles.tablaTrClick} ${i % 2 !== 0 ? styles.tablaTrImpar : ""}`}
+                        style={{
+                          opacity: inactivo ? 0.55 : 1,
+                          cursor: inactivo ? "default" : "pointer",
+                        }}
+                        onClick={() =>
+                          !inactivo &&
                           router.push(
                             `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
-                          );
+                          )
                         }
-                      }}
-                    >
-                      <td className={`${styles.tablaTd} ${styles.tdId}`}>
-                        #{c.id}
-                      </td>
-                      <td className={styles.tablaTd}>
-                        <span className={styles.tdCultivoNombre}>
-                          {c.cultivo_nombre ?? `#${c.campo_cultivo_id}`}
-                        </span>
-                      </td>
-                      <td className={`${styles.tablaTd} ${styles.tdOperador}`}>
-                        {c.operador_nombre ?? "—"}
-                      </td>
-                      <td className={styles.tablaTd}>
-                        {new Date(
-                          c.fecha_conteo + "T00:00:00",
-                        ).toLocaleDateString("es-GT", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td
-                        className={`${styles.tablaTd} ${c.conteo_total_acumulado > 0 ? styles.tdTotal : styles.tdTotalVacio}`}
+                        role={inactivo ? undefined : "button"}
+                        tabIndex={inactivo ? undefined : 0}
+                        onKeyDown={(e) => {
+                          if (
+                            !inactivo &&
+                            (e.key === "Enter" || e.key === " ")
+                          ) {
+                            e.preventDefault();
+                            router.push(
+                              `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
+                            );
+                          }
+                        }}
                       >
-                        {c.conteo_total_acumulado > 0
-                          ? c.conteo_total_acumulado.toLocaleString()
-                          : "—"}
-                      </td>
-                      <td className={styles.tablaTd}>
-                        <BadgeConfiabilidad
-                          nivel={(c as any).nivel_confiabilidad}
-                        />
-                      </td>
-                      <td className={styles.tablaTd}>
-                        <span
-                          className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                        <td className={`${styles.tablaTd} ${styles.tdId}`}>
+                          #{c.id}
+                        </td>
+                        <td className={styles.tablaTd}>
+                          <span
+                            className={styles.tdCultivoNombre}
+                            style={
+                              inactivo
+                                ? {
+                                    textDecoration: "line-through",
+                                    color: "var(--color-text-muted)",
+                                  }
+                                : {}
+                            }
+                          >
+                            {c.cultivo_nombre ?? `#${c.campo_cultivo_id}`}
+                          </span>
+                        </td>
+                        <td
+                          className={`${styles.tablaTd} ${styles.tdOperador}`}
                         >
-                          {c.estado_id === 2 ? "Completado" : "En progreso"}
-                        </span>
-                      </td>
-                      <td className={styles.tablaTd}>
-                        <div className={styles.tdAcciones}>
-                          <button
-                            className={styles.btnPDF}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleExportarPDF(c.id, c.campo_cultivo_id);
-                            }}
-                            disabled={exportando === c.id}
-                          >
-                            {exportando === c.id ? "..." : "PDF"}
-                          </button>
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className={styles.tdChevron}
-                          >
-                            <path d="m9 18 6-6-6-6" />
-                          </svg>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          {c.operador_nombre ?? "—"}
+                        </td>
+                        <td className={styles.tablaTd}>
+                          {new Date(
+                            c.fecha_conteo + "T00:00:00",
+                          ).toLocaleDateString("es-GT", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td
+                          className={`${styles.tablaTd} ${c.conteo_total_acumulado > 0 && !inactivo ? styles.tdTotal : styles.tdTotalVacio}`}
+                        >
+                          {c.conteo_total_acumulado > 0
+                            ? c.conteo_total_acumulado.toLocaleString()
+                            : "—"}
+                        </td>
+                        <td className={styles.tablaTd}>
+                          {!inactivo ? (
+                            <BadgeConfiabilidad
+                              nivel={(c as any).nivel_confiabilidad}
+                            />
+                          ) : (
+                            <span
+                              style={{
+                                color: "var(--color-text-muted)",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td className={styles.tablaTd}>
+                          {inactivo ? (
+                            <span
+                              style={{
+                                fontSize: "0.72rem",
+                                padding: "2px 9px",
+                                borderRadius: "99px",
+                                fontWeight: 600,
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                              }}
+                            >
+                              Desactivado
+                            </span>
+                          ) : (
+                            <span
+                              className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                            >
+                              {c.estado_id === 2 ? "Completado" : "En progreso"}
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          className={styles.tablaTd}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className={styles.tdAcciones}>
+                            {inactivo ? (
+                              <button
+                                style={{
+                                  padding: "4px 11px",
+                                  borderRadius: 7,
+                                  border: "1.5px solid var(--color-primary)",
+                                  background: "var(--color-primary-light)",
+                                  color: "var(--color-primary)",
+                                  fontSize: "0.78rem",
+                                  fontWeight: 600,
+                                  fontFamily: "inherit",
+                                  cursor: "pointer",
+                                  opacity: enAccion ? 0.5 : 1,
+                                }}
+                                onClick={() =>
+                                  handleReactivarConteo(c.id, c.fecha_conteo)
+                                }
+                                disabled={enAccion}
+                              >
+                                {enAccion ? "…" : "Reactivar"}
+                              </button>
+                            ) : (
+                              <>
+                                {!enAccion && (
+                                  <button
+                                    style={{
+                                      padding: "4px 6px",
+                                      borderRadius: 7,
+                                      border: "1.5px solid var(--color-border)",
+                                      background: "none",
+                                      color: "var(--color-text-muted)",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                    }}
+                                    onClick={() =>
+                                      handleDesactivarConteo(
+                                        c.id,
+                                        c.fecha_conteo,
+                                      )
+                                    }
+                                    disabled={enAccion}
+                                    title="Desactivar conteo"
+                                  >
+                                    <svg
+                                      width="13"
+                                      height="13"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                      <path d="M10 11v6" />
+                                      <path d="M14 11v6" />
+                                    </svg>
+                                  </button>
+                                )}
+                                {enAccion && (
+                                  <span
+                                    style={{
+                                      fontSize: "0.8rem",
+                                      color: "var(--color-text-muted)",
+                                    }}
+                                  >
+                                    …
+                                  </span>
+                                )}
+                                <button
+                                  className={styles.btnPDF}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleExportarPDF(c.id, c.campo_cultivo_id);
+                                  }}
+                                  disabled={exportando === c.id}
+                                >
+                                  {exportando === c.id ? "..." : "PDF"}
+                                </button>
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={styles.tdChevron}
+                                >
+                                  <path d="m9 18 6-6-6-6" />
+                                </svg>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -157,6 +157,10 @@ export default function DetalleCultivoPage() {
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   // Id del conteo en acción (desactivar/reactivar)
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
+  // Vista: tabla | anual
+  const [modoVista, setModoVista] = useState<"tabla" | "anual">("tabla");
+  // Año expandido en la vista anual
+  const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
 
   // Construye los query params de filtros comunes a tabla y gráfica
   const buildFiltros = useCallback(() => {
@@ -177,22 +181,32 @@ export default function DetalleCultivoPage() {
         paramsTabla.append("limit", String(PAGE_SIZE));
         if (incluir) paramsTabla.append("incluir_inactivos", "true");
 
-        const [resConteos, resCultivos, resOps, resTodos] = await Promise.all([
-          api.get<{ items: Conteo[]; total: number }>(
-            `/conteos/admin/historial?${paramsTabla}`,
-          ),
-          api.get(`/cultivos/admin/todos`),
-          api.get(`/cultivos/${cultivoId}/operadores`),
-          api.get<Usuario[]>(`/usuarios/`),
-        ]);
+        const paramsTodos = buildFiltros();
+        paramsTodos.append("skip", "0");
+        paramsTodos.append("limit", "500");
+        if (incluir) paramsTodos.append("incluir_inactivos", "true");
+
+        const [resConteos, resTodos, resCultivos, resOps, resTodosUsers] =
+          await Promise.all([
+            api.get<{ items: Conteo[]; total: number }>(
+              `/conteos/admin/historial?${paramsTabla}`,
+            ),
+            api.get<{ items: Conteo[]; total: number }>(
+              `/conteos/admin/historial?${paramsTodos}`,
+            ),
+            api.get(`/cultivos/admin/todos`),
+            api.get(`/cultivos/${cultivoId}/operadores`),
+            api.get<Usuario[]>(`/usuarios/`),
+          ]);
         setConteos(resConteos.data.items);
         setTotal(resConteos.data.total);
+        setConteosTendencia(resTodos.data.items);
         setCultivo(
           resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
             null,
         );
         setOperadores(resOps.data);
-        setTodosOperadores(resTodos.data);
+        setTodosOperadores(resTodosUsers.data);
       } catch {
         setError("Error al cargar los datos del cultivo.");
       } finally {
@@ -210,19 +224,6 @@ export default function DetalleCultivoPage() {
   useEffect(() => {
     setPagina(1);
   }, [filtroOperador, fechaDesde, fechaHasta]);
-
-  // Cargar TODOS los conteos del rango (sin paginar) para la gráfica
-  useEffect(() => {
-    const params = buildFiltros();
-    params.append("skip", "0");
-    params.append("limit", "10000");
-    api
-      .get<{ items: Conteo[]; total: number }>(
-        `/conteos/admin/historial?${params}`,
-      )
-      .then((r) => setConteosTendencia(r.data.items))
-      .catch(() => {});
-  }, [buildFiltros]);
 
   const handleAsignar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,6 +292,76 @@ export default function DetalleCultivoPage() {
     } finally {
       setAccionConteoId(null);
     }
+  };
+
+  // Agrupar conteosTendencia por año (para vista anual)
+  const conteosAgrupados = (() => {
+    const ordenConfianza: Record<string, number> = {
+      alto: 0,
+      moderado: 1,
+      bajo: 2,
+    };
+    const mapa = new Map<
+      number,
+      {
+        anio: number;
+        conteos: Conteo[];
+        total: number;
+        operadoresUnicos: string[];
+        variedadesUnicas: string[];
+        todosCompletos: boolean;
+        peorConfianza: string | null;
+      }
+    >();
+
+    for (const c of conteosTendencia) {
+      const anio = new Date(c.fecha_conteo + "T00:00:00").getFullYear();
+      if (!mapa.has(anio)) {
+        mapa.set(anio, {
+          anio,
+          conteos: [],
+          total: 0,
+          operadoresUnicos: [],
+          variedadesUnicas: [],
+          todosCompletos: true,
+          peorConfianza: null,
+        });
+      }
+      const g = mapa.get(anio)!;
+      g.conteos.push(c);
+      g.total += c.conteo_total_acumulado;
+      if (c.operador_nombre && !g.operadoresUnicos.includes(c.operador_nombre))
+        g.operadoresUnicos.push(c.operador_nombre);
+      if (c.variedad_nombre && !g.variedadesUnicas.includes(c.variedad_nombre))
+        g.variedadesUnicas.push(c.variedad_nombre);
+      if (c.estado_id !== 2) g.todosCompletos = false;
+      if (c.nivel_confiabilidad) {
+        const peorActual = g.peorConfianza
+          ? (ordenConfianza[g.peorConfianza] ?? 0)
+          : -1;
+        if ((ordenConfianza[c.nivel_confiabilidad] ?? 0) > peorActual)
+          g.peorConfianza = c.nivel_confiabilidad;
+      }
+    }
+    return Array.from(mapa.values()).sort((a, b) => b.anio - a.anio);
+  })();
+
+  const handleExportarPDFAnual = async () => {
+    if (!cultivo || conteosAgrupados.length === 0) return;
+    const { generarReporteAnualPDF } = await import("@/lib/generarReportePDF");
+    generarReporteAnualPDF({
+      grupos: conteosAgrupados.map((g) => ({
+        ...g,
+        cultivosUnicos: [cultivo.nombre],
+      })),
+      filtros: {
+        cultivo: cultivo.nombre,
+        operador: todosOperadores.find((u) => String(u.id) === filtroOperador)
+          ?.nombre,
+        fechaDesde: fechaDesde || null,
+        fechaHasta: fechaHasta || null,
+      },
+    });
   };
 
   // Operadores que aún no están asignados
@@ -485,215 +556,463 @@ export default function DetalleCultivoPage() {
           <h3 className={styles.panelTitle} style={{ marginBottom: 0 }}>
             Historial de conteos ({total})
           </h3>
-          <label className={styles.toggleLabel}>
-            <div
-              className={`${styles.toggle} ${mostrarInactivos ? styles.toggleOn : ""}`}
-              onClick={() => handleToggleInactivos(!mostrarInactivos)}
-              role="switch"
-              aria-checked={mostrarInactivos}
-              tabIndex={0}
-              onKeyDown={(e) =>
-                e.key === "Enter" || e.key === " "
-                  ? handleToggleInactivos(!mostrarInactivos)
-                  : null
-              }
-            >
-              <div className={styles.toggleThumb} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            {modoVista === "anual" && conteosAgrupados.length > 0 && (
+              <button
+                onClick={handleExportarPDFAnual}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 8,
+                  border: "1.5px solid var(--color-border)",
+                  background: "none",
+                  color: "var(--color-text-muted)",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                Exportar PDF anual
+              </button>
+            )}
+            <div className={styles.vistaToggle}>
+              {(["tabla", "anual"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setModoVista(v)}
+                  className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
+                >
+                  {v === "tabla" ? "Tabla" : "Por año"}
+                </button>
+              ))}
             </div>
-            <span className={styles.toggleText}>Mostrar desactivados</span>
-          </label>
+            <label className={styles.toggleLabel}>
+              <div
+                className={`${styles.toggle} ${mostrarInactivos ? styles.toggleOn : ""}`}
+                onClick={() => handleToggleInactivos(!mostrarInactivos)}
+                role="switch"
+                aria-checked={mostrarInactivos}
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  e.key === "Enter" || e.key === " "
+                    ? handleToggleInactivos(!mostrarInactivos)
+                    : null
+                }
+              >
+                <div className={styles.toggleThumb} />
+              </div>
+              <span className={styles.toggleText}>Desactivados</span>
+            </label>
+          </div>
         </div>
 
-        {conteos.length === 0 ? (
-          <p className={styles.tablaVaciaMsg}>
-            No hay conteos registrados para este cultivo.
-          </p>
-        ) : (
-          <div className={styles.tablaScrollWrapper}>
-            <table className={styles.tabla}>
-              <thead>
-                <tr className={styles.tablaTheadRow}>
-                  {[
-                    "#",
-                    "Operador",
-                    "Fecha",
-                    "Total melones",
-                    "Confiabilidad",
-                    "Estado",
-                    "",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className={
-                        h === "Total melones"
-                          ? styles.thAlignRight
-                          : styles.thAlignLeft
-                      }
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {conteos.map((c, i) => {
-                  const inactivo = !c.activo;
-                  const enAccion = accionConteoId === c.id;
-                  return (
-                    <tr
-                      key={c.id}
-                      className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrAlt : ""} ${inactivo ? styles.tablaTrInactivo : ""}`}
-                      onClick={() =>
-                        !inactivo &&
-                        router.push(`/cultivos/${cultivoId}/conteos/${c.id}`)
-                      }
-                      style={{ cursor: inactivo ? "default" : "pointer" }}
-                    >
-                      <td className={styles.tdId}>#{c.id}</td>
-                      <td
-                        className={`${styles.tdNombre} ${inactivo ? styles.tdInactivo : ""}`}
-                      >
-                        {c.operador_nombre ?? "—"}
-                      </td>
-                      <td
-                        className={`${styles.tdBase} ${inactivo ? styles.tdInactivo : ""}`}
-                      >
-                        {new Date(
-                          c.fecha_conteo + "T00:00:00",
-                        ).toLocaleDateString("es-GT", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td
-                        className={`${styles.tdTotal} ${c.conteo_total_acumulado > 0 && !inactivo ? styles.totalValido : ""}`}
-                      >
-                        {c.conteo_total_acumulado > 0
-                          ? c.conteo_total_acumulado.toLocaleString()
-                          : "—"}
-                      </td>
-                      <td className={styles.tdBase}>
-                        {!inactivo && (c as any).nivel_confiabilidad ? (
-                          <span
-                            className={`${styles.badgeConfianza} ${
-                              (c as any).nivel_confiabilidad === "alto"
-                                ? styles.badgeAlto
-                                : (c as any).nivel_confiabilidad === "moderado"
-                                  ? styles.badgeModerado
-                                  : styles.badgeBajo
-                            }`}
+        {/* Vista tabla */}
+        {modoVista === "tabla" && (
+          <>
+            {conteos.length === 0 ? (
+              <p className={styles.tablaVaciaMsg}>
+                No hay conteos registrados para este cultivo.
+              </p>
+            ) : (
+              <div className={styles.tablaScrollWrapper}>
+                <table className={styles.tabla}>
+                  <thead>
+                    <tr className={styles.tablaTheadRow}>
+                      {[
+                        "#",
+                        "Operador",
+                        "Fecha",
+                        "Total melones",
+                        "Confiabilidad",
+                        "Estado",
+                        "",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className={
+                            h === "Total melones"
+                              ? styles.thAlignRight
+                              : styles.thAlignLeft
+                          }
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conteos.map((c, i) => {
+                      const inactivo = !c.activo;
+                      const enAccion = accionConteoId === c.id;
+                      return (
+                        <tr
+                          key={c.id}
+                          className={`${styles.tablaTr} ${i % 2 !== 0 ? styles.tablaTrAlt : ""} ${inactivo ? styles.tablaTrInactivo : ""}`}
+                          onClick={() =>
+                            !inactivo &&
+                            router.push(
+                              `/cultivos/${cultivoId}/conteos/${c.id}`,
+                            )
+                          }
+                          style={{ cursor: inactivo ? "default" : "pointer" }}
+                        >
+                          <td className={styles.tdId}>#{c.id}</td>
+                          <td
+                            className={`${styles.tdNombre} ${inactivo ? styles.tdInactivo : ""}`}
                           >
-                            {(c as any).nivel_confiabilidad}
-                          </span>
-                        ) : (
-                          <span className={styles.badgeVacio}>—</span>
-                        )}
-                      </td>
-                      <td className={styles.tdBase}>
-                        {inactivo ? (
-                          <span
-                            className={`${styles.badgeEstado} ${styles.badgeDesactivado}`}
+                            {c.operador_nombre ?? "—"}
+                          </td>
+                          <td
+                            className={`${styles.tdBase} ${inactivo ? styles.tdInactivo : ""}`}
                           >
-                            Desactivado
-                          </span>
-                        ) : (
-                          <span
-                            className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                            {new Date(
+                              c.fecha_conteo + "T00:00:00",
+                            ).toLocaleDateString("es-GT", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td
+                            className={`${styles.tdTotal} ${c.conteo_total_acumulado > 0 && !inactivo ? styles.totalValido : ""}`}
                           >
-                            {c.estado_id === 2 ? "Completado" : "En progreso"}
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        className={styles.tdAcciones}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {inactivo ? (
-                          <button
-                            className={styles.btnReactivarConteo}
-                            onClick={() =>
-                              handleReactivarConteo(c.id, c.fecha_conteo)
-                            }
-                            disabled={enAccion}
+                            {c.conteo_total_acumulado > 0
+                              ? c.conteo_total_acumulado.toLocaleString()
+                              : "—"}
+                          </td>
+                          <td className={styles.tdBase}>
+                            {!inactivo && (c as any).nivel_confiabilidad ? (
+                              <span
+                                className={`${styles.badgeConfianza} ${
+                                  (c as any).nivel_confiabilidad === "alto"
+                                    ? styles.badgeAlto
+                                    : (c as any).nivel_confiabilidad ===
+                                        "moderado"
+                                      ? styles.badgeModerado
+                                      : styles.badgeBajo
+                                }`}
+                              >
+                                {(c as any).nivel_confiabilidad}
+                              </span>
+                            ) : (
+                              <span className={styles.badgeVacio}>—</span>
+                            )}
+                          </td>
+                          <td className={styles.tdBase}>
+                            {inactivo ? (
+                              <span
+                                className={`${styles.badgeEstado} ${styles.badgeDesactivado}`}
+                              >
+                                Desactivado
+                              </span>
+                            ) : (
+                              <span
+                                className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                              >
+                                {c.estado_id === 2
+                                  ? "Completado"
+                                  : "En progreso"}
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={styles.tdAcciones}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {enAccion ? "…" : "Reactivar"}
-                          </button>
-                        ) : (
-                          <>
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className={styles.tdChevron}
-                            >
-                              <path d="m9 18 6-6-6-6" />
-                            </svg>
-                            <button
-                              className={styles.btnDesactivarConteo}
-                              onClick={() =>
-                                handleDesactivarConteo(c.id, c.fecha_conteo)
-                              }
-                              disabled={enAccion}
-                              title="Desactivar conteo"
-                            >
-                              {enAccion ? (
-                                "…"
-                              ) : (
+                            {inactivo ? (
+                              <button
+                                className={styles.btnReactivarConteo}
+                                onClick={() =>
+                                  handleReactivarConteo(c.id, c.fecha_conteo)
+                                }
+                                disabled={enAccion}
+                              >
+                                {enAccion ? "…" : "Reactivar"}
+                              </button>
+                            ) : (
+                              <>
                                 <svg
-                                  width="13"
-                                  height="13"
+                                  width="16"
+                                  height="16"
                                   viewBox="0 0 24 24"
                                   fill="none"
                                   stroke="currentColor"
-                                  strokeWidth="2"
+                                  strokeWidth="2.5"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
+                                  className={styles.tdChevron}
                                 >
-                                  <polyline points="3 6 5 6 21 6" />
-                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                  <path d="M10 11v6" />
-                                  <path d="M14 11v6" />
+                                  <path d="m9 18 6-6-6-6" />
                                 </svg>
-                              )}
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                                <button
+                                  className={styles.btnDesactivarConteo}
+                                  onClick={() =>
+                                    handleDesactivarConteo(c.id, c.fecha_conteo)
+                                  }
+                                  disabled={enAccion}
+                                  title="Desactivar conteo"
+                                >
+                                  {enAccion ? (
+                                    "…"
+                                  ) : (
+                                    <svg
+                                      width="13"
+                                      height="13"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                      <path d="M10 11v6" />
+                                      <path d="M14 11v6" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {total > PAGE_SIZE && (
+              <div className={styles.paginacion}>
+                <button
+                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                  disabled={pagina === 1}
+                  className={styles.btnPag}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pagInfo}>
+                  Página {pagina} de {Math.ceil(total / PAGE_SIZE)}
+                </span>
+                <button
+                  onClick={() =>
+                    setPagina((p) =>
+                      Math.min(Math.ceil(total / PAGE_SIZE), p + 1),
+                    )
+                  }
+                  disabled={pagina >= Math.ceil(total / PAGE_SIZE)}
+                  className={styles.btnPag}
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {total > PAGE_SIZE && (
-          <div className={styles.paginacion}>
-            <button
-              onClick={() => setPagina((p) => Math.max(1, p - 1))}
-              disabled={pagina === 1}
-              className={styles.btnPag}
-            >
-              ← Anterior
-            </button>
-            <span className={styles.pagInfo}>
-              Página {pagina} de {Math.ceil(total / PAGE_SIZE)}
-            </span>
-            <button
-              onClick={() =>
-                setPagina((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))
-              }
-              disabled={pagina >= Math.ceil(total / PAGE_SIZE)}
-              className={styles.btnPag}
-            >
-              Siguiente →
-            </button>
+        {/* Vista anual */}
+        {modoVista === "anual" && (
+          <div className={styles.anualWrap}>
+            {conteosAgrupados.length === 0 ? (
+              <p className={styles.tablaVaciaMsg}>
+                No hay conteos para agrupar con los filtros aplicados.
+              </p>
+            ) : (
+              conteosAgrupados.map((g) => {
+                const expandido = anioExpandido === g.anio;
+                return (
+                  <div key={g.anio} className={styles.anualCard}>
+                    <div
+                      className={styles.anualHeader}
+                      onClick={() =>
+                        setAnioExpandido(expandido ? null : g.anio)
+                      }
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) =>
+                        (e.key === "Enter" || e.key === " ") &&
+                        setAnioExpandido(expandido ? null : g.anio)
+                      }
+                    >
+                      <div className={styles.anualHeaderLeft}>
+                        <span className={styles.anualAnio}>{g.anio}</span>
+                        <div className={styles.anualMeta}>
+                          <span>
+                            {g.conteos.length} conteo
+                            {g.conteos.length !== 1 ? "s" : ""}
+                          </span>
+                          {g.variedadesUnicas.length > 0 && (
+                            <span>
+                              {g.variedadesUnicas.length === 1
+                                ? g.variedadesUnicas[0]
+                                : `${g.variedadesUnicas.length} variedades`}
+                            </span>
+                          )}
+                          {g.operadoresUnicos.length > 1 && (
+                            <span>{g.operadoresUnicos.length} operadores</span>
+                          )}
+                          {g.operadoresUnicos.length === 1 && (
+                            <span>{g.operadoresUnicos[0]}</span>
+                          )}
+                          {!g.todosCompletos && (
+                            <span className={styles.anualBadgeProgreso}>
+                              Hay conteos en progreso
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.anualHeaderRight}>
+                        <div className={styles.anualTotalWrap}>
+                          <span className={styles.anualTotalLabel}>
+                            Total del año
+                          </span>
+                          <span className={styles.anualTotal}>
+                            {g.total.toLocaleString()}
+                          </span>
+                          <span className={styles.anualTotalSub}>melones</span>
+                        </div>
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: expandido ? "rotate(180deg)" : "none",
+                            transition: "transform 0.2s",
+                            color: "var(--color-text-muted)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {expandido && (
+                      <div className={styles.anualDetalle}>
+                        <table className={styles.anualTabla}>
+                          <thead>
+                            <tr className={styles.anualTablaHead}>
+                              {[
+                                "#",
+                                "Operador",
+                                "Variedad",
+                                "Fecha",
+                                "Total",
+                                "Estado",
+                              ].map((h) => (
+                                <th key={h} className={styles.anualTablaTh}>
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {g.conteos
+                              .slice()
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.fecha_conteo).getTime() -
+                                  new Date(a.fecha_conteo).getTime(),
+                              )
+                              .map((c, i) => (
+                                <tr
+                                  key={c.id}
+                                  className={`${styles.anualTablaTr} ${i % 2 !== 0 ? styles.anualTablaTrImpar : ""} ${c.activo ? styles.anualTablaTrClick : ""}`}
+                                  onClick={() =>
+                                    c.activo &&
+                                    router.push(
+                                      `/cultivos/${cultivoId}/conteos/${c.id}`,
+                                    )
+                                  }
+                                  style={{
+                                    cursor: c.activo ? "pointer" : "default",
+                                    opacity: c.activo ? 1 : 0.5,
+                                  }}
+                                >
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{
+                                      color: "var(--color-text-muted)",
+                                      fontSize: "0.8rem",
+                                    }}
+                                  >
+                                    #{c.id}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{ color: "var(--color-text-muted)" }}
+                                  >
+                                    {c.operador_nombre ?? "—"}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{ color: "var(--color-text-muted)" }}
+                                  >
+                                    {c.variedad_nombre ?? "—"}
+                                  </td>
+                                  <td className={styles.anualTablaTd}>
+                                    {new Date(
+                                      c.fecha_conteo + "T00:00:00",
+                                    ).toLocaleDateString("es-GT", {
+                                      day: "2-digit",
+                                      month: "short",
+                                    })}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{
+                                      fontWeight: 700,
+                                      fontFamily: "monospace",
+                                      color:
+                                        c.conteo_total_acumulado > 0
+                                          ? "var(--color-primary)"
+                                          : "var(--color-text-muted)",
+                                    }}
+                                  >
+                                    {c.conteo_total_acumulado > 0
+                                      ? c.conteo_total_acumulado.toLocaleString()
+                                      : "—"}
+                                  </td>
+                                  <td className={styles.anualTablaTd}>
+                                    {!c.activo ? (
+                                      <span
+                                        className={styles.anualBadgeDesactivado}
+                                      >
+                                        Desactivado
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`${styles.anualBadgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                                      >
+                                        {c.estado_id === 2
+                                          ? "Completado"
+                                          : "En progreso"}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
       </div>

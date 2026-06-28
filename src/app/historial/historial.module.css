@@ -413,8 +413,194 @@
 }
 
 /* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
+   VISTA ANUAL
    ========================================= */
+.anualWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.anualCard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.anualHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+}
+
+.anualHeader:hover {
+  background: rgba(45, 106, 79, 0.04);
+}
+
+.anualHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.anualAnio {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.anualMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.anualMeta span::before {
+  content: "·";
+  margin-right: 10px;
+  opacity: 0.4;
+}
+
+.anualMeta span:first-child::before {
+  content: none;
+}
+
+.anualBadgeProgreso {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.anualHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.anualTotalWrap {
+  text-align: right;
+}
+
+.anualTotalLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 1px;
+}
+
+.anualTotal {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  font-family: "DM Mono", monospace;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.anualTotalSub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-top: 1px;
+}
+
+.anualDetalle {
+  border-top: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.anualTabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.anualTablaHead {
+  background: var(--color-surface-alt, #f4f7f5);
+}
+
+.anualTablaTh {
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.anualTablaTr {
+  border-top: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+
+.anualTablaTrImpar {
+  background: var(--color-surface-alt, #fafcfb);
+}
+
+.anualTablaTrClick:hover {
+  background: rgba(45, 106, 79, 0.05);
+}
+
+.anualTablaTd {
+  padding: 9px 14px;
+  font-size: 0.84rem;
+}
+
+.anualBadgeEstado {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.anualBadgeDesactivado {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .anualHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .anualHeaderRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .anualTotalWrap {
+    text-align: left;
+  }
+}
 @media (max-width: 768px) {
   .container {
     padding: 1.25rem 1rem;

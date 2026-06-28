@@ -23,13 +23,19 @@ const COLORES_CALIBRE: [number, number, number][] = [
 function formatFecha(fecha: string | null | undefined) {
   if (!fecha) return "—";
   try {
-    return new Date(fecha + "T00:00:00").toLocaleDateString("es-GT", {
+    // Si ya tiene componente de hora (contiene T o espacio seguido de dígitos), parsear directo.
+    // Si es solo fecha YYYY-MM-DD, agregar T00:00:00 para evitar desfase de zona horaria.
+    const d = /T|\s\d{2}:/.test(fecha)
+      ? new Date(fecha)
+      : new Date(fecha + "T00:00:00");
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("es-GT", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
-  } catch (e) {
-    return "Fecha inválida";
+  } catch {
+    return "—";
   }
 }
 
@@ -455,4 +461,239 @@ export function generarReportePDF(params: {
   }
 
   doc.save(`conteo_${conteo.id}_reporte.pdf`);
+}
+
+// ─── Reporte anual ────────────────────────────────────────────────────────────
+
+interface GrupoAnual {
+  anio: number;
+  conteos: Conteo[];
+  total: number;
+  cultivosUnicos: string[];
+  variedadesUnicas: string[];
+  operadoresUnicos: string[];
+  todosCompletos: boolean;
+  peorConfianza: string | null;
+}
+
+export function generarReporteAnualPDF(params: {
+  grupos: GrupoAnual[];
+  filtros: {
+    cultivo?: string;
+    operador?: string;
+    fechaDesde: string | null;
+    fechaHasta: string | null;
+  };
+}) {
+  const { grupos, filtros } = params;
+
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "letter",
+  });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const ML = 20,
+    MR = 20;
+  const ANCHO = W - ML - MR;
+  let y = 20;
+
+  // Encabezado
+  doc.setFillColor(...VERDE);
+  doc.rect(0, 0, W, 28, "F");
+
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLANCO);
+  doc.text("MelonCount", ML, 12);
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("Sistema de Conteo Pre-cosecha · Amadeo Export S.A.", ML, 18);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("Resumen anual de conteos", ML, 24);
+
+  const hoy = new Date().toLocaleDateString("es-GT", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado el ${hoy}`, W - MR, 24, { align: "right" });
+
+  y = 36;
+
+  // Filtros aplicados
+  const filtrosTexto: string[] = [];
+  if (filtros.cultivo) filtrosTexto.push(`Cultivo: ${filtros.cultivo}`);
+  if (filtros.operador) filtrosTexto.push(`Operador: ${filtros.operador}`);
+  if (filtros.fechaDesde)
+    filtrosTexto.push(`Desde: ${formatFecha(filtros.fechaDesde)}`);
+  if (filtros.fechaHasta)
+    filtrosTexto.push(`Hasta: ${formatFecha(filtros.fechaHasta)}`);
+
+  if (filtrosTexto.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(...GRIS_M);
+    doc.text(`Filtros: ${filtrosTexto.join(" · ")}`, ML, y);
+    y += 8;
+  }
+
+  // Resumen global
+  const totalGlobal = grupos.reduce((s, g) => s + g.total, 0);
+  const totalConteos = grupos.reduce((s, g) => s + g.conteos.length, 0);
+
+  doc.setFillColor(...VERDE_CL);
+  doc.roundedRect(ML, y, ANCHO, 18, 3, 3, "F");
+  doc.setDrawColor(...VERDE);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(ML, y, ANCHO, 18, 3, 3, "S");
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...VERDE);
+  doc.text(
+    `${grupos.length} año${grupos.length !== 1 ? "s" : ""} · ${totalConteos} conteo${totalConteos !== 1 ? "s" : ""}`,
+    ML + 5,
+    y + 7,
+  );
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...GRIS_M);
+  doc.text("Total global acumulado:", ML + 5, y + 13);
+
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...VERDE);
+  doc.text(formatNum(totalGlobal), W - MR - 4, y + 13, { align: "right" });
+
+  y += 24;
+
+  // Un bloque por año
+  for (const g of grupos) {
+    if (y > H - 60) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Título del año
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...VERDE);
+    doc.text(String(g.anio), ML, y);
+
+    // Total del año alineado a la derecha
+    doc.setFontSize(13);
+    doc.text(formatNum(g.total), W - MR, y, { align: "right" });
+
+    y += 3;
+    doc.setDrawColor(...VERDE);
+    doc.setLineWidth(0.4);
+    doc.line(ML, y, W - MR, y);
+    y += 4;
+
+    // Metadatos del año
+    const meta: string[] = [
+      `${g.conteos.length} conteo${g.conteos.length !== 1 ? "s" : ""}`,
+    ];
+    if (g.cultivosUnicos.length === 1) meta.push(g.cultivosUnicos[0]);
+    else if (g.cultivosUnicos.length > 1)
+      meta.push(`${g.cultivosUnicos.length} cultivos`);
+    if (g.variedadesUnicas.length === 1) meta.push(g.variedadesUnicas[0]);
+    else if (g.variedadesUnicas.length > 1)
+      meta.push(`${g.variedadesUnicas.length} variedades`);
+    if (!g.todosCompletos) meta.push("Incluye conteos en progreso");
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...GRIS_M);
+    doc.text(meta.join(" · "), ML, y);
+    y += 6;
+
+    // Tabla de conteos del año
+    const filas = g.conteos
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.fecha_conteo).getTime() -
+          new Date(b.fecha_conteo).getTime(),
+      )
+      .map((c) => [
+        `#${c.id}`,
+        c.cultivo_nombre ?? "—",
+        c.operador_nombre ?? "—",
+        new Date(c.fecha_conteo + "T00:00:00").toLocaleDateString("es-GT", {
+          day: "2-digit",
+          month: "short",
+        }),
+        formatNum(
+          c.conteo_total_acumulado > 0 ? c.conteo_total_acumulado : null,
+        ),
+        c.estado_id === 2 ? "Completado" : "En progreso",
+      ]);
+
+    const totalAnio = g.conteos.reduce(
+      (s, c) => s + c.conteo_total_acumulado,
+      0,
+    );
+    filas.push(["TOTAL", "", "", "", formatNum(totalAnio), ""]);
+
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Cultivo", "Operador", "Fecha", "Total", "Estado"]],
+      body: filas,
+      margin: { left: ML, right: MR },
+      styles: { fontSize: 7.5, cellPadding: 2.5, textColor: GRIS },
+      headStyles: { fillColor: VERDE_CL, textColor: VERDE, fontStyle: "bold" },
+      columnStyles: {
+        0: { cellWidth: 14, halign: "center" },
+        3: { cellWidth: 18, halign: "center" },
+        4: { halign: "right", fontStyle: "bold" },
+        5: { cellWidth: 24 },
+      },
+      didParseCell: (data) => {
+        if (data.row.index === filas.length - 1) {
+          data.cell.styles.fillColor = VERDE_CL;
+          data.cell.styles.textColor = VERDE;
+          data.cell.styles.fontStyle = "bold";
+        }
+        if (data.row.index % 2 === 1 && data.row.index !== filas.length - 1) {
+          data.cell.styles.fillColor = [249, 251, 250];
+        }
+      },
+      tableLineColor: GRIS_B,
+      tableLineWidth: 0.3,
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 14;
+  }
+
+  // Pie de página
+  const totalPaginas = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPaginas; i++) {
+    doc.setPage(i);
+    const py = H - 10;
+    doc.setDrawColor(...GRIS_B);
+    doc.setLineWidth(0.3);
+    doc.line(ML, py - 4, W - MR, py - 4);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...GRIS_M);
+    doc.text(
+      "MelonCount — Amadeo Export S.A. · Resumen anual de conteos",
+      ML,
+      py,
+    );
+    doc.text(`Página ${i} de ${totalPaginas}`, W - MR, py, { align: "right" });
+  }
+
+  const sufijo = filtros.cultivo
+    ? `_${filtros.cultivo.replace(/\s+/g, "_")}`
+    : "";
+  doc.save(`resumen_anual${sufijo}.pdf`);
 }

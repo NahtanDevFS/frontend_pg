@@ -158,6 +158,219 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   );
 }
 
+interface GrupoAnualGrafica {
+  anio: number;
+  total: number;
+  todosCompletos: boolean;
+}
+
+function GraficaAnual({ grupos }: { grupos: GrupoAnualGrafica[] }) {
+  const [hoverAnio, setHoverAnio] = useState<number | null>(null);
+
+  if (grupos.length === 0) return null;
+
+  // Ordenar cronológico para la gráfica
+  const ordenados = [...grupos].sort((a, b) => a.anio - b.anio);
+  const max = Math.max(...ordenados.map((g) => g.total));
+  if (max === 0) return null;
+
+  const W = 560,
+    H = 140,
+    PAD_X = 40,
+    PAD_Y = 24;
+  const w = W - PAD_X * 2;
+  const h = H - PAD_Y * 2;
+  const n = ordenados.length;
+  const BAR_W = Math.min(36, (w / n) * 0.55);
+  const STEP = w / Math.max(n - 1, 1);
+
+  const pts = ordenados.map((g, i) => ({
+    x: n === 1 ? PAD_X + w / 2 : PAD_X + i * STEP,
+    y: PAD_Y + h - (g.total / max) * h,
+    grupo: g,
+    i,
+  }));
+
+  return (
+    <div style={{ overflowX: "auto", width: "100%", paddingBottom: "4px" }}>
+      <svg
+        width="100%"
+        viewBox={`0 0 ${W} ${H + 20}`}
+        style={{ minWidth: "260px", maxWidth: "560px", overflow: "visible" }}
+        onMouseLeave={() => setHoverAnio(null)}
+      >
+        {/* Línea base */}
+        <line
+          x1={PAD_X}
+          y1={PAD_Y + h}
+          x2={PAD_X + w}
+          y2={PAD_Y + h}
+          stroke="#e8eeeb"
+          strokeWidth="1"
+        />
+
+        {/* Línea de tendencia */}
+        {n > 1 && (
+          <polyline
+            points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
+            fill="none"
+            stroke="#52b788"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+        )}
+
+        {pts.map((p) => {
+          const hover = hoverAnio === p.grupo.anio;
+          const barH = PAD_Y + h - p.y;
+          const bx = p.x - BAR_W / 2;
+          const anterior = p.i > 0 ? ordenados[p.i - 1].total : null;
+          const variacion = anterior
+            ? (((p.grupo.total - anterior) / anterior) * 100).toFixed(1)
+            : null;
+          const subio = variacion ? parseFloat(variacion) >= 0 : null;
+
+          return (
+            <g key={p.grupo.anio}>
+              {/* Barra */}
+              <rect
+                x={bx}
+                y={p.y}
+                width={BAR_W}
+                height={barH}
+                rx="3"
+                fill={
+                  hover
+                    ? "#1a2e25"
+                    : p.grupo.todosCompletos
+                      ? "#52b788"
+                      : "#74c69d"
+                }
+                opacity={hover ? 1 : 0.75}
+                style={{ transition: "all 0.15s" }}
+              />
+
+              {/* Valor encima de la barra */}
+              <text
+                x={p.x}
+                y={p.y - 5}
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="700"
+                fill={hover ? "#1a2e25" : "#2d6a4f"}
+                style={{ opacity: hover ? 0 : 1, transition: "opacity 0.15s" }}
+              >
+                {p.grupo.total.toLocaleString()}
+              </text>
+
+              {/* Variación */}
+              {variacion && (
+                <text
+                  x={p.x}
+                  y={p.y - 16}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill={subio ? "#059669" : "#dc2626"}
+                  style={{
+                    opacity: hover ? 0 : 0.8,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  {subio ? "▲" : "▼"} {Math.abs(parseFloat(variacion))}%
+                </text>
+              )}
+
+              {/* Año debajo */}
+              <text
+                x={p.x}
+                y={PAD_Y + h + 14}
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="600"
+                fill={hover ? "#1a2e25" : "#5a7a6a"}
+              >
+                {p.grupo.anio}
+              </text>
+
+              {/* Zona de interacción */}
+              <rect
+                x={bx - 8}
+                y={PAD_Y}
+                width={BAR_W + 16}
+                height={h + 4}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHoverAnio(p.grupo.anio)}
+                onMouseLeave={() => setHoverAnio(null)}
+                onClick={() => setHoverAnio(hover ? null : p.grupo.anio)}
+              />
+
+              {/* Tooltip hover */}
+              {hover &&
+                (() => {
+                  const bw = 90,
+                    bh = variacion ? 42 : 30;
+                  let bx2 = p.x - bw / 2;
+                  if (bx2 < 0) bx2 = 0;
+                  if (bx2 + bw > W) bx2 = W - bw;
+                  const by2 =
+                    p.y - bh - 10 > PAD_Y ? p.y - bh - 10 : p.y + barH + 6;
+                  return (
+                    <g>
+                      <rect
+                        x={bx2}
+                        y={by2}
+                        width={bw}
+                        height={bh}
+                        rx={6}
+                        fill="#1a2e25"
+                        opacity="0.96"
+                      />
+                      <text
+                        x={bx2 + bw / 2}
+                        y={by2 + 13}
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="13"
+                        fontWeight="bold"
+                      >
+                        {p.grupo.total.toLocaleString()}
+                      </text>
+                      <text
+                        x={bx2 + bw / 2}
+                        y={by2 + 23}
+                        textAnchor="middle"
+                        fill="#a3b8ad"
+                        fontSize="9"
+                      >
+                        melones · {p.grupo.anio}
+                      </text>
+                      {variacion && (
+                        <text
+                          x={bx2 + bw / 2}
+                          y={by2 + 35}
+                          textAnchor="middle"
+                          fill={subio ? "#6ee7b7" : "#fca5a5"}
+                          fontSize="9"
+                          fontWeight="600"
+                        >
+                          {subio ? "▲" : "▼"} {Math.abs(parseFloat(variacion))}%
+                          vs año anterior
+                        </text>
+                      )}
+                    </g>
+                  );
+                })()}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
   if (!nivel)
     return (
@@ -191,18 +404,22 @@ export default function HistorialPage() {
   const [filtroOperador, setFiltroOperador] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-  const [modoVista, setModoVista] = useState<"tabla" | "tendencia">("tabla");
+  const [modoVista, setModoVista] = useState<"tabla" | "tendencia" | "anual">(
+    "tabla",
+  );
   const [exportando, setExportando] = useState<number | null>(null);
   // Paginación numérica
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 20;
-  // Data completa (sin paginar) para la vista de tendencia
+  // Data completa (sin paginar) para la vista de tendencia y anual
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
   // Toggle para mostrar desactivados
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   // Id del conteo en acción
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
+  // Año expandido en la vista anual
+  const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -213,18 +430,29 @@ export default function HistorialPage() {
       if (fechaDesde) params.append("fecha_desde", fechaDesde);
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
       if (mostrarInactivos) params.append("incluir_inactivos", "true");
-      params.append("skip", String((pagina - 1) * PAGE_SIZE));
-      params.append("limit", String(PAGE_SIZE));
 
-      const [resHist, resCultivos, resOps] = await Promise.all([
+      // Vista anual: carga todos sin paginación para poder agrupar
+      const paramsPag = new URLSearchParams(params);
+      paramsPag.append("skip", String((pagina - 1) * PAGE_SIZE));
+      paramsPag.append("limit", String(PAGE_SIZE));
+
+      const paramsTodos = new URLSearchParams(params);
+      paramsTodos.append("skip", "0");
+      paramsTodos.append("limit", "500");
+
+      const [resHist, resTodos, resCultivos, resOps] = await Promise.all([
         api.get<{ items: Conteo[]; total: number }>(
-          `/conteos/admin/historial?${params}`,
+          `/conteos/admin/historial?${paramsPag}`,
+        ),
+        api.get<{ items: Conteo[]; total: number }>(
+          `/conteos/admin/historial?${paramsTodos}`,
         ),
         api.get<Cultivo[]>("/cultivos/admin/todos"),
         api.get<Usuario[]>("/usuarios/"),
       ]);
       setConteos(resHist.data.items);
       setTotal(resHist.data.total);
+      setConteosTendencia(resTodos.data.items);
       setCultivos(resCultivos.data);
       setOperadores(resOps.data);
     } catch (err: any) {
@@ -246,24 +474,6 @@ export default function HistorialPage() {
     setPagina(1);
   }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
 
-  // Cargar TODOS los conteos (respetando filtros) cuando se entra a tendencia
-  useEffect(() => {
-    if (modoVista !== "tendencia") return;
-    const params = new URLSearchParams();
-    if (filtroCultivo) params.append("cultivo_id", filtroCultivo);
-    if (filtroOperador) params.append("usuario_id", filtroOperador);
-    if (fechaDesde) params.append("fecha_desde", fechaDesde);
-    if (fechaHasta) params.append("fecha_hasta", fechaHasta);
-    params.append("skip", "0");
-    params.append("limit", "10000"); // traer todo para la gráfica
-    api
-      .get<{ items: Conteo[]; total: number }>(
-        `/conteos/admin/historial?${params}`,
-      )
-      .then((r) => setConteosTendencia(r.data.items))
-      .catch((err) => console.error(err));
-  }, [modoVista, filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
-
   useEffect(() => {
     cargar();
   }, [cargar]);
@@ -275,6 +485,79 @@ export default function HistorialPage() {
     operadores.find((u) => u.id === conteo.created_by)?.nombre ?? "—";
 
   const conteosFiltrados = conteos;
+
+  // Agrupar conteosTendencia por año
+  const conteosAgrupados = (() => {
+    const mapa = new Map<
+      number,
+      {
+        anio: number;
+        conteos: Conteo[];
+        total: number;
+        cultivosUnicos: string[];
+        variedadesUnicas: string[];
+        operadoresUnicos: string[];
+        todosCompletos: boolean;
+        peorConfianza: string | null;
+      }
+    >();
+
+    const ordenConfianza: Record<string, number> = {
+      alto: 0,
+      moderado: 1,
+      bajo: 2,
+    };
+
+    for (const c of conteosTendencia) {
+      const anio = new Date(c.fecha_conteo + "T00:00:00").getFullYear();
+      if (!mapa.has(anio)) {
+        mapa.set(anio, {
+          anio,
+          conteos: [],
+          total: 0,
+          cultivosUnicos: [],
+          variedadesUnicas: [],
+          operadoresUnicos: [],
+          todosCompletos: true,
+          peorConfianza: null,
+        });
+      }
+      const g = mapa.get(anio)!;
+      g.conteos.push(c);
+      g.total += c.conteo_total_acumulado;
+      if (c.cultivo_nombre && !g.cultivosUnicos.includes(c.cultivo_nombre))
+        g.cultivosUnicos.push(c.cultivo_nombre);
+      if (c.variedad_nombre && !g.variedadesUnicas.includes(c.variedad_nombre))
+        g.variedadesUnicas.push(c.variedad_nombre);
+      if (c.operador_nombre && !g.operadoresUnicos.includes(c.operador_nombre))
+        g.operadoresUnicos.push(c.operador_nombre);
+      if (c.estado_id !== 2) g.todosCompletos = false;
+      if (c.nivel_confiabilidad) {
+        const peorActual = g.peorConfianza
+          ? (ordenConfianza[g.peorConfianza] ?? 0)
+          : -1;
+        const nuevo = ordenConfianza[c.nivel_confiabilidad] ?? 0;
+        if (nuevo > peorActual) g.peorConfianza = c.nivel_confiabilidad;
+      }
+    }
+
+    return Array.from(mapa.values()).sort((a, b) => b.anio - a.anio);
+  })();
+
+  const handleExportarPDFAnual = async () => {
+    if (conteosAgrupados.length === 0) return;
+    const { generarReporteAnualPDF } = await import("@/lib/generarReportePDF");
+    generarReporteAnualPDF({
+      grupos: conteosAgrupados,
+      filtros: {
+        cultivo: cultivos.find((c) => String(c.id) === filtroCultivo)?.nombre,
+        operador: operadores.find((o) => String(o.id) === filtroOperador)
+          ?.nombre,
+        fechaDesde: fechaDesde || null,
+        fechaHasta: fechaHasta || null,
+      },
+    });
+  };
 
   const handleToggleInactivos = (checked: boolean) => {
     setMostrarInactivos(checked);
@@ -443,14 +726,23 @@ export default function HistorialPage() {
               Mostrar desactivados
             </span>
           </label>
+          {modoVista === "anual" && conteosAgrupados.length > 0 && (
+            <button className={styles.btnPDF} onClick={handleExportarPDFAnual}>
+              Exportar PDF anual
+            </button>
+          )}
           <div className={styles.vistaToggle}>
-            {(["tabla", "tendencia"] as const).map((v) => (
+            {(["tabla", "tendencia", "anual"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setModoVista(v)}
                 className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
               >
-                {v === "tabla" ? "Tabla" : "Tendencia"}
+                {v === "tabla"
+                  ? "Tabla"
+                  : v === "tendencia"
+                    ? "Tendencia"
+                    : "Por año"}
               </button>
             ))}
           </div>
@@ -523,11 +815,14 @@ export default function HistorialPage() {
         )}
       </div>
 
-      {loading ? (
+      {loading && (
         <div className={styles.loadingWrap}>
           <div className={styles.spinner} />
         </div>
-      ) : modoVista === "tabla" ? (
+      )}
+
+      {/* Vista tabla */}
+      {!loading && modoVista === "tabla" && (
         <div className={styles.tablaWrap}>
           {conteosFiltrados.length === 0 ? (
             <p className={styles.tablaVacia}>
@@ -799,7 +1094,10 @@ export default function HistorialPage() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {/* Vista tendencia */}
+      {!loading && modoVista === "tendencia" && (
         <div className={styles.tendenciaGrid}>
           {conteosPorCultivo.length === 0 ? (
             <p className={styles.tendenciaSinDatos}>
@@ -825,6 +1123,221 @@ export default function HistorialPage() {
                 )}
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Vista anual */}
+      {!loading && modoVista === "anual" && (
+        <div className={styles.anualWrap}>
+          {conteosAgrupados.length === 0 ? (
+            <p className={styles.tablaVacia}>
+              No hay conteos para agrupar con los filtros aplicados.
+            </p>
+          ) : (
+            <>
+              {/* Gráfica de totales anuales */}
+              {conteosAgrupados.length >= 2 && (
+                <div className={styles.anualGraficaWrap}>
+                  <p className={styles.anualGraficaLabel}>
+                    Total de melones por año
+                  </p>
+                  <GraficaAnual grupos={conteosAgrupados} />
+                </div>
+              )}
+              {conteosAgrupados.map((g) => {
+                const expandido = anioExpandido === g.anio;
+                return (
+                  <div key={g.anio} className={styles.anualCard}>
+                    {/* Cabecera del año */}
+                    <div
+                      className={styles.anualHeader}
+                      onClick={() =>
+                        setAnioExpandido(expandido ? null : g.anio)
+                      }
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) =>
+                        (e.key === "Enter" || e.key === " ") &&
+                        setAnioExpandido(expandido ? null : g.anio)
+                      }
+                    >
+                      <div className={styles.anualHeaderLeft}>
+                        <span className={styles.anualAnio}>{g.anio}</span>
+                        <div className={styles.anualMeta}>
+                          <span>
+                            {g.conteos.length} conteo
+                            {g.conteos.length !== 1 ? "s" : ""}
+                          </span>
+                          {g.cultivosUnicos.length > 0 && (
+                            <span>
+                              {g.cultivosUnicos.length === 1
+                                ? g.cultivosUnicos[0]
+                                : `${g.cultivosUnicos.length} cultivos`}
+                            </span>
+                          )}
+                          {g.variedadesUnicas.length > 0 && (
+                            <span>
+                              {g.variedadesUnicas.length === 1
+                                ? g.variedadesUnicas[0]
+                                : `${g.variedadesUnicas.length} variedades`}
+                            </span>
+                          )}
+                          {!g.todosCompletos && (
+                            <span className={styles.anualBadgeProgreso}>
+                              Hay conteos en progreso
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.anualHeaderRight}>
+                        <div className={styles.anualTotalWrap}>
+                          <span className={styles.anualTotalLabel}>
+                            Total del año
+                          </span>
+                          <span className={styles.anualTotal}>
+                            {g.total.toLocaleString()}
+                          </span>
+                          <span className={styles.anualTotalSub}>melones</span>
+                        </div>
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: expandido ? "rotate(180deg)" : "none",
+                            transition: "transform 0.2s",
+                            color: "var(--color-text-muted)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Conteos del año expandidos */}
+                    {expandido && (
+                      <div className={styles.anualDetalle}>
+                        <table className={styles.anualTabla}>
+                          <thead>
+                            <tr className={styles.anualTablaHead}>
+                              {[
+                                "#",
+                                "Cultivo",
+                                "Operador",
+                                "Fecha",
+                                "Total",
+                                "Estado",
+                              ].map((h) => (
+                                <th key={h} className={styles.anualTablaTh}>
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {g.conteos
+                              .slice()
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.fecha_conteo).getTime() -
+                                  new Date(a.fecha_conteo).getTime(),
+                              )
+                              .map((c, i) => (
+                                <tr
+                                  key={c.id}
+                                  className={`${styles.anualTablaTr} ${i % 2 !== 0 ? styles.anualTablaTrImpar : ""} ${c.activo ? styles.anualTablaTrClick : ""}`}
+                                  onClick={() =>
+                                    c.activo &&
+                                    router.push(
+                                      `/cultivos/${c.campo_cultivo_id}/conteos/${c.id}`,
+                                    )
+                                  }
+                                  style={{
+                                    cursor: c.activo ? "pointer" : "default",
+                                    opacity: c.activo ? 1 : 0.5,
+                                  }}
+                                >
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{
+                                      color: "var(--color-text-muted)",
+                                      fontSize: "0.8rem",
+                                    }}
+                                  >
+                                    #{c.id}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "var(--color-primary)",
+                                    }}
+                                  >
+                                    {c.cultivo_nombre ?? "—"}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{ color: "var(--color-text-muted)" }}
+                                  >
+                                    {c.operador_nombre ?? "—"}
+                                  </td>
+                                  <td className={styles.anualTablaTd}>
+                                    {new Date(
+                                      c.fecha_conteo + "T00:00:00",
+                                    ).toLocaleDateString("es-GT", {
+                                      day: "2-digit",
+                                      month: "short",
+                                    })}
+                                  </td>
+                                  <td
+                                    className={styles.anualTablaTd}
+                                    style={{
+                                      fontWeight: 700,
+                                      fontFamily: "monospace",
+                                      color:
+                                        c.conteo_total_acumulado > 0
+                                          ? "var(--color-primary)"
+                                          : "var(--color-text-muted)",
+                                    }}
+                                  >
+                                    {c.conteo_total_acumulado > 0
+                                      ? c.conteo_total_acumulado.toLocaleString()
+                                      : "—"}
+                                  </td>
+                                  <td className={styles.anualTablaTd}>
+                                    {!c.activo ? (
+                                      <span
+                                        className={styles.anualBadgeDesactivado}
+                                      >
+                                        Desactivado
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`${styles.anualBadgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                                      >
+                                        {c.estado_id === 2
+                                          ? "Completado"
+                                          : "En progreso"}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}

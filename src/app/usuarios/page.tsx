@@ -18,6 +18,7 @@ export default function GestionUsuariosPage() {
   const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [usuarioActualId, setUsuarioActualId] = useState<number | null>(null);
 
   // Crear
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -32,12 +33,14 @@ export default function GestionUsuariosPage() {
 
   const cargarDatos = async () => {
     try {
-      const [resU, resR] = await Promise.all([
+      const [resU, resR, resMe] = await Promise.all([
         api.get("/usuarios/"),
         api.get("/catalogos/roles"),
+        api.get("/usuarios/me"),
       ]);
       setUsuarios(resU.data);
       setRoles(resR.data);
+      setUsuarioActualId(resMe.data.id ?? null);
       if (resR.data.length > 0)
         setRolId(
           String(
@@ -276,7 +279,12 @@ export default function GestionUsuariosPage() {
                     key={u.id}
                     className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""}`}
                   >
-                    <td className={styles.tdNombre}>{u.nombre}</td>
+                    <td className={styles.tdNombre}>
+                      {u.nombre}
+                      {u.id === usuarioActualId && (
+                        <span className={styles.badgeYo}>Yo</span>
+                      )}
+                    </td>
                     <td className={styles.tdRol}>
                       <span
                         className={

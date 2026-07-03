@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
@@ -398,7 +398,6 @@ function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
 
 export default function HistorialPage() {
   const router = useRouter();
-  const [conteos, setConteos] = useState<Conteo[]>([]);
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -433,27 +432,27 @@ export default function HistorialPage() {
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
       if (mostrarInactivos) params.append("incluir_inactivos", "true");
 
-      // Vista anual: carga todos sin paginación para poder agrupar
-      const paramsPag = new URLSearchParams(params);
-      paramsPag.append("skip", String((pagina - 1) * PAGE_SIZE));
-      paramsPag.append("limit", String(PAGE_SIZE));
-
+      // Una sola petición trae hasta 500 conteos (ya ordenados por fecha
+      // desc por el backend), usados tanto para las vistas de tendencia y
+      // anual como para la tabla paginada, derivada en el cliente (ver
+      // useMemo de "conteos" más abajo). No depende de "pagina": cambiar
+      // de página nunca dispara una petición nueva.
+      // Nota: si algún día hubiera más de 500 conteos con los filtros
+      // activos, la paginación del cliente dejaría de reflejar
+      // correctamente páginas más allá del registro 500 — el mismo techo
+      // que ya tenían las vistas de tendencia y anual antes de este cambio.
       const paramsTodos = new URLSearchParams(params);
       paramsTodos.append("skip", "0");
       paramsTodos.append("limit", "500");
 
-      const [resHist, resTodos, resCultivos, resOps] = await Promise.all([
-        api.get<{ items: Conteo[]; total: number }>(
-          `/conteos/admin/historial?${paramsPag}`,
-        ),
+      const [resTodos, resCultivos, resOps] = await Promise.all([
         api.get<{ items: Conteo[]; total: number }>(
           `/conteos/admin/historial?${paramsTodos}`,
         ),
         api.get<Cultivo[]>("/cultivos/admin/todos"),
         api.get<Usuario[]>("/usuarios/"),
       ]);
-      setConteos(resHist.data.items);
-      setTotal(resHist.data.total);
+      setTotal(resTodos.data.total);
       setConteosTendencia(resTodos.data.items);
       setCultivos(resCultivos.data);
       setOperadores(resOps.data);
@@ -462,14 +461,15 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }, [
-    filtroCultivo,
-    filtroOperador,
-    fechaDesde,
-    fechaHasta,
-    pagina,
-    mostrarInactivos,
-  ]);
+  }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta, mostrarInactivos]);
+
+  // Porción visible de la tabla paginada, derivada de los conteos ya
+  // cargados en memoria. Cambiar de página solo recalcula este slice, sin
+  // volver a pedir nada al servidor.
+  const conteos = useMemo(() => {
+    const inicio = (pagina - 1) * PAGE_SIZE;
+    return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);
+  }, [conteosTendencia, pagina]);
 
   // Al cambiar cualquier filtro, volver a la página 1
   useEffect(() => {

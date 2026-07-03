@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
@@ -138,7 +138,6 @@ export default function DetalleCultivoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
   const [cultivo, setCultivo] = useState<Cultivo | null>(null);
-  const [conteos, setConteos] = useState<Conteo[]>([]);
   const [operadores, setOperadores] = useState<OperadorAsignado[]>([]);
   const [todosOperadores, setTodosOperadores] = useState<Usuario[]>([]);
   const [nuevoOpId, setNuevoOpId] = useState("");
@@ -178,21 +177,23 @@ export default function DetalleCultivoPage() {
     async (inclInactivos?: boolean) => {
       const incluir = inclInactivos ?? mostrarInactivos;
       try {
-        const paramsTabla = buildFiltros();
-        paramsTabla.append("skip", String((pagina - 1) * PAGE_SIZE));
-        paramsTabla.append("limit", String(PAGE_SIZE));
-        if (incluir) paramsTabla.append("incluir_inactivos", "true");
-
+        // Una sola petición trae hasta 500 conteos (ya ordenados por fecha
+        // desc por el backend) que sirven tanto para la gráfica de
+        // tendencia como para la tabla paginada, derivada en el cliente
+        // (ver useMemo de "conteos" más abajo). No depende de "pagina":
+        // cambiar de página nunca dispara una petición nueva, solo
+        // re-deriva la porción visible sobre los datos ya en memoria.
+        // Nota: si algún cultivo llegara a superar 500 conteos con los
+        // filtros activos, la paginación del cliente dejaría de reflejar
+        // correctamente páginas más allá del registro 500 — el mismo techo
+        // que ya tenía la gráfica de tendencia antes de este cambio.
         const paramsTodos = buildFiltros();
         paramsTodos.append("skip", "0");
         paramsTodos.append("limit", "500");
         if (incluir) paramsTodos.append("incluir_inactivos", "true");
 
-        const [resConteos, resTodos, resCultivos, resOps, resTodosUsers] =
+        const [resTodos, resCultivos, resOps, resTodosUsers] =
           await Promise.all([
-            api.get<{ items: Conteo[]; total: number }>(
-              `/conteos/admin/historial?${paramsTabla}`,
-            ),
             api.get<{ items: Conteo[]; total: number }>(
               `/conteos/admin/historial?${paramsTodos}`,
             ),
@@ -200,8 +201,7 @@ export default function DetalleCultivoPage() {
             api.get(`/cultivos/${cultivoId}/operadores`),
             api.get<Usuario[]>(`/usuarios/`),
           ]);
-        setConteos(resConteos.data.items);
-        setTotal(resConteos.data.total);
+        setTotal(resTodos.data.total);
         setConteosTendencia(resTodos.data.items);
         setCultivo(
           resCultivos.data.find((c: Cultivo) => c.id === Number(cultivoId)) ??
@@ -215,12 +215,20 @@ export default function DetalleCultivoPage() {
         setLoading(false);
       }
     },
-    [cultivoId, buildFiltros, pagina, mostrarInactivos],
+    [cultivoId, buildFiltros, mostrarInactivos],
   );
 
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  // Porción visible de la tabla paginada, derivada de los conteos ya
+  // cargados en memoria. Cambiar de página solo recalcula este slice, sin
+  // volver a pedir nada al servidor.
+  const conteos = useMemo(() => {
+    const inicio = (pagina - 1) * PAGE_SIZE;
+    return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);
+  }, [conteosTendencia, pagina]);
 
   // Al cambiar filtros, volver a página 1
   useEffect(() => {

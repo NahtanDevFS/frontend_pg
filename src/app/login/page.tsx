@@ -25,6 +25,7 @@ export default function LoginPage() {
         setError(
           "Esta interfaz es exclusiva para administradores. Los operadores deben usar la aplicación móvil",
         );
+        window.history.replaceState({}, "", window.location.pathname);
       }
     }
   }, []);

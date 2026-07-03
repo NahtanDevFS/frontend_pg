@@ -176,7 +176,10 @@ export function generarReportePDF(params: {
   const infoRight = [
     ["Hectáreas", cultivo.hectareas ? `${cultivo.hectareas} ha` : "—"],
     ["Total surcos", String(cultivo.total_surcos)],
-    ["Estado", conteo.estado_id === 2 ? "Completado" : "En progreso"],
+    [
+      "Estado",
+      conteo.estado_nombre === "completado" ? "Completado" : "En progreso",
+    ],
     ["", ""], //igualar los 4 elementos de infoLeft
   ];
 
@@ -634,7 +637,7 @@ export function generarReporteAnualPDF(params: {
         formatNum(
           c.conteo_total_acumulado > 0 ? c.conteo_total_acumulado : null,
         ),
-        c.estado_id === 2 ? "Completado" : "En progreso",
+        c.estado_nombre === "completado" ? "Completado" : "En progreso",
       ]);
 
     const totalAnio = g.conteos.reduce(

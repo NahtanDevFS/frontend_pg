@@ -47,6 +47,7 @@ export interface Usuario {
   id: number;
   nombre: string;
   rol_id: number;
+  rol_nombre?: string;
   debe_cambiar_password?: boolean;
   activo: boolean;
   created_at: string;
@@ -90,6 +91,7 @@ export interface Conteo {
   variedad_id: number;
   variedad_nombre: string | null;
   estado_id: number;
+  estado_nombre: string | null;
   fecha_conteo: string;
   total_surcos: number;
   conteo_total_acumulado: number;

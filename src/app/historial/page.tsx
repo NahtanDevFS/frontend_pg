@@ -13,7 +13,9 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   if (conteos.length < 2) return null;
 
   const completados = conteos
-    .filter((c) => c.estado_id === 2 && c.conteo_total_acumulado > 0)
+    .filter(
+      (c) => c.estado_nombre === "completado" && c.conteo_total_acumulado > 0,
+    )
     .sort(
       (a, b) =>
         new Date(a.fecha_conteo).getTime() - new Date(b.fecha_conteo).getTime(),
@@ -531,7 +533,7 @@ export default function HistorialPage() {
         g.variedadesUnicas.push(c.variedad_nombre);
       if (c.operador_nombre && !g.operadoresUnicos.includes(c.operador_nombre))
         g.operadoresUnicos.push(c.operador_nombre);
-      if (c.estado_id !== 2) g.todosCompletos = false;
+      if (c.estado_nombre !== "completado") g.todosCompletos = false;
       if (c.nivel_confiabilidad) {
         const peorActual = g.peorConfianza
           ? (ordenConfianza[g.peorConfianza] ?? 0)
@@ -952,9 +954,11 @@ export default function HistorialPage() {
                             </span>
                           ) : (
                             <span
-                              className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                              className={`${styles.badgeEstado} ${c.estado_nombre === "completado" ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                             >
-                              {c.estado_id === 2 ? "Completado" : "En progreso"}
+                              {c.estado_nombre === "completado"
+                                ? "Completado"
+                                : "En progreso"}
                             </span>
                           )}
                         </td>
@@ -1114,7 +1118,9 @@ export default function HistorialPage() {
                 </div>
                 <GraficaTendencia conteos={cs} />
                 {cs.filter(
-                  (c) => c.estado_id === 2 && c.conteo_total_acumulado > 0,
+                  (c) =>
+                    c.estado_nombre === "completado" &&
+                    c.conteo_total_acumulado > 0,
                 ).length < 2 && (
                   <p className={styles.tendenciaNota}>
                     Se necesitan al menos 2 conteos completados para ver la
@@ -1320,9 +1326,9 @@ export default function HistorialPage() {
                                       </span>
                                     ) : (
                                       <span
-                                        className={`${styles.anualBadgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                                        className={`${styles.anualBadgeEstado} ${c.estado_nombre === "completado" ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                                       >
-                                        {c.estado_id === 2
+                                        {c.estado_nombre === "completado"
                                           ? "Completado"
                                           : "En progreso"}
                                       </span>

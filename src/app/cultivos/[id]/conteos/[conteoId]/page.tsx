@@ -336,7 +336,8 @@ export default function DetalleConteoPage() {
       <div className={styles.errorWrap}>{error || "Conteo no encontrado."}</div>
     );
 
-  const estadoNombre = conteo.estado_id === 2 ? "Completado" : "En progreso";
+  const estadoNombre =
+    conteo.estado_nombre === "completado" ? "Completado" : "En progreso";
   const procsActivos = procesamientos.filter((p) => p.activo !== false);
   const procsCancelados = procesamientos.filter((p) => p.activo === false);
 
@@ -360,7 +361,7 @@ export default function DetalleConteoPage() {
               })}
             </span>
             <span
-              className={`${styles.badgeEstado} ${conteo.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+              className={`${styles.badgeEstado} ${conteo.estado_nombre === "completado" ? styles.badgeCompletado : styles.badgeEnProgreso}`}
             >
               {estadoNombre}
             </span>
@@ -480,13 +481,7 @@ export default function DetalleConteoPage() {
           <div className={styles.procListScroll}>
             <div className={styles.procList}>
               {procsActivos.map((p) => {
-                const estadoProc =
-                  p.estado_nombre ??
-                  (p.estado_id === 2
-                    ? "completado"
-                    : p.estado_id === 3
-                      ? "error"
-                      : "procesando");
+                const estadoProc = p.estado_nombre ?? "procesando";
                 const badgeClase =
                   estadoProc === "completado"
                     ? styles.badgeProcCompletado

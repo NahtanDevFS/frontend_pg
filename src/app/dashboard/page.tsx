@@ -28,7 +28,9 @@ export default function DashboardPage() {
         api.get<Usuario[]>("/usuarios/"),
       ]);
       setCultivos(resCultivos.data);
-      setOperadores(resOperadores.data.filter((u) => u.rol_id !== 1));
+      setOperadores(
+        resOperadores.data.filter((u) => u.rol_nombre !== "Administrador"),
+      );
     } catch (err: any) {
       if (err.response?.status === 401) {
         localStorage.removeItem("token");

@@ -18,7 +18,9 @@ interface OperadorAsignado {
 //Gráfica de tendencia histórica
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const completados = conteos
-    .filter((c) => c.estado_id === 2 && c.conteo_total_acumulado > 0)
+    .filter(
+      (c) => c.estado_nombre === "completado" && c.conteo_total_acumulado > 0,
+    )
     .sort(
       (a, b) =>
         new Date(a.fecha_conteo).getTime() - new Date(b.fecha_conteo).getTime(),
@@ -334,7 +336,7 @@ export default function DetalleCultivoPage() {
         g.operadoresUnicos.push(c.operador_nombre);
       if (c.variedad_nombre && !g.variedadesUnicas.includes(c.variedad_nombre))
         g.variedadesUnicas.push(c.variedad_nombre);
-      if (c.estado_id !== 2) g.todosCompletos = false;
+      if (c.estado_nombre !== "completado") g.todosCompletos = false;
       if (c.nivel_confiabilidad) {
         const peorActual = g.peorConfianza
           ? (ordenConfianza[g.peorConfianza] ?? 0)
@@ -367,7 +369,7 @@ export default function DetalleCultivoPage() {
   // Operadores que aún no están asignados
   const asignadosIds = new Set(operadores.map((o) => o.usuario_id));
   const disponibles = todosOperadores.filter(
-    (u) => !asignadosIds.has(u.id) && u.rol_id !== 1, // excluir admins
+    (u) => !asignadosIds.has(u.id) && u.rol_nombre !== "Administrador", // excluir admins
   );
 
   if (loading)
@@ -378,7 +380,9 @@ export default function DetalleCultivoPage() {
       </div>
     );
 
-  const completados = conteosTendencia.filter((c) => c.estado_id === 2).length;
+  const completados = conteosTendencia.filter(
+    (c) => c.estado_nombre === "completado",
+  ).length;
 
   return (
     <div className={styles.container}>
@@ -500,7 +504,7 @@ export default function DetalleCultivoPage() {
           >
             <option value="">Todos</option>
             {todosOperadores
-              .filter((u) => u.rol_id !== 1)
+              .filter((u) => u.rol_nombre !== "Administrador")
               .map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nombre}
@@ -714,9 +718,9 @@ export default function DetalleCultivoPage() {
                               </span>
                             ) : (
                               <span
-                                className={`${styles.badgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                                className={`${styles.badgeEstado} ${c.estado_nombre === "completado" ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                               >
-                                {c.estado_id === 2
+                                {c.estado_nombre === "completado"
                                   ? "Completado"
                                   : "En progreso"}
                               </span>
@@ -995,9 +999,9 @@ export default function DetalleCultivoPage() {
                                       </span>
                                     ) : (
                                       <span
-                                        className={`${styles.anualBadgeEstado} ${c.estado_id === 2 ? styles.badgeCompletado : styles.badgeEnProgreso}`}
+                                        className={`${styles.anualBadgeEstado} ${c.estado_nombre === "completado" ? styles.badgeCompletado : styles.badgeEnProgreso}`}
                                       >
-                                        {c.estado_id === 2
+                                        {c.estado_nombre === "completado"
                                           ? "Completado"
                                           : "En progreso"}
                                       </span>

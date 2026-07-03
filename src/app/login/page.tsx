@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [intentosRestantes, setIntentosRestantes] = useState<number | null>(
+    null,
+  );
+
   useEffect(() => {
     // Leer el query param directamente del browser, sin useSearchParams
     if (typeof window !== "undefined") {
@@ -28,6 +32,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIntentosRestantes(null);
 
     try {
       const params = new URLSearchParams();
@@ -42,10 +47,25 @@ export default function LoginPage() {
       // Redirigir al dashboard, ClientLayout verificará el rol
       router.replace("/dashboard");
     } catch (err: any) {
-      if (err.response?.status === 401) {
+      const detail = err.response?.data?.detail;
+
+      if (detail?.tipo === "bloqueado") {
+        setError(detail.mensaje);
+      } else if (detail?.tipo === "credenciales_invalidas") {
+        setError(detail.mensaje);
+        if (typeof detail.intentos_restantes === "number") {
+          setIntentosRestantes(detail.intentos_restantes);
+        }
+      } else if (err.response?.status === 401) {
         setError("Usuario o contraseña incorrectos.");
-      } else {
+      } else if (err.response?.status === 429) {
+        setError(
+          "Demasiados intentos fallidos. Intenta de nuevo en unos segundos.",
+        );
+      } else if (err.response) {
         setError("Ocurrió un error al intentar iniciar sesión.");
+      } else {
+        setError("No se pudo conectar con el servidor. Verifica tu conexión.");
       }
     }
   };
@@ -137,6 +157,13 @@ export default function LoginPage() {
               )}
             </button>
           </div>
+          {intentosRestantes !== null && intentosRestantes > 0 && (
+            <p className={styles.intentosMsg}>
+              Te queda{intentosRestantes === 1 ? "" : "n"} {intentosRestantes}{" "}
+              intento{intentosRestantes === 1 ? "" : "s"} antes del bloqueo
+              temporal.
+            </p>
+          )}
         </div>
 
         <button type="submit" className={styles.submitBtn}>
@@ -144,7 +171,6 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* Mensaje de exclusividad agregado */}
       <div className={styles.adminMessage}>
         <p>Acceso exclusivo para administradores del sistema</p>
       </div>

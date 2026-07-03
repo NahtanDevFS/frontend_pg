@@ -96,6 +96,12 @@
   width: 100%;
 }
 
+.intentosMsg {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #b06a00;
+}
+
 .inputGroup label {
   display: block;
   margin-bottom: 6px;

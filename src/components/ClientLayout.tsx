@@ -8,6 +8,7 @@ import styles from "./ClientLayout.module.css";
 interface UsuarioMe {
   nombre: string;
   rol_id: number;
+  rol_nombre?: string;
   activo: boolean;
   debe_cambiar_password?: boolean;
 }
@@ -105,24 +106,17 @@ export default function ClientLayout({
 
     api
       .get("/usuarios/me")
-      .then(async (resMe) => {
+      .then((resMe) => {
         const userData: UsuarioMe = resMe.data;
 
-        try {
-          const resRoles = await api.get("/catalogos/roles");
-          const rolesData: { id: number; nombre: string }[] = resRoles.data;
-          const rolNombre =
-            rolesData.find((r) => r.id === userData.rol_id)?.nombre ?? "";
-
-          if (rolNombre !== "Administrador") {
-            localStorage.removeItem("token");
-            authCache.checked = true;
-            authCache.user = null;
-            setLoading(false);
-            router.replace("/login?acceso=denegado");
-            return;
-          }
-        } catch {}
+        if (userData.rol_nombre !== "Administrador") {
+          localStorage.removeItem("token");
+          authCache.checked = true;
+          authCache.user = null;
+          setLoading(false);
+          router.replace("/login?acceso=denegado");
+          return;
+        }
 
         authCache.checked = true;
         authCache.user = userData;
@@ -158,6 +152,15 @@ export default function ClientLayout({
         .get("/usuarios/me")
         .then((resMe) => {
           const userData: UsuarioMe = resMe.data;
+
+          if (userData.rol_nombre !== "Administrador") {
+            localStorage.removeItem("token");
+            authCache.checked = true;
+            authCache.user = null;
+            router.replace("/login?acceso=denegado");
+            return;
+          }
+
           authCache.checked = true;
           authCache.user = userData;
           setUser(userData);

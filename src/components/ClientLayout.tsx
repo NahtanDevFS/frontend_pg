@@ -18,13 +18,12 @@ let authCache: { user: UsuarioMe | null; checked: boolean } = {
   checked: false,
 };
 
-export default function ClientLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { NotificationProvider, useNotification } from "./NotificationProvider";
+
+function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const { notify } = useNotification();
   const [user, setUser] = useState<UsuarioMe | null>(authCache.user);
   const [loading, setLoading] = useState(!authCache.checked);
 
@@ -70,7 +69,7 @@ export default function ClientLayout({
         authCache.user = actualizado;
       }
       cerrarModalPass();
-      alert("Contraseña actualizada correctamente.");
+      notify.success("Contraseña actualizada correctamente.");
     } catch (err: any) {
       setErrorPass(
         err.response?.data?.detail ?? "No se pudo cambiar la contraseña.",
@@ -499,5 +498,17 @@ export default function ClientLayout({
         </div>
       )}
     </>
+  );
+}
+
+export default function ClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <NotificationProvider>
+      <ClientLayoutInner>{children}</ClientLayoutInner>
+    </NotificationProvider>
   );
 }

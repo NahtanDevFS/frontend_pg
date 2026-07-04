@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Usuario, Rol } from "@/types";
+import {
+  useNotification,
+  mensajeDeError,
+} from "@/components/NotificationProvider";
 import styles from "./usuarios.module.css";
 
 interface UsuarioEditando {
@@ -14,6 +18,7 @@ interface UsuarioEditando {
 
 export default function GestionUsuariosPage() {
   const router = useRouter();
+  const { notify, confirmar } = useNotification();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,8 +82,9 @@ export default function GestionUsuariosPage() {
       setPassword("");
       setMostrarForm(false);
       cargarDatos();
+      notify.success("Usuario creado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al crear usuario.");
+      notify.error(mensajeDeError(err, "Error al crear usuario."));
     } finally {
       setGuardando(false);
     }
@@ -97,8 +103,9 @@ export default function GestionUsuariosPage() {
       await api.patch(`/usuarios/${editando.id}`, payload);
       setEditando(null);
       cargarDatos();
+      notify.success("Cambios guardados correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al guardar los cambios.");
+      notify.error(mensajeDeError(err, "Error al guardar los cambios."));
     } finally {
       setGuardandoEdit(false);
     }
@@ -106,16 +113,18 @@ export default function GestionUsuariosPage() {
 
   const handleDesactivar = async (id: number, nombre: string) => {
     if (
-      !confirm(
+      !(await confirmar(
         `¿Desactivar al usuario "${nombre}"? Ya no podrá iniciar sesión.`,
-      )
+        { peligroso: true, textoConfirmar: "Desactivar" },
+      ))
     )
       return;
     try {
       await api.patch(`/usuarios/${id}/desactivar`);
       cargarDatos();
+      notify.success("Usuario desactivado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al desactivar.");
+      notify.error(mensajeDeError(err, "Error al desactivar."));
     }
   };
 

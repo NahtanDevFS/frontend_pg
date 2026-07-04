@@ -5,6 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
 import BtnBack from "@/components/BtnBack";
+import {
+  useNotification,
+  mensajeDeError,
+} from "@/components/NotificationProvider";
 import styles from "./detalle_cultivo.module.css";
 
 interface OperadorAsignado {
@@ -137,6 +141,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
 export default function DetalleCultivoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
+  const { notify, confirmar } = useNotification();
   const [cultivo, setCultivo] = useState<Cultivo | null>(null);
   const [operadores, setOperadores] = useState<OperadorAsignado[]>([]);
   const [todosOperadores, setTodosOperadores] = useState<Usuario[]>([]);
@@ -245,20 +250,28 @@ export default function DetalleCultivoPage() {
       });
       setNuevoOpId("");
       await cargar();
+      notify.success("Operador asignado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al asignar operador.");
+      notify.error(mensajeDeError(err, "Error al asignar operador."));
     } finally {
       setAsignando(false);
     }
   };
 
   const handleQuitar = async (usuario_id: number, nombre: string) => {
-    if (!confirm(`¿Quitar el acceso de "${nombre}" a este cultivo?`)) return;
+    if (
+      !(await confirmar(`¿Quitar el acceso de "${nombre}" a este cultivo?`, {
+        peligroso: true,
+        textoConfirmar: "Quitar acceso",
+      }))
+    )
+      return;
     try {
       await api.delete(`/cultivos/${cultivoId}/operadores/${usuario_id}`);
       await cargar();
+      notify.success("Acceso removido correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al quitar operador.");
+      notify.error(mensajeDeError(err, "Error al quitar operador."));
     }
   };
 
@@ -270,17 +283,19 @@ export default function DetalleCultivoPage() {
 
   const handleDesactivarConteo = async (conteoId: number, fecha: string) => {
     if (
-      !confirm(
+      !(await confirmar(
         `¿Desactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}? Sus procesamientos quedarán excluidos.`,
-      )
+        { peligroso: true, textoConfirmar: "Desactivar" },
+      ))
     )
       return;
     setAccionConteoId(conteoId);
     try {
       await api.patch(`/conteos/admin/${conteoId}/desactivar`);
       await cargar();
+      notify.success("Conteo desactivado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "Error al desactivar el conteo.");
+      notify.error(mensajeDeError(err, "Error al desactivar el conteo."));
     } finally {
       setAccionConteoId(null);
     }
@@ -288,17 +303,18 @@ export default function DetalleCultivoPage() {
 
   const handleReactivarConteo = async (conteoId: number, fecha: string) => {
     if (
-      !confirm(
+      !(await confirmar(
         `¿Reactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
-      )
+      ))
     )
       return;
     setAccionConteoId(conteoId);
     try {
       await api.patch(`/conteos/admin/${conteoId}/reactivar`);
       await cargar();
+      notify.success("Conteo reactivado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "Error al reactivar el conteo.");
+      notify.error(mensajeDeError(err, "Error al reactivar el conteo."));
     } finally {
       setAccionConteoId(null);
     }

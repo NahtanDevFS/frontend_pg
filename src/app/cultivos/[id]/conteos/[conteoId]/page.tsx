@@ -11,6 +11,10 @@ import {
   Cultivo,
 } from "@/types";
 import BtnBack from "@/components/BtnBack";
+import {
+  useNotification,
+  mensajeDeError,
+} from "@/components/NotificationProvider";
 import styles from "./conteo.module.css";
 
 const colores = ["#2d6a4f", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
@@ -135,6 +139,7 @@ function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
 export default function DetalleConteoPage() {
   const router = useRouter();
   const { id: cultivoId, conteoId } = useParams();
+  const { notify, confirmar } = useNotification();
 
   const [conteo, setConteo] = useState<Conteo | null>(null);
   const [cultivo, setCultivo] = useState<Cultivo | null>(null);
@@ -227,7 +232,7 @@ export default function DetalleConteoPage() {
     const estadoNombreNuevo =
       estadosConteo.find((es) => es.id === nuevoEstadoId)?.nombre ??
       "ese estado";
-    const ok = window.confirm(
+    const ok = await confirmar(
       `¿Cambiar el estado del conteo a "${estadoNombreNuevo.replace(/_/g, " ")}"?`,
     );
     if (!ok) return;
@@ -237,8 +242,9 @@ export default function DetalleConteoPage() {
         estado_id: nuevoEstadoId,
       });
       setConteo(data);
+      notify.success("Estado actualizado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "No se pudo cambiar el estado.");
+      notify.error(mensajeDeError(err, "No se pudo cambiar el estado."));
     } finally {
       setCambiandoEstado(false);
     }
@@ -257,7 +263,7 @@ export default function DetalleConteoPage() {
         muestreo,
       });
     } catch {
-      alert("Error al generar el reporte PDF.");
+      notify.error("Error al generar el reporte PDF.");
     } finally {
       setExportando(false);
     }
@@ -279,15 +285,16 @@ export default function DetalleConteoPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(objectUrl);
     } catch {
-      alert("No se pudo descargar el video.");
+      notify.error("No se pudo descargar el video.");
     } finally {
       setDescargandoId(null);
     }
   };
 
   const handleCancelarProcesamiento = async (p: ProcesamientoVideo) => {
-    const ok = window.confirm(
+    const ok = await confirmar(
       `¿Anular el procesamiento de surcos ${p.surco_inicio}–${p.surco_fin}? Su conteo quedará excluido del total acumulado.`,
+      { peligroso: true, textoConfirmar: "Anular" },
     );
     if (!ok) return;
     setAccionProcId(p.id);
@@ -295,17 +302,16 @@ export default function DetalleConteoPage() {
       await api.patch(`/procesamientos/admin/${p.id}/cancelar`);
       await cargar();
       setVideoExpandido(null);
+      notify.success("Procesamiento anulado correctamente.");
     } catch (err: any) {
-      alert(
-        err.response?.data?.detail ?? "No se pudo anular el procesamiento.",
-      );
+      notify.error(mensajeDeError(err, "No se pudo anular el procesamiento."));
     } finally {
       setAccionProcId(null);
     }
   };
 
   const handleReactivarProcesamiento = async (p: ProcesamientoVideo) => {
-    const ok = window.confirm(
+    const ok = await confirmar(
       `¿Reactivar el procesamiento de surcos ${p.surco_inicio}–${p.surco_fin}? Su conteo volverá a sumarse al total acumulado.`,
     );
     if (!ok) return;
@@ -314,9 +320,10 @@ export default function DetalleConteoPage() {
       await api.patch(`/procesamientos/admin/${p.id}/reactivar`);
       await cargar();
       setVideoExpandido(null);
+      notify.success("Procesamiento reactivado correctamente.");
     } catch (err: any) {
-      alert(
-        err.response?.data?.detail ?? "No se pudo reactivar el procesamiento.",
+      notify.error(
+        mensajeDeError(err, "No se pudo reactivar el procesamiento."),
       );
     } finally {
       setAccionProcId(null);

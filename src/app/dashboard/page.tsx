@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Cultivo, Usuario } from "@/types";
+import { useNotification } from "@/components/NotificationProvider";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { notify, confirmar } = useNotification();
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
   const [filtroOperador, setFiltroOperador] = useState("");
@@ -57,22 +59,30 @@ export default function DashboardPage() {
   };
 
   const handleDesactivar = async (id: number, nombre: string) => {
-    if (!confirm(`¿Desactivar el cultivo "${nombre}"?`)) return;
+    if (
+      !(await confirmar(`¿Desactivar el cultivo "${nombre}"?`, {
+        peligroso: true,
+        textoConfirmar: "Desactivar",
+      }))
+    )
+      return;
     try {
       await api.patch(`/cultivos/${id}/desactivar`);
       setCultivos((prev) => prev.filter((c) => c.id !== id));
+      notify.success("Cultivo desactivado correctamente.");
     } catch {
-      alert("Error al desactivar el cultivo.");
+      notify.error("Error al desactivar el cultivo.");
     }
   };
 
   const handleReactivar = async (id: number, nombre: string) => {
-    if (!confirm(`¿Reactivar el cultivo "${nombre}"?`)) return;
+    if (!(await confirmar(`¿Reactivar el cultivo "${nombre}"?`))) return;
     try {
       await api.patch(`/cultivos/${id}/reactivar`);
       await fetchDatos(filtroOperador || undefined);
+      notify.success("Cultivo reactivado correctamente.");
     } catch {
-      alert("Error al reactivar el cultivo.");
+      notify.error("Error al reactivar el cultivo.");
     }
   };
 

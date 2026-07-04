@@ -4,6 +4,10 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
+import {
+  useNotification,
+  mensajeDeError,
+} from "@/components/NotificationProvider";
 import styles from "./historial.module.css";
 
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
@@ -398,6 +402,7 @@ function BadgeConfiabilidad({ nivel }: { nivel?: string | null }) {
 
 export default function HistorialPage() {
   const router = useRouter();
+  const { notify, confirmar } = useNotification();
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [operadores, setOperadores] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -568,17 +573,19 @@ export default function HistorialPage() {
 
   const handleDesactivarConteo = async (conteoId: number, fecha: string) => {
     if (
-      !confirm(
+      !(await confirmar(
         `¿Desactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
-      )
+        { peligroso: true, textoConfirmar: "Desactivar" },
+      ))
     )
       return;
     setAccionConteoId(conteoId);
     try {
       await api.patch(`/conteos/admin/${conteoId}/desactivar`);
       await cargar();
+      notify.success("Conteo desactivado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "Error al desactivar el conteo.");
+      notify.error(mensajeDeError(err, "Error al desactivar el conteo."));
     } finally {
       setAccionConteoId(null);
     }
@@ -586,17 +593,18 @@ export default function HistorialPage() {
 
   const handleReactivarConteo = async (conteoId: number, fecha: string) => {
     if (
-      !confirm(
+      !(await confirmar(
         `¿Reactivar el conteo del ${new Date(fecha + "T00:00:00").toLocaleDateString("es-GT")}?`,
-      )
+      ))
     )
       return;
     setAccionConteoId(conteoId);
     try {
       await api.patch(`/conteos/admin/${conteoId}/reactivar`);
       await cargar();
+      notify.success("Conteo reactivado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "Error al reactivar el conteo.");
+      notify.error(mensajeDeError(err, "Error al reactivar el conteo."));
     } finally {
       setAccionConteoId(null);
     }
@@ -635,7 +643,7 @@ export default function HistorialPage() {
         muestreo,
       });
     } catch {
-      alert("Error al generar el reporte.");
+      notify.error("Error al generar el reporte.");
     } finally {
       setExportando(null);
     }

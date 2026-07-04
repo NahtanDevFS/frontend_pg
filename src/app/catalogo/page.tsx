@@ -3,6 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { CalibreAdmin, VariedadAdmin, CalibreDeVariedad } from "@/types";
+import {
+  useNotification,
+  mensajeDeError,
+} from "@/components/NotificationProvider";
 import styles from "./catalogo.module.css";
 
 type Pestana = "calibres" | "variedades";
@@ -21,6 +25,7 @@ interface VariedadEdit {
 }
 
 export default function GestionMelonesPage() {
+  const { notify, confirmar } = useNotification();
   const [pestana, setPestana] = useState<Pestana>("calibres");
 
   // ── Calibres ──
@@ -103,8 +108,9 @@ export default function GestionMelonesPage() {
       else await api.patch(`/catalogos/admin/calibres/${editCal.id}`, payload);
       setEditCal(null);
       await cargarCalibres();
+      notify.success("Calibre guardado correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "No se pudo guardar el calibre.");
+      notify.error(mensajeDeError(err, "No se pudo guardar el calibre."));
     } finally {
       setGuardandoCal(false);
     }
@@ -116,15 +122,26 @@ export default function GestionMelonesPage() {
         c.conteos_asociados > 0
           ? `El calibre "${c.nombre}" está asociado a ${c.conteos_asociados} conteo(s). Se conservarán intactos, pero el calibre dejará de ofrecerse para nuevos muestreos. ¿Desactivarlo?`
           : `¿Desactivar el calibre "${c.nombre}"? Dejará de ofrecerse para nuevos muestreos.`;
-      if (!window.confirm(msg)) return;
+      if (
+        !(await confirmar(msg, {
+          peligroso: true,
+          textoConfirmar: "Desactivar",
+        }))
+      )
+        return;
     }
     try {
       await api.patch(
         `/catalogos/admin/calibres/${c.id}/${c.activo ? "desactivar" : "activar"}`,
       );
       await cargarCalibres();
+      notify.success(
+        c.activo
+          ? "Calibre desactivado correctamente."
+          : "Calibre activado correctamente.",
+      );
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "No se pudo cambiar el estado.");
+      notify.error(mensajeDeError(err, "No se pudo cambiar el estado."));
     }
   };
 
@@ -152,8 +169,9 @@ export default function GestionMelonesPage() {
         await api.patch(`/catalogos/admin/variedades/${editVar.id}`, payload);
       setEditVar(null);
       await cargarVariedades();
+      notify.success("Variedad guardada correctamente.");
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "No se pudo guardar la variedad.");
+      notify.error(mensajeDeError(err, "No se pudo guardar la variedad."));
     } finally {
       setGuardandoVar(false);
     }
@@ -165,15 +183,26 @@ export default function GestionMelonesPage() {
         v.conteos_asociados > 0
           ? `La variedad "${v.nombre}" está asociada a ${v.conteos_asociados} conteo(s). Se conservarán intactos, pero la variedad dejará de ofrecerse para nuevos conteos. ¿Desactivarla?`
           : `¿Desactivar la variedad "${v.nombre}"? Dejará de ofrecerse para nuevos conteos.`;
-      if (!window.confirm(msg)) return;
+      if (
+        !(await confirmar(msg, {
+          peligroso: true,
+          textoConfirmar: "Desactivar",
+        }))
+      )
+        return;
     }
     try {
       await api.patch(
         `/catalogos/admin/variedades/${v.id}/${v.activo ? "desactivar" : "activar"}`,
       );
       await cargarVariedades();
+      notify.success(
+        v.activo
+          ? "Variedad desactivada correctamente."
+          : "Variedad activada correctamente.",
+      );
     } catch (err: any) {
-      alert(err.response?.data?.detail ?? "No se pudo cambiar el estado.");
+      notify.error(mensajeDeError(err, "No se pudo cambiar el estado."));
     }
   };
 
@@ -187,7 +216,7 @@ export default function GestionMelonesPage() {
       );
       setListaCalVar(data);
     } catch {
-      alert("No se pudieron cargar los calibres de la variedad.");
+      notify.error("No se pudieron cargar los calibres de la variedad.");
       setVarCalibres(null);
     } finally {
       setLoadingCalVar(false);
@@ -206,8 +235,9 @@ export default function GestionMelonesPage() {
     // Aviso al quitar un calibre con historial en la variedad
     if (cal.asignado) {
       if (cal.conteos_en_variedad > 0) {
-        const ok = window.confirm(
+        const ok = await confirmar(
           `El calibre "${cal.nombre}" se usó en ${cal.conteos_en_variedad} conteo(s) de esta variedad. Quitarlo solo afecta nuevos muestreos; los conteos históricos se conservan intactos. ¿Quitarlo?`,
+          { peligroso: true, textoConfirmar: "Quitar" },
         );
         if (!ok) return;
       }
@@ -225,10 +255,13 @@ export default function GestionMelonesPage() {
         );
       }
       await recargarCalVar(varCalibres.id);
-    } catch (err: any) {
-      alert(
-        err.response?.data?.detail ?? "No se pudo actualizar la asignación.",
+      notify.success(
+        cal.asignado
+          ? "Calibre quitado correctamente."
+          : "Calibre asignado correctamente.",
       );
+    } catch (err: any) {
+      notify.error(mensajeDeError(err, "No se pudo actualizar la asignación."));
     } finally {
       setProcesandoCalId(null);
     }

@@ -13,6 +13,7 @@ import styles from "./usuarios.module.css";
 interface UsuarioEditando {
   id: number;
   nombre: string;
+  rolId: string;
   nuevaPassword: string;
 }
 
@@ -95,10 +96,18 @@ export default function GestionUsuariosPage() {
     if (!editando) return;
     setGuardandoEdit(true);
     try {
-      const payload: Record<string, string> = {};
+      const original = usuarios.find((u) => u.id === editando.id);
+      const payload: Record<string, string | number> = {};
       if (editando.nombre.trim()) payload.nombre = editando.nombre.trim();
       if (editando.nuevaPassword.trim())
         payload.password = editando.nuevaPassword.trim();
+      if (
+        editando.rolId &&
+        original &&
+        Number(editando.rolId) !== original.rol_id
+      ) {
+        payload.rol_id = Number(editando.rolId);
+      }
 
       await api.patch(`/usuarios/${editando.id}`, payload);
       setEditando(null);
@@ -158,6 +167,30 @@ export default function GestionUsuariosPage() {
                   maxLength={100}
                   required
                 />
+              </div>
+              <div className={styles.formGroup}>
+                <label>
+                  Rol{" "}
+                  {editando.id === usuarioActualId && (
+                    <span className={styles.labelHint}>
+                      (no puedes cambiar tu propio rol)
+                    </span>
+                  )}
+                </label>
+                <select
+                  value={editando.rolId}
+                  onChange={(e) =>
+                    setEditando({ ...editando, rolId: e.target.value })
+                  }
+                  disabled={editando.id === usuarioActualId}
+                  required
+                >
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className={styles.formGroup}>
                 <label>
@@ -315,6 +348,7 @@ export default function GestionUsuariosPage() {
                             setEditando({
                               id: u.id,
                               nombre: u.nombre,
+                              rolId: String(u.rol_id),
                               nuevaPassword: "",
                             })
                           }

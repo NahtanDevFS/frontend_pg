@@ -498,6 +498,10 @@ export default function DetalleConteoPage() {
                 const expandido = videoExpandido === p.id;
                 const obs = p.resultado?.observaciones_ajuste;
                 const enAccion = accionProcId === p.id;
+                const sinDetecciones =
+                  p.resultado?.conteo_ia === 0 &&
+                  p.resultado?.conteo_ajustado == null;
+                const ocultarMetricasIa = p.resultado?.conteo_ia === 0;
                 return (
                   <div key={p.id} className={styles.procCard}>
                     <div
@@ -525,35 +529,47 @@ export default function DetalleConteoPage() {
                       </div>
                       <div className={styles.procRight}>
                         <div className={styles.procStats}>
-                          {p.resultado && (
-                            <>
+                          {p.resultado &&
+                            (sinDetecciones ? (
                               <div className={styles.procStatWrap}>
-                                <p className={styles.procStatLabel}>IA</p>
+                                <p className={styles.procStatLabel}>
+                                  Resultado
+                                </p>
                                 <p className={styles.procStatVal}>
-                                  {p.resultado.conteo_ia.toLocaleString()}
+                                  Sin detecciones
                                 </p>
                               </div>
-                              {p.resultado.conteo_ajustado != null && (
+                            ) : (
+                              <>
                                 <div className={styles.procStatWrap}>
-                                  <p className={styles.procStatLabel}>
-                                    Ajustado
-                                  </p>
-                                  <p className={styles.procStatValPrimary}>
-                                    {p.resultado.conteo_ajustado.toLocaleString()}
+                                  <p className={styles.procStatLabel}>IA</p>
+                                  <p className={styles.procStatVal}>
+                                    {p.resultado.conteo_ia.toLocaleString()}
                                   </p>
                                 </div>
-                              )}
-                              {(p.resultado as any).nivel_confiabilidad && (
-                                <div className={styles.procBadgeWrapper}>
-                                  <BadgeConfiabilidad
-                                    nivel={
-                                      (p.resultado as any).nivel_confiabilidad
-                                    }
-                                  />
-                                </div>
-                              )}
-                            </>
-                          )}
+                                {p.resultado.conteo_ajustado != null && (
+                                  <div className={styles.procStatWrap}>
+                                    <p className={styles.procStatLabel}>
+                                      Ajustado
+                                    </p>
+                                    <p className={styles.procStatValPrimary}>
+                                      {p.resultado.conteo_ajustado.toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
+                                {!ocultarMetricasIa &&
+                                  (p.resultado as any).nivel_confiabilidad && (
+                                    <div className={styles.procBadgeWrapper}>
+                                      <BadgeConfiabilidad
+                                        nivel={
+                                          (p.resultado as any)
+                                            .nivel_confiabilidad
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                              </>
+                            ))}
                           <span
                             className={`${styles.badgeProcEstado} ${badgeClase}`}
                           >
@@ -583,7 +599,8 @@ export default function DetalleConteoPage() {
 
                     {expandido && (
                       <div className={styles.procDetalle}>
-                        {p.resultado?.nivel_confiabilidad &&
+                        {!ocultarMetricasIa &&
+                          p.resultado?.nivel_confiabilidad &&
                           p.resultado.porcentaje_baja_confianza != null && (
                             <div className={styles.procDetalleObs}>
                               <p className={styles.procDetalleLabel}>

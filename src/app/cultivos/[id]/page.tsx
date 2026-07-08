@@ -182,16 +182,7 @@ export default function DetalleCultivoPage() {
     async (inclInactivos?: boolean) => {
       const incluir = inclInactivos ?? mostrarInactivos;
       try {
-        // Una sola petición trae hasta 500 conteos (ya ordenados por fecha
-        // desc por el backend) que sirven tanto para la gráfica de
-        // tendencia como para la tabla paginada, derivada en el cliente
-        // (ver useMemo de "conteos" más abajo). No depende de "pagina":
-        // cambiar de página nunca dispara una petición nueva, solo
-        // re-deriva la porción visible sobre los datos ya en memoria.
-        // Nota: si algún cultivo llegara a superar 500 conteos con los
-        // filtros activos, la paginación del cliente dejaría de reflejar
-        // correctamente páginas más allá del registro 500 — el mismo techo
-        // que ya tenía la gráfica de tendencia antes de este cambio.
+        // Trae hasta 500 conteos de una vez (gráfica + tabla paginada en el cliente); techo de 500.
         const paramsTodos = buildFiltros();
         paramsTodos.append("skip", "0");
         paramsTodos.append("limit", "500");
@@ -227,9 +218,7 @@ export default function DetalleCultivoPage() {
     cargar();
   }, [cargar]);
 
-  // Porción visible de la tabla paginada, derivada de los conteos ya
-  // cargados en memoria. Cambiar de página solo recalcula este slice, sin
-  // volver a pedir nada al servidor.
+  // Porción visible de la tabla paginada, derivada en memoria (sin pedir al servidor).
   const conteos = useMemo(() => {
     const inicio = (pagina - 1) * PAGE_SIZE;
     return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);

@@ -437,15 +437,7 @@ export default function HistorialPage() {
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
       if (mostrarInactivos) params.append("incluir_inactivos", "true");
 
-      // Una sola petición trae hasta 500 conteos (ya ordenados por fecha
-      // desc por el backend), usados tanto para las vistas de tendencia y
-      // anual como para la tabla paginada, derivada en el cliente (ver
-      // useMemo de "conteos" más abajo). No depende de "pagina": cambiar
-      // de página nunca dispara una petición nueva.
-      // Nota: si algún día hubiera más de 500 conteos con los filtros
-      // activos, la paginación del cliente dejaría de reflejar
-      // correctamente páginas más allá del registro 500 — el mismo techo
-      // que ya tenían las vistas de tendencia y anual antes de este cambio.
+      // Trae hasta 500 conteos de una vez (tendencia/anual + tabla paginada en el cliente); techo de 500.
       const paramsTodos = new URLSearchParams(params);
       paramsTodos.append("skip", "0");
       paramsTodos.append("limit", "500");
@@ -468,9 +460,7 @@ export default function HistorialPage() {
     }
   }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta, mostrarInactivos]);
 
-  // Porción visible de la tabla paginada, derivada de los conteos ya
-  // cargados en memoria. Cambiar de página solo recalcula este slice, sin
-  // volver a pedir nada al servidor.
+  // Porción visible de la tabla paginada, derivada en memoria (sin pedir al servidor).
   const conteos = useMemo(() => {
     const inicio = (pagina - 1) * PAGE_SIZE;
     return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);

@@ -23,8 +23,7 @@ const COLORES_CALIBRE: [number, number, number][] = [
 function formatFecha(fecha: string | null | undefined) {
   if (!fecha) return "—";
   try {
-    // Si ya tiene componente de hora (contiene T o espacio seguido de dígitos), parsear directo.
-    // Si es solo fecha YYYY-MM-DD, agregar T00:00:00 para evitar desfase de zona horaria.
+    // Si es solo fecha (YYYY-MM-DD) agrega T00:00:00 para evitar desfase de zona horaria.
     const d = /T|\s\d{2}:/.test(fecha)
       ? new Date(fecha)
       : new Date(fecha + "T00:00:00");

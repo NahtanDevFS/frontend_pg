@@ -26,14 +26,14 @@ export default function GestionUsuariosPage() {
   const [error, setError] = useState("");
   const [usuarioActualId, setUsuarioActualId] = useState<number | null>(null);
 
-  // Crear
+  // form de crear usuario
   const [mostrarForm, setMostrarForm] = useState(false);
   const [nombre, setNombre] = useState("");
   const [password, setPassword] = useState("");
   const [rolId, setRolId] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  // Editar
+  // estado de edicion de un usuario
   const [editando, setEditando] = useState<UsuarioEditando | null>(null);
   const [guardandoEdit, setGuardandoEdit] = useState(false);
 

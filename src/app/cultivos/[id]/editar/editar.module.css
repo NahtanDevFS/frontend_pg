@@ -210,9 +210,6 @@
   box-shadow: none;
 }
 
-/* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
-   ========================================= */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;

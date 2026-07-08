@@ -26,7 +26,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Un 401 fuera de /login = sesión expirada: limpia el token y redirige al login.
+    // un 401 fuera de /login = la sesion se vencio: botamos el token y mandamos al login
     const esLogin = error.config?.url?.includes("/login");
     if (
       typeof window !== "undefined" &&

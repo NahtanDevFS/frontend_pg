@@ -151,18 +151,18 @@ export default function DetalleConteoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportando, setExportando] = useState(false);
-  // Acordeón: id del procesamiento expandido (o null)
+  // acordeon: id del procesamiento que esta abierto (o null si ninguno)
   const [videoExpandido, setVideoExpandido] = useState<number | null>(null);
-  // Id del procesamiento cuyo video se está descargando
+  // id del procesamiento cuyo video se esta descargando ahorita
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
-  // Estados de conteo disponibles + control de cambio (admin)
+  // estados de conteo disponibles + control del cambio (admin)
   const [estadosConteo, setEstadosConteo] = useState<
     { id: number; nombre: string }[]
   >([]);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
-  // Toggle para mostrar procesamientos cancelados
+  // toggle pa mostrar los procesamientos cancelados
   const [mostrarCancelados, setMostrarCancelados] = useState(false);
-  // Id del procesamiento en acción (cancelar/reactivar)
+  // id del procesamiento sobre el que se actua (cancelar/reactivar)
   const [accionProcId, setAccionProcId] = useState<number | null>(null);
 
   const cargar = useCallback(
@@ -223,7 +223,7 @@ export default function DetalleConteoPage() {
     cargar(checked);
   };
 
-  // Cambia el estado del conteo (admin, libre entre estados)
+  // el admin mueve el conteo entre estados a su antojo
   const handleCambiarEstado = async (
     e: React.ChangeEvent<HTMLSelectElement>,
   ) => {

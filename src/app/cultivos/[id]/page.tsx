@@ -19,7 +19,7 @@ interface OperadorAsignado {
   created_at: string;
 }
 
-//Gráfica de tendencia histórica
+// grafica de tendencia historica
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const completados = conteos
     .filter(
@@ -137,7 +137,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   );
 }
 
-//Página principal
+// pagina principal
 export default function DetalleCultivoPage() {
   const router = useRouter();
   const { id: cultivoId } = useParams();
@@ -149,26 +149,26 @@ export default function DetalleCultivoPage() {
   const [asignando, setAsignando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // Filtros globales (afectan gráfica e historial)
+  // filtros globales, afectan tanto la grafica como el historial
   const [filtroOperador, setFiltroOperador] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-  // Paginación del historial
+  // paginacion del historial
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 20;
-  // Data completa (sin paginar) para la gráfica de tendencia
+  // data completa sin paginar, la usamos pa la grafica de tendencia
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
-  // Toggle para mostrar conteos desactivados
+  // toggle pa mostrar los conteos desactivados
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
-  // Id del conteo en acción (desactivar/reactivar)
+  // id del conteo sobre el que se esta actuando (desactivar/reactivar)
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
-  // Vista: tabla | anual
+  // vista: tabla | anual
   const [modoVista, setModoVista] = useState<"tabla" | "anual">("tabla");
-  // Año expandido en la vista anual
+  // el año que esta abierto en la vista anual
   const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
 
-  // Construye los query params de filtros comunes a tabla y gráfica
+  // arma los query params de filtros que comparten la tabla y la grafica
   const buildFiltros = useCallback(() => {
     const params = new URLSearchParams();
     params.append("cultivo_id", String(cultivoId));
@@ -182,7 +182,7 @@ export default function DetalleCultivoPage() {
     async (inclInactivos?: boolean) => {
       const incluir = inclInactivos ?? mostrarInactivos;
       try {
-        // Trae hasta 500 conteos de una vez (gráfica + tabla paginada en el cliente); techo de 500.
+        // traemos hasta 500 conteos de un jalon (sirven pa la grafica y pa la tabla que paginamos en el cliente), tope 500
         const paramsTodos = buildFiltros();
         paramsTodos.append("skip", "0");
         paramsTodos.append("limit", "500");
@@ -218,13 +218,13 @@ export default function DetalleCultivoPage() {
     cargar();
   }, [cargar]);
 
-  // Porción visible de la tabla paginada, derivada en memoria (sin pedir al servidor).
+  // el pedazo visible de la tabla, lo sacamos en memoria sin volver a pedirle nada al server
   const conteos = useMemo(() => {
     const inicio = (pagina - 1) * PAGE_SIZE;
     return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);
   }, [conteosTendencia, pagina]);
 
-  // Al cambiar filtros, volver a página 1
+  // cuando cambian los filtros, volvemos a la pagina 1
   useEffect(() => {
     setPagina(1);
   }, [filtroOperador, fechaDesde, fechaHasta]);
@@ -309,7 +309,7 @@ export default function DetalleCultivoPage() {
     }
   };
 
-  // Agrupar conteosTendencia por año (para vista anual)
+  // agrupamos los conteos por año pa la vista anual
   const conteosAgrupados = (() => {
     const ordenConfianza: Record<string, number> = {
       alto: 0,
@@ -379,7 +379,7 @@ export default function DetalleCultivoPage() {
     });
   };
 
-  // Operadores que aún no están asignados
+  // los operadores que todavia no estan asignados a este campo
   const asignadosIds = new Set(operadores.map((o) => o.usuario_id));
   const disponibles = todosOperadores.filter(
     (u) => !asignadosIds.has(u.id) && u.rol_nombre !== "Administrador", // excluir admins

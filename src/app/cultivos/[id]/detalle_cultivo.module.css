@@ -465,9 +465,6 @@
   font-weight: 500;
 }
 
-/* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
-   ========================================= */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
@@ -555,9 +552,7 @@
   color: white;
 }
 
-/* =========================================
-   VISTA ANUAL
-   ========================================= */
+/*vista anual*/
 .anualWrap {
   display: flex;
   flex-direction: column;
@@ -797,9 +792,6 @@
   white-space: nowrap;
 }
 
-/* =========================================
-   FILAS Y ACCIONES DE CONTEOS
-   ========================================= */
 .tablaTrInactivo {
   opacity: 0.55;
 }

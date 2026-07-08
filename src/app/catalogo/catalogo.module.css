@@ -329,7 +329,7 @@
   margin-top: 18px;
 }
 
-/* Lista calibres por variedad (Modal Fase 3) */
+/* Lista calibres por variedad */
 .calVarList {
   display: flex;
   flex-direction: column;
@@ -400,9 +400,6 @@
   cursor: not-allowed;
 }
 
-/* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
-   ========================================= */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;

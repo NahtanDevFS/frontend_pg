@@ -142,7 +142,7 @@
   opacity: 0.7;
 }
 
-/* ── Hero total ─────────────────────────────────────── */
+/*Hero total */
 .hero {
   background: linear-gradient(135deg, var(--color-primary) 0%, #1b4332 100%);
   border-radius: 14px 14px 0 0;

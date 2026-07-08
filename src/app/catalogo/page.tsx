@@ -28,21 +28,21 @@ export default function GestionMelonesPage() {
   const { notify, confirmar } = useNotification();
   const [pestana, setPestana] = useState<Pestana>("calibres");
 
-  // ── Calibres ──
+  // ── calibres ──
   const [calibres, setCalibres] = useState<CalibreAdmin[]>([]);
   const [loadingCal, setLoadingCal] = useState(true);
   const [errorCal, setErrorCal] = useState("");
   const [editCal, setEditCal] = useState<CalibreEdit | null>(null);
   const [guardandoCal, setGuardandoCal] = useState(false);
 
-  // ── Variedades ──
+  // ── variedades ──
   const [variedades, setVariedades] = useState<VariedadAdmin[]>([]);
   const [loadingVar, setLoadingVar] = useState(true);
   const [errorVar, setErrorVar] = useState("");
   const [editVar, setEditVar] = useState<VariedadEdit | null>(null);
   const [guardandoVar, setGuardandoVar] = useState(false);
 
-  // ── Gestión de calibres de una variedad (Fase 3) ──
+  // ── calibres de una variedad ──
   const [varCalibres, setVarCalibres] = useState<VariedadAdmin | null>(null);
   const [listaCalVar, setListaCalVar] = useState<CalibreDeVariedad[]>([]);
   const [loadingCalVar, setLoadingCalVar] = useState(false);
@@ -83,7 +83,7 @@ export default function GestionMelonesPage() {
     cargarVariedades();
   }, [cargarCalibres, cargarVariedades]);
 
-  // ── Acciones calibres ──
+  // ── acciones de calibres ──
   const abrirCrearCal = () =>
     setEditCal({ id: null, nombre: "", descripcion: "", orden: "0" });
   const abrirEditarCal = (c: CalibreAdmin) =>
@@ -145,7 +145,7 @@ export default function GestionMelonesPage() {
     }
   };
 
-  // ── Acciones variedades ──
+  // ── acciones de variedades ──
   const abrirCrearVar = () =>
     setEditVar({ id: null, nombre: "", descripcion: "" });
   const abrirEditarVar = (v: VariedadAdmin) =>
@@ -206,7 +206,7 @@ export default function GestionMelonesPage() {
     }
   };
 
-  // ── Gestión de calibres de variedad (Fase 3) ──
+  // ── gestion de calibres de una variedad ──
   const abrirCalibresVar = async (v: VariedadAdmin) => {
     setVarCalibres(v);
     setLoadingCalVar(true);
@@ -232,7 +232,7 @@ export default function GestionMelonesPage() {
 
   const toggleAsignacion = async (cal: CalibreDeVariedad) => {
     if (!varCalibres) return;
-    // Aviso al quitar un calibre con historial en la variedad
+    // avisamos antes de quitar un calibre que tiene historial en esta variedad
     if (cal.asignado) {
       if (cal.conteos_en_variedad > 0) {
         const ok = await confirmar(
@@ -637,7 +637,7 @@ export default function GestionMelonesPage() {
   );
 }
 
-// ── Componentes auxiliares ──
+// ── componentes auxiliares ──
 
 function BadgeActivo({ activo }: { activo: boolean }) {
   return (

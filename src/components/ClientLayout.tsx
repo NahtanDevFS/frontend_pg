@@ -27,10 +27,9 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UsuarioMe | null>(authCache.user);
   const [loading, setLoading] = useState(!authCache.checked);
 
-  // Estado para el menú responsivo
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Estado del modal "cambiar mi contraseña"
+  // estado del modal de "cambiar mi contraseña"
   const [modalPass, setModalPass] = useState(false);
   const [passActual, setPassActual] = useState("");
   const [passNueva, setPassNueva] = useState("");
@@ -62,7 +61,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         password_actual: passActual,
         password_nueva: passNueva,
       });
-      // Refrescar el flag local
+      // refrescamos el flag local pa que no siga saliendo el aviso
       if (user) {
         const actualizado = { ...user, debe_cambiar_password: false };
         setUser(actualizado);
@@ -81,7 +80,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
   const enLogin = pathname.startsWith("/login");
 
-  // Cerrar el menú móvil al cambiar de ruta
+  // cerramos el menu movil cuando cambia la ruta
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
@@ -145,7 +144,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Hay token pero el cache no tiene usuario (tras login sin recargar) re-verificar e hidratar el header
+    // hay token pero el cache no tiene usuario (pasa tras login sin recargar), reverificamos e hidratamos el header
     if (token && !authCache.user && !enLogin) {
       api
         .get("/usuarios/me")

@@ -20,16 +20,16 @@ export default function EditarCultivoPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // Cascada departamento -> municipio
+  // cascada departamento -> municipio
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [departamentoId, setDepartamentoId] = useState("");
   const [municipioId, setMunicipioId] = useState("");
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
-  // Evita que el efecto de cascada borre el municipio durante la precarga inicial
+  // esta bandera evita que la cascada borre el municipio mientras precargamos los datos del cultivo
   const [precargando, setPrecargando] = useState(true);
 
-  // Cargar departamentos + datos del cultivo
+  // cargamos los departamentos y los datos del cultivo
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -52,7 +52,7 @@ export default function EditarCultivoPage() {
         setTotalSurcos(String(c.total_surcos));
         setDepartamentoId(String(c.departamento_id));
 
-        // Cargar los municipios del departamento actual y seleccionar el municipio
+        // cargamos los municipios del departamento actual y dejamos seleccionado el que ya tenia
         const resMunis = await api.get<Municipio[]>(
           `/catalogos/departamentos/${c.departamento_id}/municipios`,
         );
@@ -68,9 +68,9 @@ export default function EditarCultivoPage() {
     cargar();
   }, [id]);
 
-  // Cuando el usuario cambia el departamento (después de la precarga)
+  // cuando el usuario cambia el departamento (ya despues de la precarga)
   useEffect(() => {
-    if (precargando) return; // no borrar el municipio durante la carga inicial
+    if (precargando) return; // no borres el municipio durante la carga inicial
     if (!departamentoId) {
       setMunicipios([]);
       setMunicipioId("");

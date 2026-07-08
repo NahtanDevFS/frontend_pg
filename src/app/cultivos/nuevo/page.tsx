@@ -16,14 +16,14 @@ export default function NuevoCultivoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Cascada departamento -> municipio
+  // cascada departamento -> municipio
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [departamentoId, setDepartamentoId] = useState("");
   const [municipioId, setMunicipioId] = useState("");
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
 
-  // Cargar departamentos al montar
+  // cargamos los departamentos al montar
   useEffect(() => {
     api
       .get<Departamento[]>("/catalogos/departamentos")
@@ -31,7 +31,7 @@ export default function NuevoCultivoPage() {
       .catch(() => setError("No se pudieron cargar los departamentos."));
   }, []);
 
-  // Cargar municipios cuando cambia el departamento
+  // cargamos los municipios cuando cambia el departamento
   useEffect(() => {
     if (!departamentoId) {
       setMunicipios([]);
@@ -64,7 +64,7 @@ export default function NuevoCultivoPage() {
         total_surcos: parseInt(totalSurcos),
       };
       const res = await api.post("/cultivos/", payload);
-      // Redirigir al detalle del cultivo recién creado para asignar operadores
+      // al detalle del cultivo recien creado pa poder asignarle operadores
       router.push(`/cultivos/${res.data.id}`);
     } catch (err: any) {
       if (err instanceof Error && err.message) setError(err.message);

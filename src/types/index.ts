@@ -16,7 +16,7 @@ export interface Calibre {
   orden: number;
 }
 
-// Calibre con estado y dependencias, para el módulo de gestión admin
+// calibre con su estado y dependencias, pal modulo de gestion del admin
 export interface CalibreAdmin {
   id: number;
   nombre: string;
@@ -58,11 +58,11 @@ export interface Cultivo {
   usuario_id: number;
   nombre: string;
   municipio_id: number;
-  // nombres desnormalizados que el backend ya resuelve
+  // nombres desnormalizados que ya nos manda resueltos el backend
   municipio_nombre: string;
   departamento_id: number;
   departamento_nombre: string;
-  // ubicacion: dirección/referencia libre dentro del municipio (opcional)
+  // ubicacion: direccion o referencia libre dentro del municipio (opcional)
   ubicacion: string | null;
   hectareas: number | null;
   total_surcos: number;
@@ -70,7 +70,7 @@ export interface Cultivo {
   created_at: string;
 }
 
-// Catálogos geográficos
+// catalogos geograficos
 export interface Departamento {
   id: number;
   nombre: string;
@@ -85,7 +85,7 @@ export interface Municipio {
 export interface Conteo {
   id: number;
   campo_cultivo_id: number;
-  // nombres desnormalizados resueltos por el backend
+  // nombres desnormalizados que resuelve el backend
   cultivo_nombre: string | null;
   operador_nombre: string | null;
   variedad_id: number;
@@ -112,7 +112,7 @@ export interface ResultadoIa {
   tiempo_procesamiento_seg: number | null;
   promedio_confianza: number | null;
   porcentaje_baja_confianza: number | null;
-  // nivel derivado por el backend a partir de las métricas de este video
+  // nivel que deriva el backend a partir de las metricas de este video
   nivel_confiabilidad: "alto" | "moderado" | "bajo" | null;
   total_frames_procesados: number | null;
 }

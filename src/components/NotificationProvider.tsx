@@ -36,13 +36,13 @@ interface ConfirmOptions {
   titulo?: string;
   textoConfirmar?: string;
   textoCancelar?: string;
-  // Si es true, el botón de confirmar se pinta en rojo (acciones destructivas).
+  // si es true el boton de confirmar se pinta rojo, pa acciones destructivas tipo borrar
   peligroso?: boolean;
 }
 
 interface NotificationContextType {
   notify: NotifyApi;
-  // Reemplazo asíncrono de window.confirm(): if (await confirmar("¿Seguro?")) { ... }
+  // nuestro reemplazo del window.confirm() pero async: if (await confirmar("¿seguro?")) { ... }
   confirmar: (mensaje: string, opciones?: ConfirmOptions) => Promise<boolean>;
 }
 
@@ -179,7 +179,7 @@ export function useNotification() {
   return ctx;
 }
 
-// Extrae texto legible del error axios, ya sea detail string u objeto { tipo, mensaje }.
+// saca un texto legible del error de axios, sea que el detail venga como string o como objeto { tipo, mensaje }
 export function mensajeDeError(err: any, fallback: string): string {
   const detail = err?.response?.data?.detail;
   if (typeof detail === "string" && detail.trim()) return detail;

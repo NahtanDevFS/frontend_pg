@@ -18,7 +18,7 @@ export default function LoginPage() {
   );
 
   useEffect(() => {
-    // Leer el query param directamente del browser, sin useSearchParams
+    // leemos el query param directo del browser, sin useSearchParams
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("acceso") === "denegado") {
@@ -45,7 +45,7 @@ export default function LoginPage() {
       });
 
       localStorage.setItem("token", response.data.access_token);
-      // Redirigir al dashboard, ClientLayout verificará el rol
+      // al dashboard, el ClientLayout se encarga de verificar el rol
       router.replace("/dashboard");
     } catch (err: any) {
       const detail = err.response?.data?.detail;

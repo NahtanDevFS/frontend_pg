@@ -11,7 +11,7 @@ import {
 import styles from "./historial.module.css";
 
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
-  // Estado para saber qué punto está seleccionado/hovered
+  // pa saber que punto esta seleccionado/con el mouse encima
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   if (conteos.length < 2) return null;
@@ -34,7 +34,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const w = W - PAD * 2,
     h = H - PAD * 2;
 
-  // Calculamos las coordenadas x,y de cada punto
+  // calculamos las coordenadas x,y de cada punto
   const points = completados.map((c, i) => {
     const x = PAD + (i / (completados.length - 1)) * w;
     const y = PAD + h - (c.conteo_total_acumulado / max) * h;
@@ -111,12 +111,12 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
             const boxWidth = 64;
             const boxHeight = 32;
 
-            // Lógica para que el Tooltip no se salga por los lados
+            // pa que el tooltip no se salga por los lados
             let boxX = p.x - boxWidth / 2;
             if (boxX < 0) boxX = 0;
             if (boxX + boxWidth > W) boxX = W - boxWidth;
 
-            // Lógica para que no se salga por arriba
+            // y pa que no se salga por arriba
             const boxY =
               p.y - boxHeight - 8 > 0 ? p.y - boxHeight - 8 : p.y + 8;
 
@@ -175,7 +175,7 @@ function GraficaAnual({ grupos }: { grupos: GrupoAnualGrafica[] }) {
 
   if (grupos.length === 0) return null;
 
-  // Ordenar cronológico para la gráfica
+  // ordenamos cronologico pa la grafica
   const ordenados = [...grupos].sort((a, b) => a.anio - b.anio);
   const max = Math.max(...ordenados.map((g) => g.total));
   if (max === 0) return null;
@@ -414,17 +414,17 @@ export default function HistorialPage() {
     "tabla",
   );
   const [exportando, setExportando] = useState<number | null>(null);
-  // Paginación numérica
+  // paginacion numerica
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 20;
-  // Data completa (sin paginar) para la vista de tendencia y anual
+  // data completa sin paginar, pa las vistas de tendencia y anual
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
-  // Toggle para mostrar desactivados
+  // toggle pa mostrar los desactivados
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
-  // Id del conteo en acción
+  // id del conteo sobre el que se esta actuando
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
-  // Año expandido en la vista anual
+  // el año que esta abierto en la vista anual
   const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
@@ -437,7 +437,7 @@ export default function HistorialPage() {
       if (fechaHasta) params.append("fecha_hasta", fechaHasta);
       if (mostrarInactivos) params.append("incluir_inactivos", "true");
 
-      // Trae hasta 500 conteos de una vez (tendencia/anual + tabla paginada en el cliente); techo de 500.
+      // traemos hasta 500 conteos de un jalon (tendencia/anual + la tabla que paginamos en el cliente), tope 500
       const paramsTodos = new URLSearchParams(params);
       paramsTodos.append("skip", "0");
       paramsTodos.append("limit", "500");
@@ -460,13 +460,13 @@ export default function HistorialPage() {
     }
   }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta, mostrarInactivos]);
 
-  // Porción visible de la tabla paginada, derivada en memoria (sin pedir al servidor).
+  // el pedazo visible de la tabla, lo sacamos en memoria sin volver a pedirle al server
   const conteos = useMemo(() => {
     const inicio = (pagina - 1) * PAGE_SIZE;
     return conteosTendencia.slice(inicio, inicio + PAGE_SIZE);
   }, [conteosTendencia, pagina]);
 
-  // Al cambiar cualquier filtro, volver a la página 1
+  // cuando cambia cualquier filtro, volvemos a la pagina 1
   useEffect(() => {
     setPagina(1);
   }, [filtroCultivo, filtroOperador, fechaDesde, fechaHasta]);
@@ -483,7 +483,7 @@ export default function HistorialPage() {
 
   const conteosFiltrados = conteos;
 
-  // Agrupar conteosTendencia por año
+  // agrupamos los conteos por año
   const conteosAgrupados = (() => {
     const mapa = new Map<
       number,

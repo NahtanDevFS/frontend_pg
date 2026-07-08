@@ -320,9 +320,6 @@
   background: var(--color-primary-hover);
 }
 
-/* =========================================
-   MEDIA QUERIES PARA RESPONSIVIDAD (MÓVILES)
-   ========================================= */
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
@@ -389,9 +386,7 @@
   }
 }
 
-/* =========================================
-   TOGGLE MOSTRAR DESACTIVADOS
-   ========================================= */
+/*toggle mostrar desactivados */
 .filtroRow {
   display: flex;
   align-items: center;
@@ -459,9 +454,7 @@
   white-space: nowrap;
 }
 
-/* =========================================
-   CARDS INACTIVAS
-   ========================================= */
+/*cards inactivas*/
 .seccionInactivosDivider {
   display: flex;
   align-items: center;

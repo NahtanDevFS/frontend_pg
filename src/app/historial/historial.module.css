@@ -412,9 +412,7 @@
   margin-bottom: 6px;
 }
 
-/* =========================================
-   VISTA ANUAL
-   ========================================= */
+/*vista anual */
 .anualWrap {
   display: flex;
   flex-direction: column;

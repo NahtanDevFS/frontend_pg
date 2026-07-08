@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Conteo, Cultivo, ProcesamientoVideo, MuestreoResponse } from "@/types";
 
-//Paleta
+// paleta de colores del reporte
 const VERDE = [45, 106, 79] as [number, number, number];
 const VERDE_OS = [27, 67, 50] as [number, number, number];
 const VERDE_CL = [216, 243, 220] as [number, number, number];
@@ -19,11 +19,11 @@ const COLORES_CALIBRE: [number, number, number][] = [
   [183, 228, 199],
 ];
 
-// Validación agregada para evitar error de "Invalid Date"
+// validamos la fecha pa que no reviente con un "Invalid Date"
 function formatFecha(fecha: string | null | undefined) {
   if (!fecha) return "—";
   try {
-    // Si es solo fecha (YYYY-MM-DD) agrega T00:00:00 para evitar desfase de zona horaria.
+    // si viene solo fecha (YYYY-MM-DD) le pegamos T00:00:00 pa que no se desfase por la zona horaria
     const d = /T|\s\d{2}:/.test(fecha)
       ? new Date(fecha)
       : new Date(fecha + "T00:00:00");
@@ -43,7 +43,7 @@ function formatNum(n: number | null | undefined) {
   return n.toLocaleString("es-GT");
 }
 
-//Gráfica de barras manual
+// grafica de barras hecha a mano (jsPDF no trae graficas)
 function dibujarGraficaBarras(
   doc: jsPDF,
   clasificaciones: MuestreoResponse["clasificaciones"],
@@ -66,11 +66,9 @@ function dibujarGraficaBarras(
     const by = baseY - altBarra;
     const color = COLORES_CALIBRE[i % COLORES_CALIBRE.length];
 
-    // Barra
     doc.setFillColor(...color);
     doc.roundedRect(bx, by, anchoBar, altBarra, 1.5, 1.5, "F");
 
-    // Valor encima
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...color);
@@ -78,7 +76,6 @@ function dibujarGraficaBarras(
       align: "center",
     });
 
-    // Nombre calibre
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...GRIS);
@@ -86,7 +83,6 @@ function dibujarGraficaBarras(
       align: "center",
     });
 
-    // Porcentaje
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...GRIS_M);
@@ -95,13 +91,12 @@ function dibujarGraficaBarras(
     });
   });
 
-  // Línea base
   doc.setDrawColor(...GRIS_B);
   doc.setLineWidth(0.4);
   doc.line(x, baseY, x + ancho, baseY);
 }
 
-//Función principal
+// funcion principal: arma el PDF de un conteo
 export function generarReportePDF(params: {
   conteo: Conteo;
   cultivo: Cultivo;
@@ -123,7 +118,7 @@ export function generarReportePDF(params: {
   const ANCHO = W - ML - MR;
   let y = 20;
 
-  //Encabezado
+  // encabezado
   doc.setFillColor(...VERDE);
   doc.rect(0, 0, W, 28, "F");
 
@@ -146,7 +141,7 @@ export function generarReportePDF(params: {
 
   y = 36;
 
-  //Info del cultivo
+  // info del cultivo
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...VERDE);
@@ -193,7 +188,6 @@ export function generarReportePDF(params: {
     doc.setTextColor(...GRIS);
     doc.text(valor, ML + 30, yRow);
 
-    // Se añadió fallback por seguridad extra
     const [label2, valor2] = infoRight[i] || ["", ""];
 
     if (label2) {
@@ -209,7 +203,7 @@ export function generarReportePDF(params: {
 
   y += infoLeft.length * 6 + 8;
 
-  // Total acumulado
+  // total acumulado
   doc.setFillColor(...VERDE_CL);
   doc.roundedRect(ML, y, ANCHO, 22, 3, 3, "F");
   doc.setDrawColor(...VERDE);
@@ -235,10 +229,9 @@ export function generarReportePDF(params: {
 
   y += 28; // Bajamos el puntero para colocar el texto de confianza
 
-  //DATOS DE CONFIANZA IA
+  // datos de confianza de la IA
   const nivelConfiabilidad = (conteo as any).nivel_confiabilidad;
   if (nivelConfiabilidad) {
-    // Capitalizamos la primera letra
     const capNivel =
       nivelConfiabilidad.charAt(0).toUpperCase() + nivelConfiabilidad.slice(1);
 
@@ -278,7 +271,7 @@ export function generarReportePDF(params: {
 
   y += 4;
 
-  //Videos procesados
+  // videos procesados
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...VERDE);
@@ -288,7 +281,7 @@ export function generarReportePDF(params: {
   doc.line(ML, y, ML + ANCHO, y);
   y += 3;
 
-  // Agregada validación de seguridad (|| [])
+  // por si acaso viene undefined, lo dejamos en array vacio
   const procesamientosSeguros = procesamientos || [];
 
   const videosRows = procesamientosSeguros.map((p) => {
@@ -324,13 +317,13 @@ export function generarReportePDF(params: {
       4: { halign: "right", fontStyle: "bold" },
     },
     didParseCell: (data) => {
-      // Fila total
+      // la fila del total va resaltada
       if (data.row.index === videosRows.length - 1) {
         data.cell.styles.fillColor = VERDE_CL;
         data.cell.styles.textColor = VERDE;
         data.cell.styles.fontStyle = "bold";
       }
-      // Filas alternas
+      // filas alternas con fondo gris clarito
       if (
         data.row.index % 2 === 1 &&
         data.row.index !== videosRows.length - 1
@@ -344,10 +337,9 @@ export function generarReportePDF(params: {
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  //Segmentación por calibre
-  // Agregada validación segura con el Optional Chaining (?)
+  // segmentacion por calibre
   if (muestreo && muestreo.clasificaciones?.length > 0) {
-    // Nueva página si no hay espacio suficiente
+    // metemos pagina nueva si ya no cabe
     if (y > H - 100) {
       doc.addPage();
       y = 20;
@@ -372,7 +364,6 @@ export function generarReportePDF(params: {
     );
     y += 8;
 
-    // Gráfica de barras
     const ALTO_GRAF = 45;
     dibujarGraficaBarras(
       doc,
@@ -384,7 +375,6 @@ export function generarReportePDF(params: {
     );
     y += ALTO_GRAF + 22;
 
-    // Tabla de calibres
     const calRows = muestreo.clasificaciones.map((c) => [
       c.nombre_calibre,
       `${c.cantidad_muestreo} / ${c.total_muestreo}`,
@@ -442,7 +432,7 @@ export function generarReportePDF(params: {
     y += 8;
   }
 
-  //Pie de página en todas las páginas
+  // pie de pagina en todas las hojas
   const totalPaginas = doc.getNumberOfPages();
   for (let i = 1; i <= totalPaginas; i++) {
     doc.setPage(i);
@@ -465,7 +455,7 @@ export function generarReportePDF(params: {
   doc.save(`conteo_${conteo.id}_reporte.pdf`);
 }
 
-// ─── Reporte anual ────────────────────────────────────────────────────────────
+//reporte anual resume varios conteos agrupados por año
 
 interface GrupoAnual {
   anio: number;
@@ -501,7 +491,7 @@ export function generarReporteAnualPDF(params: {
   const ANCHO = W - ML - MR;
   let y = 20;
 
-  // Encabezado
+  // encabezado
   doc.setFillColor(...VERDE);
   doc.rect(0, 0, W, 28, "F");
 
@@ -529,7 +519,7 @@ export function generarReporteAnualPDF(params: {
 
   y = 36;
 
-  // Filtros aplicados
+  // filtros aplicados
   const filtrosTexto: string[] = [];
   if (filtros.cultivo) filtrosTexto.push(`Cultivo: ${filtros.cultivo}`);
   if (filtros.operador) filtrosTexto.push(`Operador: ${filtros.operador}`);
@@ -546,7 +536,7 @@ export function generarReporteAnualPDF(params: {
     y += 8;
   }
 
-  // Resumen global
+  // resumen global de todos los años
   const totalGlobal = grupos.reduce((s, g) => s + g.total, 0);
   const totalConteos = grupos.reduce((s, g) => s + g.conteos.length, 0);
 
@@ -576,20 +566,18 @@ export function generarReporteAnualPDF(params: {
 
   y += 24;
 
-  // Un bloque por año
+  // un bloque por cada año
   for (const g of grupos) {
     if (y > H - 60) {
       doc.addPage();
       y = 20;
     }
 
-    // Título del año
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...VERDE);
     doc.text(String(g.anio), ML, y);
 
-    // Total del año alineado a la derecha
     doc.setFontSize(13);
     doc.text(formatNum(g.total), W - MR, y, { align: "right" });
 
@@ -599,7 +587,7 @@ export function generarReporteAnualPDF(params: {
     doc.line(ML, y, W - MR, y);
     y += 4;
 
-    // Metadatos del año
+    // metadatos del año (cuantos conteos, cultivos, variedades, etc)
     const meta: string[] = [
       `${g.conteos.length} conteo${g.conteos.length !== 1 ? "s" : ""}`,
     ];
@@ -617,7 +605,6 @@ export function generarReporteAnualPDF(params: {
     doc.text(meta.join(" · "), ML, y);
     y += 6;
 
-    // Tabla de conteos del año
     const filas = g.conteos
       .slice()
       .sort(
@@ -675,7 +662,7 @@ export function generarReporteAnualPDF(params: {
     y = (doc as any).lastAutoTable.finalY + 14;
   }
 
-  // Pie de página
+  // pie de pagina
   const totalPaginas = doc.getNumberOfPages();
   for (let i = 1; i <= totalPaginas; i++) {
     doc.setPage(i);

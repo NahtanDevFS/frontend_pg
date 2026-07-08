@@ -195,8 +195,8 @@
   }
 
   .userPill {
-    padding: 4px; /* Ajustamos padding porque solo hay avatar */
-    border-radius: 50%; /* Lo hacemos redondo perfecto */
+    padding: 4px;
+    border-radius: 50%;
   }
 
   /* Ocultar texto de salir, dejamos solo el icono */

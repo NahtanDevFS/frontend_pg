@@ -213,7 +213,7 @@ export function generarReportePDF(params: {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...VERDE);
-  doc.text("Total melones contados (IA)", ML + 6, y + 8);
+  doc.text("Total acumulado", ML + 6, y + 8);
 
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");

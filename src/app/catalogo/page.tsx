@@ -28,21 +28,21 @@ export default function GestionMelonesPage() {
   const { notify, confirmar } = useNotification();
   const [pestana, setPestana] = useState<Pestana>("calibres");
 
-  // ── calibres ──
+  //calibres
   const [calibres, setCalibres] = useState<CalibreAdmin[]>([]);
   const [loadingCal, setLoadingCal] = useState(true);
   const [errorCal, setErrorCal] = useState("");
   const [editCal, setEditCal] = useState<CalibreEdit | null>(null);
   const [guardandoCal, setGuardandoCal] = useState(false);
 
-  // ── variedades ──
+  //variedades
   const [variedades, setVariedades] = useState<VariedadAdmin[]>([]);
   const [loadingVar, setLoadingVar] = useState(true);
   const [errorVar, setErrorVar] = useState("");
   const [editVar, setEditVar] = useState<VariedadEdit | null>(null);
   const [guardandoVar, setGuardandoVar] = useState(false);
 
-  // ── calibres de una variedad ──
+  //calibres de una variedad
   const [varCalibres, setVarCalibres] = useState<VariedadAdmin | null>(null);
   const [listaCalVar, setListaCalVar] = useState<CalibreDeVariedad[]>([]);
   const [loadingCalVar, setLoadingCalVar] = useState(false);
@@ -83,7 +83,7 @@ export default function GestionMelonesPage() {
     cargarVariedades();
   }, [cargarCalibres, cargarVariedades]);
 
-  // ── acciones de calibres ──
+  //acciones de calibres
   const abrirCrearCal = () =>
     setEditCal({ id: null, nombre: "", descripcion: "", orden: "0" });
   const abrirEditarCal = (c: CalibreAdmin) =>
@@ -145,7 +145,7 @@ export default function GestionMelonesPage() {
     }
   };
 
-  // ── acciones de variedades ──
+  //acciones de variedades
   const abrirCrearVar = () =>
     setEditVar({ id: null, nombre: "", descripcion: "" });
   const abrirEditarVar = (v: VariedadAdmin) =>
@@ -206,7 +206,7 @@ export default function GestionMelonesPage() {
     }
   };
 
-  // ── gestion de calibres de una variedad ──
+  //gestion de calibres de una variedad
   const abrirCalibresVar = async (v: VariedadAdmin) => {
     setVarCalibres(v);
     setLoadingCalVar(true);
@@ -562,7 +562,7 @@ export default function GestionMelonesPage() {
         </Modal>
       )}
 
-      {/* Modal gestión de calibres de variedad (Fase 3) */}
+      {/* Modal gestión de calibres de variedad */}
       {varCalibres && (
         <Modal onClose={() => setVarCalibres(null)}>
           <h3 className={styles.modalTitle}>
@@ -637,7 +637,7 @@ export default function GestionMelonesPage() {
   );
 }
 
-// ── componentes auxiliares ──
+//componentes auxiliares
 
 function BadgeActivo({ activo }: { activo: boolean }) {
   return (

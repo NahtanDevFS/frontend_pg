@@ -357,7 +357,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Modal: cambiar mi contraseña */}
+      {/* Modal cambiar mi contraseña */}
       {modalPass && (
         <div
           style={{

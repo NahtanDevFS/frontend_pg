@@ -16,7 +16,6 @@ export interface Calibre {
   orden: number;
 }
 
-// calibre con su estado y dependencias, pal modulo de gestion del admin
 export interface CalibreAdmin {
   id: number;
   nombre: string;
@@ -58,11 +57,9 @@ export interface Cultivo {
   usuario_id: number;
   nombre: string;
   municipio_id: number;
-  // nombres desnormalizados que ya nos manda resueltos el backend
   municipio_nombre: string;
   departamento_id: number;
   departamento_nombre: string;
-  // ubicacion: direccion o referencia libre dentro del municipio (opcional)
   ubicacion: string | null;
   hectareas: number | null;
   total_surcos: number;
@@ -85,7 +82,6 @@ export interface Municipio {
 export interface Conteo {
   id: number;
   campo_cultivo_id: number;
-  // nombres desnormalizados que resuelve el backend
   cultivo_nombre: string | null;
   operador_nombre: string | null;
   variedad_id: number;

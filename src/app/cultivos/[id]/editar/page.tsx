@@ -20,7 +20,7 @@ export default function EditarCultivoPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // cascada departamento -> municipio
+  // cascada departamento a municipio
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [departamentoId, setDepartamentoId] = useState("");

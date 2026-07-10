@@ -418,13 +418,9 @@ export default function HistorialPage() {
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 20;
-  // data completa sin paginar, pa las vistas de tendencia y anual
   const [conteosTendencia, setConteosTendencia] = useState<Conteo[]>([]);
-  // toggle pa mostrar los desactivados
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
-  // id del conteo sobre el que se esta actuando
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
-  // el año que esta abierto en la vista anual
   const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {

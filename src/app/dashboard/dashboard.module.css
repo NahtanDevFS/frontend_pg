@@ -377,16 +377,14 @@
   }
 
   .btnDetalle {
-    flex: 1; /* Los botones crecen de manera equitativa */
+    flex: 1;
   }
 
-  /* El icono de borrar que no crezca pero mantenga su forma */
   .btnIcono {
     flex-shrink: 0;
   }
 }
 
-/*toggle mostrar desactivados */
 .filtroRow {
   display: flex;
   align-items: center;

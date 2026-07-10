@@ -155,11 +155,10 @@
   overflow: hidden;
 }
 
-/* NUEVA REGLA CRUCIAL PARA MÓVILES */
 .tablaScroll {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 .tabla {
@@ -636,10 +635,9 @@
   }
 
   .btnLimpiar {
-    width: 100%; /* Botón de limpiar ocupa todo el ancho */
+    width: 100%;
   }
 
-  /* Ajustar la paginación para pantallas pequeñas */
   .paginacion {
     flex-direction: column;
     gap: 12px;
@@ -649,7 +647,6 @@
     width: 100%;
   }
 
-  /* Reducir columnas de tendencia */
   .tendenciaGrid {
     grid-template-columns: 1fr;
   }

@@ -842,7 +842,6 @@
   cursor: not-allowed;
 }
 
-/* También asegurar que procBadgeWrapper existe */
 .procBadgeWrapper {
   display: flex;
   align-items: center;

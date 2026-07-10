@@ -83,7 +83,6 @@
   gap: 5px;
 }
 
-/* Base Inputs y Selects totalmente responsivos */
 .formGroup input,
 .formGroup select {
   width: 100%;
@@ -208,21 +207,19 @@
     font-size: 1.4rem;
   }
 
-  /* Apilar las columnas en dispositivos pequeños */
   .formRow {
     grid-template-columns: 1fr;
-    gap: 1.25rem; /* Aumenta ligeramente el gap vertical para que respiren */
+    gap: 1.25rem;
   }
 
-  /* Apilar botones de acción */
   .formActions {
-    flex-direction: column-reverse; /* El botón de "Crear cultivo" queda arriba, el de cancelar abajo */
+    flex-direction: column-reverse;
     gap: 10px;
   }
 
   .btnCancel,
   .btnSubmit {
     width: 100%;
-    flex: none; /* Eliminar los ratios para forzar que ocupen todo el bloque */
+    flex: none;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Conteo, Cultivo, Usuario } from "@/types";
@@ -21,50 +21,102 @@ interface OperadorAsignado {
 
 // grafica de tendencia historica
 function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
-  const completados = conteos
-    .filter(
-      (c) => c.estado_nombre === "completado" && c.conteo_total_acumulado > 0,
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.fecha_conteo).getTime() - new Date(b.fecha_conteo).getTime(),
-    );
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  if (completados.length < 2)
+  const completados = useMemo(
+    () =>
+      conteos
+        .filter(
+          (c) =>
+            c.estado_nombre === "completado" && c.conteo_total_acumulado > 0,
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.fecha_conteo).getTime() -
+            new Date(b.fecha_conteo).getTime(),
+        ),
+    [conteos],
+  );
+
+  const n = completados.length;
+
+  // al haber muchos puntos, mostramos primero los mas recientes
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [n]);
+
+  if (n < 2)
     return (
       <p className={styles.graficaSinDatos}>
         Se necesitan al menos 2 ciclos completados para mostrar la tendencia.
       </p>
     );
 
-  const max = Math.max(...completados.map((c) => c.conteo_total_acumulado));
-  const W = 560;
-  const H = 120;
+  const valores = completados.map((c) => c.conteo_total_acumulado);
+  const max = Math.max(...valores);
+  const min = Math.min(...valores);
+  const idxMax = valores.indexOf(max);
+  const idxMin = valores.indexOf(min);
+
   const PAD_X = 48;
-  const PAD_Y = 20;
+  const PAD_TOP = 36;
+  const PAD_BOTTOM = 28;
+  const H = 220;
+  const MIN_SPACING = 44; // separacion minima entre puntos
+  const W = Math.max(640, PAD_X * 2 + (n - 1) * MIN_SPACING);
   const w = W - PAD_X * 2;
-  const h = H - PAD_Y * 2;
+  const h = H - PAD_TOP - PAD_BOTTOM;
+  const muchos = n > 12;
 
   const pts = completados.map((c, i) => ({
-    x: PAD_X + (i / (completados.length - 1)) * w,
-    y: PAD_Y + h - (c.conteo_total_acumulado / max) * h,
+    x: PAD_X + (i / (n - 1)) * w,
+    y: PAD_TOP + h - (c.conteo_total_acumulado / max) * h,
     conteo: c,
+    i,
   }));
 
+  const variacionDe = (i: number) => {
+    if (i === 0) return null;
+    const ant = valores[i - 1];
+    return ant ? ((valores[i] - ant) / ant) * 100 : null;
+  };
+
+  const fmtFecha = (f: string, conAnio = false) =>
+    new Date(f).toLocaleDateString("es-GT", {
+      day: "2-digit",
+      month: "short",
+      ...(conAnio ? { year: "numeric" } : {}),
+    });
+
+  // etiqueta de eje X solo cada cierto numero de puntos
+  const pasoX = Math.max(1, Math.ceil(60 / (w / (n - 1))));
+  // con pocos puntos se muestran todas las etiquetas; con muchos, solo las clave
+  const mostrarEtiqueta = (i: number) =>
+    !muchos || i === n - 1 || i === idxMax || i === idxMin;
+  const anchoZona = Math.min(MIN_SPACING, w / (n - 1));
+
   return (
-    <div className={styles.graficaContainer}>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className={styles.graficaSvg}>
+    <div className={styles.graficaContainer} ref={scrollRef}>
+      <svg
+        width={muchos ? W : "100%"}
+        viewBox={`0 0 ${W} ${H}`}
+        className={styles.graficaSvg}
+        style={muchos ? { minWidth: W } : undefined}
+        onMouseLeave={() => setHoverIndex(null)}
+      >
         <line
           x1={PAD_X}
-          y1={PAD_Y}
+          y1={PAD_TOP}
           x2={W - PAD_X}
-          y2={PAD_Y}
+          y2={PAD_TOP}
           stroke="#e8eeeb"
           strokeWidth="1"
           strokeDasharray="4 3"
         />
         <polygon
-          points={`${pts[0].x},${PAD_Y + h} ${pts.map((p) => `${p.x},${p.y}`).join(" ")} ${pts[pts.length - 1].x},${PAD_Y + h}`}
+          points={`${pts[0].x},${PAD_TOP + h} ${pts.map((p) => `${p.x},${p.y}`).join(" ")} ${pts[n - 1].x},${PAD_TOP + h}`}
           fill="#52b788"
           opacity="0.08"
         />
@@ -76,62 +128,135 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {pts.map((p, i) => {
-          const anterior =
-            i > 0 ? completados[i - 1].conteo_total_acumulado : null;
-          const variacion = anterior
-            ? (
-                ((p.conteo.conteo_total_acumulado - anterior) / anterior) *
-                100
-              ).toFixed(1)
-            : null;
-          const subio = variacion ? parseFloat(variacion) >= 0 : null;
+        {pts.map((p) => {
+          const activo = hoverIndex === p.i;
+          const variacion = variacionDe(p.i);
+          const subio = variacion !== null && variacion >= 0;
           return (
             <g key={p.conteo.id}>
               <circle
                 cx={p.x}
                 cy={p.y}
-                r={5}
-                fill="white"
+                r={activo ? 6 : muchos ? 3 : 5}
+                fill={muchos && !activo ? "#2d6a4f" : "white"}
                 stroke="#2d6a4f"
                 strokeWidth="2"
               />
-              <text
-                x={p.x}
-                y={p.y - 12}
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight="700"
-                fill="#2d6a4f"
-              >
-                {p.conteo.conteo_total_acumulado.toLocaleString()}
-              </text>
-              {variacion && (
+              {mostrarEtiqueta(p.i) && !activo && (
                 <text
                   x={p.x}
-                  y={p.y - 24}
+                  y={p.y - 10}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="700"
+                  fill="#2d6a4f"
+                >
+                  {p.conteo.conteo_total_acumulado.toLocaleString()}
+                </text>
+              )}
+              {!muchos && variacion !== null && !activo && (
+                <text
+                  x={p.x}
+                  y={p.y - 22}
                   textAnchor="middle"
                   fontSize="9"
                   fill={subio ? "#059669" : "#dc2626"}
                 >
-                  {subio ? "▲" : "▼"} {Math.abs(parseFloat(variacion))}%
+                  {subio ? "▲" : "▼"} {Math.abs(variacion).toFixed(1)}%
                 </text>
               )}
-              <text
-                x={p.x}
-                y={H - 4}
-                textAnchor="middle"
-                fontSize="8"
-                fill="#8fa898"
-              >
-                {new Date(p.conteo.fecha_conteo).toLocaleDateString("es-GT", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-              </text>
+              {p.i % pasoX === 0 || p.i === n - 1 ? (
+                <text
+                  x={p.x}
+                  y={H - 8}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#8fa898"
+                >
+                  {fmtFecha(p.conteo.fecha_conteo)}
+                </text>
+              ) : null}
+              {/* zona de interaccion */}
+              <rect
+                x={p.x - anchoZona / 2}
+                y={0}
+                width={anchoZona}
+                height={H}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHoverIndex(p.i)}
+                onClick={() => setHoverIndex(p.i)}
+                onTouchStart={() => setHoverIndex(p.i)}
+              />
             </g>
           );
         })}
+
+        {/* tooltip al final para quedar encima de todo */}
+        {hoverIndex !== null &&
+          (() => {
+            const p = pts[hoverIndex];
+            const variacion = variacionDe(hoverIndex);
+            const bw = 120;
+            const bh = variacion !== null ? 58 : 44;
+            let bx = p.x - bw / 2;
+            if (bx < 0) bx = 0;
+            if (bx + bw > W) bx = W - bw;
+            const by = p.y - bh - 12 > 0 ? p.y - bh - 12 : p.y + 12;
+            return (
+              <g pointerEvents="none">
+                <line
+                  x1={p.x}
+                  y1={PAD_TOP}
+                  x2={p.x}
+                  y2={PAD_TOP + h}
+                  stroke="#2d6a4f"
+                  strokeWidth="1"
+                  strokeDasharray="3 3"
+                  opacity="0.5"
+                />
+                <rect
+                  x={bx}
+                  y={by}
+                  width={bw}
+                  height={bh}
+                  rx={6}
+                  fill="#1a2e25"
+                  opacity="0.95"
+                />
+                <text
+                  x={bx + bw / 2}
+                  y={by + 20}
+                  textAnchor="middle"
+                  fill="#fff"
+                  fontSize="14"
+                  fontWeight="bold"
+                >
+                  {p.conteo.conteo_total_acumulado.toLocaleString()}
+                </text>
+                <text
+                  x={bx + bw / 2}
+                  y={by + 34}
+                  textAnchor="middle"
+                  fill="#b7d4c4"
+                  fontSize="10"
+                >
+                  {fmtFecha(p.conteo.fecha_conteo, true)}
+                </text>
+                {variacion !== null && (
+                  <text
+                    x={bx + bw / 2}
+                    y={by + 49}
+                    textAnchor="middle"
+                    fill={variacion >= 0 ? "#6ee7b7" : "#fca5a5"}
+                    fontSize="10"
+                  >
+                    {variacion >= 0 ? "▲" : "▼"} {Math.abs(variacion).toFixed(1)}%
+                  </text>
+                )}
+              </g>
+            );
+          })()}
       </svg>
     </div>
   );

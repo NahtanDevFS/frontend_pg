@@ -31,10 +31,10 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
           (c) =>
             c.estado_nombre === "completado" && c.conteo_total_acumulado > 0,
         )
+        // fecha_conteo es solo fecha (YYYY-MM-DD); varios conteos comparten dia, desempatamos por id
         .sort(
           (a, b) =>
-            new Date(a.fecha_conteo).getTime() -
-            new Date(b.fecha_conteo).getTime(),
+            a.fecha_conteo.localeCompare(b.fecha_conteo) || a.id - b.id,
         ),
     [conteos],
   );
@@ -84,7 +84,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   };
 
   const fmtFecha = (f: string, conAnio = false) =>
-    new Date(f).toLocaleDateString("es-GT", {
+    new Date(f + "T00:00:00").toLocaleDateString("es-GT", {
       day: "2-digit",
       month: "short",
       ...(conAnio ? { year: "numeric" } : {}),

@@ -19,8 +19,55 @@ interface OperadorAsignado {
   created_at: string;
 }
 
+type Agrupacion = "ciclo" | "mes" | "anio";
+
+const MESES = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
+// "2026-09-05" -> "2026-09" | "2026"; sin pasar por Date pa evitar lios de zona horaria
+const claveMes = (fecha: string) => fecha.slice(0, 7);
+const claveAnio = (fecha: string) => fecha.slice(0, 4);
+const nombreMes = (clave: string) => {
+  const [anio, mes] = clave.split("-");
+  const nombre = MESES[Number(mes) - 1] ?? mes;
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${anio}`;
+};
+
+interface PuntoSerie {
+  key: string;
+  valor: number;
+  etiqueta: string; // eje X
+  etiquetaLarga: string; // tooltip
+  detalle: string | null; // linea extra del tooltip
+}
+
+const fmtDia = (f: string, conAnio = false) =>
+  new Date(f + "T00:00:00").toLocaleDateString("es-GT", {
+    day: "2-digit",
+    month: "short",
+    ...(conAnio ? { year: "numeric" } : {}),
+  });
+
 // grafica de tendencia historica
-function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
+function GraficaTendencia({
+  conteos,
+  agrupacion = "ciclo",
+}: {
+  conteos: Conteo[];
+  agrupacion?: Agrupacion;
+}) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,22 +86,57 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
     [conteos],
   );
 
-  const n = completados.length;
+  // por ciclo: un punto por conteo; por mes/año: suma de los conteos del periodo
+  const serie = useMemo<PuntoSerie[]>(() => {
+    if (agrupacion === "ciclo")
+      return completados.map((c) => ({
+        key: String(c.id),
+        valor: c.conteo_total_acumulado,
+        etiqueta: fmtDia(c.fecha_conteo),
+        etiquetaLarga: fmtDia(c.fecha_conteo, true),
+        detalle: `Conteo #${c.id}`,
+      }));
+
+    const clave = agrupacion === "mes" ? claveMes : claveAnio;
+    const mapa = new Map<string, { valor: number; ciclos: number }>();
+    for (const c of completados) {
+      const k = clave(c.fecha_conteo);
+      const g = mapa.get(k) ?? { valor: 0, ciclos: 0 };
+      g.valor += c.conteo_total_acumulado;
+      g.ciclos += 1;
+      mapa.set(k, g);
+    }
+    // completados ya viene ordenado por fecha, asi que el Map conserva el orden cronologico
+    return Array.from(mapa.entries()).map(([k, g]) => ({
+      key: k,
+      valor: g.valor,
+      etiqueta:
+        agrupacion === "mes"
+          ? `${nombreMes(k).slice(0, 3)} ${k.slice(2, 4)}`
+          : k,
+      etiquetaLarga: agrupacion === "mes" ? nombreMes(k) : k,
+      detalle: `${g.ciclos} conteo${g.ciclos !== 1 ? "s" : ""}`,
+    }));
+  }, [completados, agrupacion]);
+
+  const n = serie.length;
 
   // al haber muchos puntos, mostramos primero los mas recientes
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
-  }, [n]);
+  }, [n, agrupacion]);
 
   if (n < 2)
     return (
       <p className={styles.graficaSinDatos}>
-        Se necesitan al menos 2 ciclos completados para mostrar la tendencia.
+        {agrupacion === "ciclo"
+          ? "Se necesitan al menos 2 ciclos completados para mostrar la tendencia."
+          : `Se necesitan ciclos completados en al menos 2 ${agrupacion === "mes" ? "meses" : "años"} distintos para mostrar la tendencia.`}
       </p>
     );
 
-  const valores = completados.map((c) => c.conteo_total_acumulado);
+  const valores = serie.map((s) => s.valor);
   const max = Math.max(...valores);
   const min = Math.min(...valores);
   const idxMax = valores.indexOf(max);
@@ -70,10 +152,10 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
   const h = H - PAD_TOP - PAD_BOTTOM;
   const muchos = n > 12;
 
-  const pts = completados.map((c, i) => ({
+  const pts = serie.map((s, i) => ({
     x: PAD_X + (i / (n - 1)) * w,
-    y: PAD_TOP + h - (c.conteo_total_acumulado / max) * h,
-    conteo: c,
+    y: PAD_TOP + h - (s.valor / max) * h,
+    item: s,
     i,
   }));
 
@@ -82,13 +164,6 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
     const ant = valores[i - 1];
     return ant ? ((valores[i] - ant) / ant) * 100 : null;
   };
-
-  const fmtFecha = (f: string, conAnio = false) =>
-    new Date(f + "T00:00:00").toLocaleDateString("es-GT", {
-      day: "2-digit",
-      month: "short",
-      ...(conAnio ? { year: "numeric" } : {}),
-    });
 
   // etiqueta de eje X solo cada cierto numero de puntos
   const pasoX = Math.max(1, Math.ceil(60 / (w / (n - 1))));
@@ -133,7 +208,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
           const variacion = variacionDe(p.i);
           const subio = variacion !== null && variacion >= 0;
           return (
-            <g key={p.conteo.id}>
+            <g key={p.item.key}>
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -151,7 +226,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fontWeight="700"
                   fill="#2d6a4f"
                 >
-                  {p.conteo.conteo_total_acumulado.toLocaleString()}
+                  {p.item.valor.toLocaleString()}
                 </text>
               )}
               {!muchos && variacion !== null && !activo && (
@@ -173,7 +248,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fontSize="9"
                   fill="#8fa898"
                 >
-                  {fmtFecha(p.conteo.fecha_conteo)}
+                  {p.item.etiqueta}
                 </text>
               ) : null}
               {/* zona de interaccion */}
@@ -198,7 +273,8 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
             const p = pts[hoverIndex];
             const variacion = variacionDe(hoverIndex);
             const bw = 120;
-            const bh = variacion !== null ? 58 : 44;
+            const bh =
+              44 + (p.item.detalle ? 13 : 0) + (variacion !== null ? 14 : 0);
             let bx = p.x - bw / 2;
             if (bx < 0) bx = 0;
             if (bx + bw > W) bx = W - bw;
@@ -232,7 +308,7 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fontSize="14"
                   fontWeight="bold"
                 >
-                  {p.conteo.conteo_total_acumulado.toLocaleString()}
+                  {p.item.valor.toLocaleString()}
                 </text>
                 <text
                   x={bx + bw / 2}
@@ -241,12 +317,23 @@ function GraficaTendencia({ conteos }: { conteos: Conteo[] }) {
                   fill="#b7d4c4"
                   fontSize="10"
                 >
-                  {fmtFecha(p.conteo.fecha_conteo, true)}
+                  {p.item.etiquetaLarga}
                 </text>
+                {p.item.detalle && (
+                  <text
+                    x={bx + bw / 2}
+                    y={by + 47}
+                    textAnchor="middle"
+                    fill="#b7d4c4"
+                    fontSize="9"
+                  >
+                    {p.item.detalle}
+                  </text>
+                )}
                 {variacion !== null && (
                   <text
                     x={bx + bw / 2}
-                    y={by + 49}
+                    y={by + (p.item.detalle ? 62 : 49)}
                     textAnchor="middle"
                     fill={variacion >= 0 ? "#6ee7b7" : "#fca5a5"}
                     fontSize="10"
@@ -288,10 +375,14 @@ export default function DetalleCultivoPage() {
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   // id del conteo sobre el que se esta actuando (desactivar/reactivar)
   const [accionConteoId, setAccionConteoId] = useState<number | null>(null);
-  // vista: tabla | anual
-  const [modoVista, setModoVista] = useState<"tabla" | "anual">("tabla");
-  // el año que esta abierto en la vista anual
-  const [anioExpandido, setAnioExpandido] = useState<number | null>(null);
+  // vista: tabla | mensual | anual
+  const [modoVista, setModoVista] = useState<"tabla" | "mensual" | "anual">(
+    "tabla",
+  );
+  // el grupo (mes o año) que esta abierto en las vistas agrupadas
+  const [grupoExpandido, setGrupoExpandido] = useState<string | null>(null);
+  // agrupacion de la grafica de tendencia
+  const [agrupGrafica, setAgrupGrafica] = useState<Agrupacion>("ciclo");
 
   // arma los query params de filtros que comparten la tabla y la grafica
   const buildFiltros = useCallback(() => {
@@ -434,16 +525,18 @@ export default function DetalleCultivoPage() {
     }
   };
 
-  // agrupamos los conteos por año pa la vista anual
-  const conteosAgrupados = (() => {
+  // agrupamos los conteos por mes o por año pa las vistas agrupadas
+  const agruparConteos = (modo: "mensual" | "anual") => {
     const ordenConfianza: Record<string, number> = {
       alto: 0,
       moderado: 1,
       bajo: 2,
     };
     const mapa = new Map<
-      number,
+      string,
       {
+        clave: string;
+        etiqueta: string;
         anio: number;
         conteos: Conteo[];
         total: number;
@@ -455,9 +548,13 @@ export default function DetalleCultivoPage() {
     >();
 
     for (const c of conteosTendencia) {
-      const anio = new Date(c.fecha_conteo + "T00:00:00").getFullYear();
-      if (!mapa.has(anio)) {
-        mapa.set(anio, {
+      const clave =
+        modo === "mensual" ? claveMes(c.fecha_conteo) : claveAnio(c.fecha_conteo);
+      const anio = Number(claveAnio(c.fecha_conteo));
+      if (!mapa.has(clave)) {
+        mapa.set(clave, {
+          clave,
+          etiqueta: modo === "mensual" ? nombreMes(clave) : clave,
           anio,
           conteos: [],
           total: 0,
@@ -467,7 +564,7 @@ export default function DetalleCultivoPage() {
           peorConfianza: null,
         });
       }
-      const g = mapa.get(anio)!;
+      const g = mapa.get(clave)!;
       g.conteos.push(c);
       g.total += c.conteo_total_acumulado;
       if (c.operador_nombre && !g.operadoresUnicos.includes(c.operador_nombre))
@@ -483,8 +580,14 @@ export default function DetalleCultivoPage() {
           g.peorConfianza = c.nivel_confiabilidad;
       }
     }
-    return Array.from(mapa.values()).sort((a, b) => b.anio - a.anio);
-  })();
+    return Array.from(mapa.values()).sort((a, b) =>
+      b.clave.localeCompare(a.clave),
+    );
+  };
+
+  const conteosAgrupados = agruparConteos(
+    modoVista === "mensual" ? "mensual" : "anual",
+  );
 
   const handleExportarPDFAnual = async () => {
     if (!cultivo || conteosAgrupados.length === 0) return;
@@ -684,12 +787,45 @@ export default function DetalleCultivoPage() {
 
       {/* Gráfica de tendencia */}
       <div className={styles.panelCard}>
-        <h3 className={styles.panelTitle}>Tendencia histórica</h3>
-        <p className={styles.panelSubtitle}>
-          Total de melones por ciclo completado y variación porcentual entre
-          ciclos.
-        </p>
-        <GraficaTendencia conteos={conteosTendencia} />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h3 className={styles.panelTitle}>Tendencia histórica</h3>
+            <p className={styles.panelSubtitle}>
+              {agrupGrafica === "ciclo"
+                ? "Total de melones por ciclo completado y variación porcentual entre ciclos."
+                : `Suma de melones de los ciclos completados por ${agrupGrafica === "mes" ? "mes" : "año"} y variación porcentual entre periodos.`}
+            </p>
+          </div>
+          <div className={styles.vistaToggle}>
+            {(
+              [
+                ["ciclo", "Ciclo"],
+                ["mes", "Mes"],
+                ["anio", "Año"],
+              ] as const
+            ).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setAgrupGrafica(v)}
+                className={`${styles.vistaBtn} ${agrupGrafica === v ? styles.vistaBtnActivo : ""}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <GraficaTendencia
+          conteos={conteosTendencia}
+          agrupacion={agrupGrafica}
+        />
       </div>
 
       {/* Lista de conteos */}
@@ -725,13 +861,20 @@ export default function DetalleCultivoPage() {
               </button>
             )}
             <div className={styles.vistaToggle}>
-              {(["tabla", "anual"] as const).map((v) => (
+              {(["tabla", "mensual", "anual"] as const).map((v) => (
                 <button
                   key={v}
-                  onClick={() => setModoVista(v)}
+                  onClick={() => {
+                    setModoVista(v);
+                    setGrupoExpandido(null);
+                  }}
                   className={`${styles.vistaBtn} ${modoVista === v ? styles.vistaBtnActivo : ""}`}
                 >
-                  {v === "tabla" ? "Tabla" : "Por año"}
+                  {v === "tabla"
+                    ? "Tabla"
+                    : v === "mensual"
+                      ? "Por mes"
+                      : "Por año"}
                 </button>
               ))}
             </div>
@@ -960,8 +1103,8 @@ export default function DetalleCultivoPage() {
           </>
         )}
 
-        {/* Vista anual */}
-        {modoVista === "anual" && (
+        {/* Vistas agrupadas (por mes / por año) */}
+        {modoVista !== "tabla" && (
           <div className={styles.anualWrap}>
             {conteosAgrupados.length === 0 ? (
               <p className={styles.tablaVaciaMsg}>
@@ -969,23 +1112,23 @@ export default function DetalleCultivoPage() {
               </p>
             ) : (
               conteosAgrupados.map((g) => {
-                const expandido = anioExpandido === g.anio;
+                const expandido = grupoExpandido === g.clave;
                 return (
-                  <div key={g.anio} className={styles.anualCard}>
+                  <div key={g.clave} className={styles.anualCard}>
                     <div
                       className={styles.anualHeader}
                       onClick={() =>
-                        setAnioExpandido(expandido ? null : g.anio)
+                        setGrupoExpandido(expandido ? null : g.clave)
                       }
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) =>
                         (e.key === "Enter" || e.key === " ") &&
-                        setAnioExpandido(expandido ? null : g.anio)
+                        setGrupoExpandido(expandido ? null : g.clave)
                       }
                     >
                       <div className={styles.anualHeaderLeft}>
-                        <span className={styles.anualAnio}>{g.anio}</span>
+                        <span className={styles.anualAnio}>{g.etiqueta}</span>
                         <div className={styles.anualMeta}>
                           <span>
                             {g.conteos.length} conteo
@@ -1014,7 +1157,9 @@ export default function DetalleCultivoPage() {
                       <div className={styles.anualHeaderRight}>
                         <div className={styles.anualTotalWrap}>
                           <span className={styles.anualTotalLabel}>
-                            Total del año
+                            {modoVista === "mensual"
+                              ? "Total del mes"
+                              : "Total del año"}
                           </span>
                           <span className={styles.anualTotal}>
                             {g.total.toLocaleString()}

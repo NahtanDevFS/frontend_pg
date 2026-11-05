@@ -422,7 +422,8 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                     marginBottom: 4,
                   }}
                 >
-                  {label}
+                  {label}{" "}
+                  <span style={{ color: "var(--color-danger)" }}>*</span>
                 </label>
                 <input
                   type="password"

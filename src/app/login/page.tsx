@@ -94,7 +94,9 @@ export default function LoginPage() {
         {error && <div className={styles.errorMsg}>{error}</div>}
 
         <div className={styles.inputGroup}>
-          <label htmlFor="username">Nombre de Usuario</label>
+          <label htmlFor="username">
+            Nombre de Usuario <span className={styles.required}>*</span>
+          </label>
           <input
             id="username"
             type="text"
@@ -107,7 +109,9 @@ export default function LoginPage() {
         </div>
 
         <div className={styles.inputGroup}>
-          <label htmlFor="password">Contraseña</label>
+          <label htmlFor="password">
+            Contraseña <span className={styles.required}>*</span>
+          </label>
           <div className={styles.inputWrapper}>
             <input
               id="password"

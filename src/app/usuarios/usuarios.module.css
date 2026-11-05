@@ -380,6 +380,11 @@
   opacity: 0.6;
 }
 
+.required {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
 .labelHint {
   color: var(--color-text-muted);
   font-weight: 400;

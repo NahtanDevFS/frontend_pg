@@ -157,7 +157,9 @@ export default function GestionUsuariosPage() {
             <h3 className={styles.modalTitle}>Editar usuario</h3>
             <form onSubmit={handleGuardarEdicion} className={styles.modalForm}>
               <div className={styles.formGroup}>
-                <label>Nombre de usuario</label>
+                <label>
+                  Nombre de usuario <span className={styles.required}>*</span>
+                </label>
                 <input
                   type="text"
                   value={editando.nombre}
@@ -170,7 +172,7 @@ export default function GestionUsuariosPage() {
               </div>
               <div className={styles.formGroup}>
                 <label>
-                  Rol{" "}
+                  Rol <span className={styles.required}>*</span>{" "}
                   {editando.id === usuarioActualId && (
                     <span className={styles.labelHint}>
                       (no puedes cambiar tu propio rol)
@@ -254,7 +256,9 @@ export default function GestionUsuariosPage() {
           <h3 className={styles.formTitle}>Crear nuevo usuario</h3>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
-              <label>Nombre de usuario</label>
+              <label>
+                Nombre de usuario <span className={styles.required}>*</span>
+              </label>
               <input
                 type="text"
                 required
@@ -265,17 +269,21 @@ export default function GestionUsuariosPage() {
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Contraseña inicial</label>
+              <label>
+                Contraseña inicial <span className={styles.required}>*</span>
+              </label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 6 caracteres"
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Rol</label>
+              <label>
+                Rol <span className={styles.required}>*</span>
+              </label>
               <select
                 value={rolId}
                 onChange={(e) => setRolId(e.target.value)}

@@ -26,6 +26,7 @@ export default function GestionUsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [usuarioActualId, setUsuarioActualId] = useState<number | null>(null);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
 
   // form de crear usuario
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -38,10 +39,13 @@ export default function GestionUsuariosPage() {
   const [editando, setEditando] = useState<UsuarioEditando | null>(null);
   const [guardandoEdit, setGuardandoEdit] = useState(false);
 
-  const cargarDatos = async () => {
+  const cargarDatos = async (inclInactivos?: boolean) => {
     try {
+      const incluir = inclInactivos ?? mostrarInactivos;
       const [resU, resR, resMe] = await Promise.all([
-        api.get("/usuarios/"),
+        api.get("/usuarios/", {
+          params: incluir ? { incluir_inactivos: true } : undefined,
+        }),
         api.get("/catalogos/roles"),
         api.get("/usuarios/me"),
       ]);
@@ -138,8 +142,33 @@ export default function GestionUsuariosPage() {
     }
   };
 
+  const handleReactivar = async (id: number, nombre: string) => {
+    if (
+      !(await confirmar(
+        `¿Reactivar al usuario "${nombre}"? Podrá iniciar sesión con su contraseña y rol anteriores.`,
+        { textoConfirmar: "Reactivar" },
+      ))
+    )
+      return;
+    try {
+      await api.patch(`/usuarios/${id}/reactivar`);
+      cargarDatos();
+      notify.success("Usuario reactivado correctamente.");
+    } catch (err: any) {
+      notify.error(mensajeDeError(err, "Error al reactivar."));
+    }
+  };
+
+  const handleToggleInactivos = (valor: boolean) => {
+    setMostrarInactivos(valor);
+    cargarDatos(valor);
+  };
+
   const nombreRol = (rol_id: number) =>
     roles.find((r) => r.id === rol_id)?.nombre ?? `#${rol_id}`;
+
+  const usuariosActivos = usuarios.filter((u) => u.activo);
+  const usuariosInactivos = usuarios.filter((u) => !u.activo);
 
   if (loading)
     return (
@@ -236,16 +265,36 @@ export default function GestionUsuariosPage() {
         <div>
           <h1 className={styles.pageTitle}>Gestión de usuarios</h1>
           <p className={styles.pageSubtitle}>
-            {usuarios.length} usuario{usuarios.length !== 1 ? "s" : ""} activo
-            {usuarios.length !== 1 ? "s" : ""}
+            {usuariosActivos.length} usuario
+            {usuariosActivos.length !== 1 ? "s" : ""} activo
+            {usuariosActivos.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => setMostrarForm(!mostrarForm)}
-          className={styles.btnNuevo}
-        >
-          {mostrarForm ? "Cancelar" : "+ Nuevo usuario"}
-        </button>
+        <div className={styles.headerAcciones}>
+          <label className={styles.toggleLabel}>
+            <div
+              className={`${styles.toggle} ${mostrarInactivos ? styles.toggleOn : ""}`}
+              onClick={() => handleToggleInactivos(!mostrarInactivos)}
+              role="switch"
+              aria-checked={mostrarInactivos}
+              tabIndex={0}
+              onKeyDown={(e) =>
+                e.key === "Enter" || e.key === " "
+                  ? handleToggleInactivos(!mostrarInactivos)
+                  : null
+              }
+            >
+              <div className={styles.toggleThumb} />
+            </div>
+            <span className={styles.toggleText}>Desactivados</span>
+          </label>
+          <button
+            onClick={() => setMostrarForm(!mostrarForm)}
+            className={styles.btnNuevo}
+          >
+            {mostrarForm ? "Cancelar" : "+ Nuevo usuario"}
+          </button>
+        </div>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
@@ -323,15 +372,20 @@ export default function GestionUsuariosPage() {
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map((u, i) => (
+                {[...usuariosActivos, ...usuariosInactivos].map((u, i) => (
                   <tr
                     key={u.id}
-                    className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""}`}
+                    className={`${styles.tr} ${i % 2 !== 0 ? styles.trAlt : ""} ${u.activo ? "" : styles.trInactivo}`}
                   >
                     <td className={styles.tdNombre}>
                       {u.nombre}
                       {u.id === usuarioActualId && (
                         <span className={styles.badgeYo}>Yo</span>
+                      )}
+                      {!u.activo && (
+                        <span className={styles.badgeInactivo}>
+                          Desactivado
+                        </span>
                       )}
                     </td>
                     <td className={styles.tdRol}>
@@ -350,25 +404,36 @@ export default function GestionUsuariosPage() {
                     </td>
                     <td className={styles.tdAcciones}>
                       <div className={styles.accionesWrap}>
-                        <button
-                          onClick={() =>
-                            setEditando({
-                              id: u.id,
-                              nombre: u.nombre,
-                              rolId: String(u.rol_id),
-                              nuevaPassword: "",
-                            })
-                          }
-                          className={styles.btnEditar}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDesactivar(u.id, u.nombre)}
-                          className={styles.btnDesactivar}
-                        >
-                          Desactivar
-                        </button>
+                        {u.activo ? (
+                          <>
+                            <button
+                              onClick={() =>
+                                setEditando({
+                                  id: u.id,
+                                  nombre: u.nombre,
+                                  rolId: String(u.rol_id),
+                                  nuevaPassword: "",
+                                })
+                              }
+                              className={styles.btnEditar}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDesactivar(u.id, u.nombre)}
+                              className={styles.btnDesactivar}
+                            >
+                              Desactivar
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleReactivar(u.id, u.nombre)}
+                            className={styles.btnReactivar}
+                          >
+                            Reactivar
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

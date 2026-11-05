@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
+import PasswordInput from "./PasswordInput";
 import styles from "./ClientLayout.module.css";
 
 interface UsuarioMe {
@@ -410,7 +411,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                 ["Confirmar nueva contraseña", passNueva2, setPassNueva2],
               ] as [string, string, (v: string) => void][]
             ).map(([label, val, setter]) => (
-              <div key={label}>
+              <div key={label} style={{ marginBottom: 14 }}>
                 <label
                   style={{
                     display: "block",
@@ -425,8 +426,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                   {label}{" "}
                   <span style={{ color: "var(--color-danger)" }}>*</span>
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={val}
                   onChange={(e) => setter(e.target.value)}
                   style={{
@@ -438,7 +438,6 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                     fontFamily: "inherit",
                     background: "var(--color-surface)",
                     color: "var(--color-text)",
-                    marginBottom: 14,
                     boxSizing: "border-box",
                   }}
                 />

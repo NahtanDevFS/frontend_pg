@@ -8,6 +8,7 @@ import {
   useNotification,
   mensajeDeError,
 } from "@/components/NotificationProvider";
+import PasswordInput from "@/components/PasswordInput";
 import styles from "./usuarios.module.css";
 
 interface UsuarioEditando {
@@ -201,8 +202,7 @@ export default function GestionUsuariosPage() {
                     (dejar vacío para no cambiar)
                   </span>
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={editando.nuevaPassword}
                   onChange={(e) =>
                     setEditando({ ...editando, nuevaPassword: e.target.value })
@@ -272,8 +272,7 @@ export default function GestionUsuariosPage() {
               <label>
                 Contraseña inicial <span className={styles.required}>*</span>
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

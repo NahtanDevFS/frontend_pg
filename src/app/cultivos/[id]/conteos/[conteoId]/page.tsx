@@ -361,7 +361,7 @@ export default function DetalleConteoPage() {
           </h1>
           <div className={styles.metaRow}>
             <span className={styles.metaFecha}>
-              {new Date(conteo.fecha_conteo).toLocaleDateString("es-GT", {
+              {new Date(conteo.fecha_conteo + "T00:00:00").toLocaleDateString("es-GT", {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",

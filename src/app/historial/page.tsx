@@ -769,11 +769,13 @@ export default function HistorialPage() {
             onChange={(e) => setFiltroOperador(e.target.value)}
           >
             <option value="">Todos</option>
-            {operadores.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nombre}
-              </option>
-            ))}
+            {operadores
+              .filter((u) => u.rol_nombre !== "Administrador")
+              .map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre}
+                </option>
+              ))}
           </select>
         </div>
         <div className={styles.filtroGrupoChico}>
